@@ -1,1 +1,3 @@
-packages: []
+packages:
+  - apps/*     # web and server
+  - packages/* # shared code later
