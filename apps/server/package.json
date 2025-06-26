@@ -10,9 +10,11 @@
   "scripts": {
     "start": "tsx watch src/index.ts",
     "loadtest": "tsx loadtest/example.ts --room my_room --numClients 2",
+    "loadtest:trivia": "tsx loadtest/trivia_test.ts",
     "build": "npm run clean && tsc",
     "clean": "rimraf build",
-    "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000"
+    "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000",
+    "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000"
   },
   "author": "",
   "license": "UNLICENSED",
