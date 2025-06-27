@@ -9,9 +9,28 @@ export interface RoomOptions {
   isPrivate?: boolean;
 }
 
+interface PlayerReadyMessage {
+  ready: boolean;
+}
+
+interface GuessMessage {
+  guess: string;
+}
+
+interface ChatMessage {
+  text: string;
+}
+
+interface SettingsMessage {
+  targetScore?: number;
+  roundTime?: number;
+  maxPlayers?: number;
+}
+
 export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8;
   private roundTimer?: NodeJS.Timeout;
+  private gameLoopTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 10;
   private readonly DEFAULT_ROUND_TIME = 30000; // 30 seconds
   private readonly ROUND_END_DELAY = 2000; // 2 seconds to show correct answer
@@ -78,34 +97,56 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.roundTimer) {
       clearTimeout(this.roundTimer);
     }
+    if (this.gameLoopTimer) {
+      clearInterval(this.gameLoopTimer);
+    }
   }
 
   private setupMessageHandlers() {
     // Handle player ready state
-    this.onMessage(MSG.PLAYER_READY, (client, message) => {
-      this.state.setPlayerReady(client.sessionId, message.ready);
-      this.checkGameStart();
+    this.onMessage(MSG.PLAYER_READY, (client, message: PlayerReadyMessage) => {
+      // ✅ Ignore malformed payloads
+      if (typeof message?.ready === "boolean") {
+        this.state.setPlayerReady(client.sessionId, message.ready);
+        this.checkGameStart();
+      }
     });
 
     // Handle guess submission
-    this.onMessage(MSG.SUBMIT_GUESS, (client, message) => {
-      this.handleGuess(client.sessionId, message.guess);
+    this.onMessage(MSG.SUBMIT_GUESS, (client, message: GuessMessage) => {
+      // ✅ Only act on well-formed messages
+      if (typeof message?.guess === "string") {
+        this.handleGuess(client.sessionId, message.guess);
+      }
     });
 
     // Handle game start request
     this.onMessage(MSG.START_GAME, (client) => {
-      if (client.sessionId === this.state.hostId && this.state.canStart) {
+      // ✅ Re-evaluate readiness on demand instead of relying on a stale flag
+      if (client.sessionId !== this.state.hostId) {
+        return;
+      }
+      
+      if (this.state.gameStarted) {
+        return;
+      }
+
+      const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
+      
+      if (readyPlayers.length >= 2) {
         this.startGame();
       }
     });
 
     // Handle chat messages
-    this.onMessage(MSG.CHAT, (client, message) => {
-      this.handleChatMessage(client.sessionId, message.text);
+    this.onMessage(MSG.CHAT, (client, message: ChatMessage) => {
+      if (typeof message?.text === "string") {
+        this.handleChatMessage(client.sessionId, message.text);
+      }
     });
 
     // Handle room settings update
-    this.onMessage(MSG.UPDATE_SETTINGS, (client, message) => {
+    this.onMessage(MSG.UPDATE_SETTINGS, (client, message: SettingsMessage) => {
       if (client.sessionId === this.state.hostId) {
         this.updateRoomSettings(message);
       }
@@ -113,17 +154,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private startGameLoop() {
-    // Game loop runs every 100ms to update timers and check game state
-    setInterval(() => {
+    // Game loop runs every 50ms to update timers and check game state
+    this.gameLoopTimer = setInterval(() => {
       if (this.state.gameStarted && !this.state.gamePaused) {
         this.updateGameState();
       }
-    }, 100);
+    }, 50);
   }
 
   private updateGameState() {
     // Update round timer
-    if (this.state.currentRound && this.state.roundStartTime) {
+    if (this.state.currentRound > 0 && this.state.roundStartTime > 0) {
       const elapsed = Date.now() - this.state.roundStartTime;
       this.state.roundTimeRemaining = Math.max(0, this.state.roundTime - elapsed);
       
@@ -146,6 +187,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.canStart = false;
     this.state.currentRound = 0;
     this.state.gamePaused = false;
+    this.state.gameEnded = false;
+    this.state.winnerId = "";
     
     // Start first round
     this.startNewRound();
@@ -156,7 +199,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundStartTime = Date.now();
     this.state.roundTimeRemaining = this.state.roundTime;
     this.state.roundEnded = false;
-    this.state.correctAnswer = null;
+    this.state.correctAnswer = "";
     
     // Clear previous round's guesses
     this.state.clearRoundGuesses();
@@ -170,17 +213,31 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private loadNewPrompt() {
     // TODO: Implement prompt loading system
     // For now, use placeholder data
-    this.state.currentPrompt.assign({
-      id: `prompt_${this.state.currentRound}`,
-      text: `What is the capital of France?`,
-      category: "geography",
-      difficulty: "easy"
-    });
+    this.state.currentPrompt.id = `prompt_${this.state.currentRound}`;
+    this.state.currentPrompt.text = `What is the capital of France?`;
+    this.state.currentPrompt.category = "geography";
+    this.state.currentPrompt.difficulty = "easy";
   }
 
   private handleGuess(playerId: string, guess: string) {
-    if (!this.state.gameStarted || this.state.roundEnded) {
+    if (
+      !this.state.gameStarted ||
+      this.state.roundEnded ||
+      this.state.gamePaused ||
+      typeof guess !== "string" ||
+      !guess.trim()
+    ) {
       return;
+    }
+
+    // Check if we're actually in a round
+    if (this.state.currentRound === 0) {
+      return;
+    }
+
+    // Check if player already guessed this round
+    if (this.state.roundGuesses.has(playerId)) {
+      return; // Player already guessed this round
     }
 
     // Normalize guess for comparison
@@ -209,6 +266,13 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Set correct answer
     this.state.correctAnswer = "Paris"; // TODO: Get from prompt
     
+    // Check for game winner immediately
+    const winner = this.checkForWinner();
+    if (winner) {
+      this.endGame(winner);
+      return;
+    }
+    
     // End round after delay
     this.roundTimer = setTimeout(() => {
       this.endRound();
@@ -221,6 +285,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundEnded = true;
     this.state.roundTimeRemaining = 0;
     
+    // Clear the round timer if it exists
+    if (this.roundTimer) {
+      clearTimeout(this.roundTimer);
+      this.roundTimer = undefined;
+    }
+    
     // Check for game winner
     const winner = this.checkForWinner();
     if (winner) {
@@ -228,7 +298,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     } else {
       // Start next round after delay
       setTimeout(() => {
-        this.startNewRound();
+        if (this.state.gameStarted && !this.state.gameEnded) {
+          this.startNewRound();
+        }
       }, 3000); // 3 second delay between rounds
     }
   }
@@ -246,13 +318,19 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gameEnded = true;
     this.state.winnerId = winnerId;
     this.state.gameStarted = false;
+    this.state.gamePaused = false;
     
     console.log(`Game ended in room ${this.roomId}. Winner: ${winnerId}`);
   }
 
   private pauseGame() {
     this.state.gamePaused = true;
-    console.log(`Game paused in room ${this.roomId} - not enough players`);
+    
+    // Clear any active timers
+    if (this.roundTimer) {
+      clearTimeout(this.roundTimer);
+      this.roundTimer = undefined;
+    }
   }
 
   private handleChatMessage(playerId: string, text: string) {
@@ -282,8 +360,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private sanitizeChatMessage(text: string): string {
     // Basic sanitization - remove HTML and limit length
     return text
-      .replace(/<[^>]*>/g, '')
+      .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags
       .substring(0, 200)
       .trim();
   }
-} 
+}

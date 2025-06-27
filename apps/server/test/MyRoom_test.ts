@@ -3,7 +3,10 @@ import { ColyseusTestServer, boot } from "@colyseus/testing";
 
 // import your "app.config.ts" file here.
 import appConfig from "../src/app.config";
-import { MyRoomState } from "../src/rooms/schema/MyRoomState";
+import { TriviaRoomState } from "../src/rooms/schema/TriviaRoomState";
+
+// Helper function to wait for state changes
+const waitForState = (ms: number = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe("testing your Colyseus app", () => {
   let colyseus: ColyseusTestServer;
@@ -15,7 +18,7 @@ describe("testing your Colyseus app", () => {
 
   it("connecting into a room", async () => {
     // `room` is the server-side Room instance reference.
-    const room = await colyseus.createRoom<MyRoomState>("my_room", {});
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
 
     // `client1` is the client-side `Room` instance reference (same as JavaScript SDK)
     const client1 = await colyseus.connectTo(room);
@@ -24,8 +27,11 @@ describe("testing your Colyseus app", () => {
     assert.strictEqual(client1.sessionId, room.clients[0].sessionId);
 
     // wait for state sync
-    await room.waitForNextPatch();
+    await waitForState(200);
 
-    assert.deepStrictEqual({ mySynchronizedProperty: "Hello world" }, client1.state.toJSON());
+    // Test with trivia room's actual state structure
+    assert.strictEqual(room.state.players.size, 1, "Should have one player");
+    assert.strictEqual(room.state.gameStarted, false, "Game should not be started initially");
+    assert.strictEqual(room.state.currentRound, 0, "Should be in round 0 initially");
   });
 });

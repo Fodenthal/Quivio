@@ -111,7 +111,7 @@ export class TriviaRoomState extends Schema {
     guessState.guess = guess;
     guessState.isCorrect = isCorrect;
     guessState.timestamp = Date.now();
-    this.roundGuesses.set(`${playerId}_${Date.now()}`, guessState);
+    this.roundGuesses.set(playerId, guessState);
   }
 
   clearRoundGuesses() {
