@@ -1,0 +1,135 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Product Requirements Document (PRD)
+
+## Project Codename
+
+**“PopReplay”** (working title)
+
+---
+
+## 1 • Purpose & Vision
+
+Create a real-time, multiplayer trivia game that captures the fast-paced excitement of JKLM’s **PopSauce**, with a critical focus on **generating high-quality, tailored question sets** through sophisticated prompt-based generation tools. The game emphasizes deeper, algorithmically scaffolded question creation, allowing differentiated difficulty and thematic depth based on prompt inputs.
+
+---
+
+## 2 • Goals & Success Metrics
+
+| Goal                 | Metric                           | Target (90-day post-launch) |
+| -------------------- | -------------------------------- | --------------------------- |
+| Fun, sticky gameplay | Day-7 retention                  | ≥ 25%                       |
+| Healthy concurrency  | Peak CCU on a single shard       | ≥ 2,000                     |
+| Low latency          | 95th-pct RTT client↔server       | ≤ 90 ms (NA/EU)             |
+| Viral growth         | Organic invites per daily active | ≥ 0.35                      |
+| Uptime               | Rolling 30-day availability      | ≥ 99.8%                     |
+
+---
+
+## 3 • Target Audience
+
+- **Trivia Enthusiasts & Learners**: People who love trivia, word games, and intellectually engaging experiences.
+- **Friend Groups & Casual Gamers**: Players who hop into fun multiplayer rounds, either in public matchmaking or private lobbies with friends.
+
+> The experience is optimized for people who enjoy quick, competitive learning-oriented play sessions, solo or socially.
+
+---
+
+## 4 • User Personas & Stories
+
+### Persona A – “Speed-Typer Sam”
+
+> “I hop into public rooms after dinner, race strangers, and brag about my leaderboard rank.”
+
+- **US-A1**: *As Sam, I want matchmaking to drop me into a live game in <5s so I don’t bail.*
+- **US-A2**: *As Sam, I want immediate feedback (✅ / ❌) on every guess so I can spam confidently.*
+
+### Persona B – “Focused Learner Ali”
+
+> “I want to challenge myself with smart, accurate trivia about subjects I care about.”
+
+- **US-B1**: *As Ali, I can generate a topic-specific session by inputting a scaffolded prompt.*
+- **US-B2**: *As Ali, I want to set difficulty and focus to tailor the challenge.*
+
+### Persona C – “Social Gamer Maya”
+
+> “I want a fun, fast game I can invite friends into after work.”
+
+- **US-C1**: *As Maya, I want to quickly create or join a private room with a link or code.*
+- **US-C2**: *As Maya, I want the experience to work just as well with strangers or my friends.*
+
+---
+
+## 5 • Functional Requirements
+
+### 5.1 Game Features
+
+1. **Live Game Rooms** – Players can join public or private game lobbies.
+2. **Prompt Display** – Each round starts with a clear visual, text-based, or audio-based prompt (e.g., a quote, logo, person, map, or object).
+3. **Unlimited Guesses** – Players may submit guesses at any time.
+4. **First Correct Wins Round** – Round ends when the first correct answer is submitted (e.g. matching a logo correctly to a company, identifying the capital of a country, identifying an image as being from a certain video game, etc).
+5. **Points** – Players earn points based on how fast they guess correctly.
+6. **Winning Condition** – First player to reach a target score wins the match.
+7. **Spectator Mode** – Full rooms allow overflow users to spectate.
+8. **Basic Chat** – Players can send messages and emotes during the game.
+9. **Room Host Controls** – Room creators can kick users, start game, and reset rounds.
+
+### 5.2 Admin & Ops (Not needed for MVP)
+
+- Abuse reporting & kick/ban tools
+- Basic dashboard for room metrics (CCU, latency, load)
+
+---
+
+## 6 • Non-Functional Requirements
+
+| Category      | Requirement                                                 |
+| ------------- | ----------------------------------------------------------- |
+| Performance   | ≤ 100 ms p95 end-to-end latency NA/EU; ≤ 140 ms APAC        |
+| Scalability   | Linear scaling to 50k CCU across 3 regions                  |
+| Security      | WSS/TLS 1.3, OWASP top-10 mitigations, per-room rate-limits |
+| Compliance    | COPPA friendly (no PII required), GDPR delete-me endpoint   |
+| Accessibility | Color-blind safe palette, ARIA labels for screen readers    |
+
+---
+
+## 7 • Tech Architecture (High-Level)
+
+- **Front-end** – Next.js 14 + React Server Components, Tailwind, colyseus.js client
+- **Game Server** – Colyseus (Node 20, TS) with RedisPresence & uWebSockets transport
+- **Prompt Service** – Python worker using OpenAI CLIP + custom Q/A generator; stores into Postgres + pgvector
+- **Infrastructure** – Fly.io apps v2, Global Redis (3-node), High-availability Postgres (Neon)
+- **CI/CD** – GitHub Actions → Fly deploy on main; preview apps per PR
+
+---
+
+## 8 • Data Model (simplified)
+
+```mermaid
+erDiagram
+  prompts {
+    uuid id PK
+    text answer
+    text type  "(image|quote|emoji)"
+    jsonb stages  "array paths to blur levels"
+    vector<float> clip_embedding
+    int difficulty  "1-3"
+    timestamp created_at
+  }
+  rooms {
+    uuid id PK
+    int target_score
+    jsonb settings
+    timestamp started_at
+  }
+  guesses {
+    uuid id PK
+    uuid room_id FK rooms.id
+    uuid player_id FK players.id
+    text guess
+    boolean is_correct
+    timestamp ts
+  }
