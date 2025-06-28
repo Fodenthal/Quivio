@@ -96,8 +96,53 @@ describe("testing TriviaRoom", () => {
     await client1.send("start_game", {});
     await waitForState(500);
     
-    // Submit a guess
-    await client1.send("submit_guess", { guess: "Paris" });
+    // Wait for prompt to load and get the correct answer
+    await waitForState(200);
+    const promptText = room.state.currentPrompt.text;
+    let correctAnswer = "Paris"; // fallback
+    
+    if (promptText.includes("capital of France")) correctAnswer = "Paris";
+    else if (promptText.includes("Emperor of Rome")) correctAnswer = "Augustus";
+    else if (promptText.includes("largest desert")) correctAnswer = "Sahara";
+    else if (promptText.includes("national sport of Japan")) correctAnswer = "Sumo";
+    else if (promptText.includes("Berlin Wall")) correctAnswer = "1989";
+    else if (promptText.includes("Simpsons")) correctAnswer = "Springfield";
+    else if (promptText.includes("largest country")) correctAnswer = "Russia";
+    else if (promptText.includes("chemical formula for water")) correctAnswer = "H2O";
+    else if (promptText.includes("capital of Japan")) correctAnswer = "Tokyo";
+    else if (promptText.includes("chemical symbol for gold")) correctAnswer = "Au";
+    else if (promptText.includes("highest mountain")) correctAnswer = "Mount Everest";
+    else if (promptText.includes("longest river")) correctAnswer = "Nile";
+    else if (promptText.includes("capital of Australia")) correctAnswer = "Canberra";
+    else if (promptText.includes("capital of Brazil")) correctAnswer = "Brasília";
+    else if (promptText.includes("World War II")) correctAnswer = "1945";
+    else if (promptText.includes("first President")) correctAnswer = "George Washington";
+    else if (promptText.includes("Columbus discover")) correctAnswer = "1492";
+    else if (promptText.includes("Alexandria")) correctAnswer = "Lighthouse";
+    else if (promptText.includes("Titanic sink")) correctAnswer = "1912";
+    else if (promptText.includes("main character in the movie 'Titanic'")) correctAnswer = "Jack";
+    else if (promptText.includes("Iron Man")) correctAnswer = "Robert Downey Jr";
+    else if (promptText.includes("first iPhone")) correctAnswer = "2007";
+    else if (promptText.includes("lead singer of Queen")) correctAnswer = "Freddie Mercury";
+    else if (promptText.includes("Breaking Bad")) correctAnswer = "Walter White";
+    else if (promptText.includes("Harry Potter")) correctAnswer = "Hogwarts";
+    else if (promptText.includes("Office' (US version)")) correctAnswer = "Greg Daniels";
+    else if (promptText.includes("hardest natural substance")) correctAnswer = "Diamond";
+    else if (promptText.includes("largest planet")) correctAnswer = "Jupiter";
+    else if (promptText.includes("atomic number of carbon")) correctAnswer = "6";
+    else if (promptText.includes("speed of light")) correctAnswer = "186282";
+    else if (promptText.includes("force that keeps planets")) correctAnswer = "Gravity";
+    else if (promptText.includes("largest organ")) correctAnswer = "Skin";
+    else if (promptText.includes("FIFA World Cups")) correctAnswer = "Brazil";
+    else if (promptText.includes("basketball court")) correctAnswer = "10";
+    else if (promptText.includes("Super Bowl")) correctAnswer = "Vince Lombardi Trophy";
+    else if (promptText.includes("first modern Olympic")) correctAnswer = "1896";
+    else if (promptText.includes("most popular sport")) correctAnswer = "Soccer";
+    else if (promptText.includes("Grand Slam tennis")) correctAnswer = "4";
+    else if (promptText.includes("New York Yankees")) correctAnswer = "The Bronx Bombers";
+    
+    // Submit a guess with the correct answer
+    await client1.send("submit_guess", { guess: correctAnswer });
     await waitForState(300);
     
     // Should have recorded the guess
@@ -205,10 +250,55 @@ describe("testing TriviaRoom", () => {
     assert.ok(room.state.gameStarted, "Game should be started");
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
+    // Wait for prompt to load and get the correct answer
+    await waitForState(200);
+    const promptText = room.state.currentPrompt.text;
+    let correctAnswer = "Paris"; // fallback
+    
+    if (promptText.includes("capital of France")) correctAnswer = "Paris";
+    else if (promptText.includes("Emperor of Rome")) correctAnswer = "Augustus";
+    else if (promptText.includes("largest desert")) correctAnswer = "Sahara";
+    else if (promptText.includes("national sport of Japan")) correctAnswer = "Sumo";
+    else if (promptText.includes("Berlin Wall")) correctAnswer = "1989";
+    else if (promptText.includes("Simpsons")) correctAnswer = "Springfield";
+    else if (promptText.includes("largest country")) correctAnswer = "Russia";
+    else if (promptText.includes("chemical formula for water")) correctAnswer = "H2O";
+    else if (promptText.includes("capital of Japan")) correctAnswer = "Tokyo";
+    else if (promptText.includes("chemical symbol for gold")) correctAnswer = "Au";
+    else if (promptText.includes("highest mountain")) correctAnswer = "Mount Everest";
+    else if (promptText.includes("longest river")) correctAnswer = "Nile";
+    else if (promptText.includes("capital of Australia")) correctAnswer = "Canberra";
+    else if (promptText.includes("capital of Brazil")) correctAnswer = "Brasília";
+    else if (promptText.includes("World War II")) correctAnswer = "1945";
+    else if (promptText.includes("first President")) correctAnswer = "George Washington";
+    else if (promptText.includes("Columbus discover")) correctAnswer = "1492";
+    else if (promptText.includes("Alexandria")) correctAnswer = "Lighthouse";
+    else if (promptText.includes("Titanic sink")) correctAnswer = "1912";
+    else if (promptText.includes("main character in the movie 'Titanic'")) correctAnswer = "Jack";
+    else if (promptText.includes("Iron Man")) correctAnswer = "Robert Downey Jr";
+    else if (promptText.includes("first iPhone")) correctAnswer = "2007";
+    else if (promptText.includes("lead singer of Queen")) correctAnswer = "Freddie Mercury";
+    else if (promptText.includes("Breaking Bad")) correctAnswer = "Walter White";
+    else if (promptText.includes("Harry Potter")) correctAnswer = "Hogwarts";
+    else if (promptText.includes("Office' (US version)")) correctAnswer = "Greg Daniels";
+    else if (promptText.includes("hardest natural substance")) correctAnswer = "Diamond";
+    else if (promptText.includes("largest planet")) correctAnswer = "Jupiter";
+    else if (promptText.includes("atomic number of carbon")) correctAnswer = "6";
+    else if (promptText.includes("speed of light")) correctAnswer = "186282";
+    else if (promptText.includes("force that keeps planets")) correctAnswer = "Gravity";
+    else if (promptText.includes("largest organ")) correctAnswer = "Skin";
+    else if (promptText.includes("FIFA World Cups")) correctAnswer = "Brazil";
+    else if (promptText.includes("basketball court")) correctAnswer = "10";
+    else if (promptText.includes("Super Bowl")) correctAnswer = "Vince Lombardi Trophy";
+    else if (promptText.includes("first modern Olympic")) correctAnswer = "1896";
+    else if (promptText.includes("most popular sport")) correctAnswer = "Soccer";
+    else if (promptText.includes("Grand Slam tennis")) correctAnswer = "4";
+    else if (promptText.includes("New York Yankees")) correctAnswer = "The Bronx Bombers";
+    
     // Submit multiple guesses
     await client1.send("submit_guess", { guess: "Wrong Answer" });
     await waitForState(200);
-    await client2.send("submit_guess", { guess: "Paris" });
+    await client2.send("submit_guess", { guess: correctAnswer });
     await waitForState(600); // Wait longer for processing
     
     // Should have recorded both guesses
@@ -271,8 +361,53 @@ describe("testing TriviaRoom", () => {
     assert.ok(room.state.gameStarted, "Game should be started");
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
+    // Wait for prompt to load and get the correct answer
+    await waitForState(200);
+    const promptText = room.state.currentPrompt.text;
+    let correctAnswer = "Paris"; // fallback
+    
+    if (promptText.includes("capital of France")) correctAnswer = "Paris";
+    else if (promptText.includes("Emperor of Rome")) correctAnswer = "Augustus";
+    else if (promptText.includes("largest desert")) correctAnswer = "Sahara";
+    else if (promptText.includes("national sport of Japan")) correctAnswer = "Sumo";
+    else if (promptText.includes("Berlin Wall")) correctAnswer = "1989";
+    else if (promptText.includes("Simpsons")) correctAnswer = "Springfield";
+    else if (promptText.includes("largest country")) correctAnswer = "Russia";
+    else if (promptText.includes("chemical formula for water")) correctAnswer = "H2O";
+    else if (promptText.includes("capital of Japan")) correctAnswer = "Tokyo";
+    else if (promptText.includes("chemical symbol for gold")) correctAnswer = "Au";
+    else if (promptText.includes("highest mountain")) correctAnswer = "Mount Everest";
+    else if (promptText.includes("longest river")) correctAnswer = "Nile";
+    else if (promptText.includes("capital of Australia")) correctAnswer = "Canberra";
+    else if (promptText.includes("capital of Brazil")) correctAnswer = "Brasília";
+    else if (promptText.includes("World War II")) correctAnswer = "1945";
+    else if (promptText.includes("first President")) correctAnswer = "George Washington";
+    else if (promptText.includes("Columbus discover")) correctAnswer = "1492";
+    else if (promptText.includes("Alexandria")) correctAnswer = "Lighthouse";
+    else if (promptText.includes("Titanic sink")) correctAnswer = "1912";
+    else if (promptText.includes("main character in the movie 'Titanic'")) correctAnswer = "Jack";
+    else if (promptText.includes("Iron Man")) correctAnswer = "Robert Downey Jr";
+    else if (promptText.includes("first iPhone")) correctAnswer = "2007";
+    else if (promptText.includes("lead singer of Queen")) correctAnswer = "Freddie Mercury";
+    else if (promptText.includes("Breaking Bad")) correctAnswer = "Walter White";
+    else if (promptText.includes("Harry Potter")) correctAnswer = "Hogwarts";
+    else if (promptText.includes("Office' (US version)")) correctAnswer = "Greg Daniels";
+    else if (promptText.includes("hardest natural substance")) correctAnswer = "Diamond";
+    else if (promptText.includes("largest planet")) correctAnswer = "Jupiter";
+    else if (promptText.includes("atomic number of carbon")) correctAnswer = "6";
+    else if (promptText.includes("speed of light")) correctAnswer = "186282";
+    else if (promptText.includes("force that keeps planets")) correctAnswer = "Gravity";
+    else if (promptText.includes("largest organ")) correctAnswer = "Skin";
+    else if (promptText.includes("FIFA World Cups")) correctAnswer = "Brazil";
+    else if (promptText.includes("basketball court")) correctAnswer = "10";
+    else if (promptText.includes("Super Bowl")) correctAnswer = "Vince Lombardi Trophy";
+    else if (promptText.includes("first modern Olympic")) correctAnswer = "1896";
+    else if (promptText.includes("most popular sport")) correctAnswer = "Soccer";
+    else if (promptText.includes("Grand Slam tennis")) correctAnswer = "4";
+    else if (promptText.includes("New York Yankees")) correctAnswer = "The Bronx Bombers";
+    
     // Submit correct guess to win
-    await client1.send("submit_guess", { guess: "Paris" });
+    await client1.send("submit_guess", { guess: correctAnswer });
     await waitForState(1000); // Wait longer for game end processing
     
     // Game should have ended
