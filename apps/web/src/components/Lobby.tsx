@@ -19,9 +19,33 @@ export const Lobby: React.FC = () => {
     }
     setIsJoining(true);
     try {
-      await connectToRoom(roomId);
+      await connectToRoom(roomId.trim());
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handlePlayerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlayerName(e.target.value);
+    console.log('Player name:', e.target.value);
+  };
+
+  const handleRoomIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRoomId(e.target.value);
+    console.log('Room ID:', e.target.value);
+  };
+
+  const handleRoomIdBlur = () => {
+    setRoomId(roomId.trim());
+  };
+
+  const handlePlayerNameBlur = () => {
+    setPlayerName(playerName.trim());
+  };
+
+  const handleRoomIdKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && playerName.trim() && roomId.trim() && !isJoining) {
+      handleJoinRoom();
     }
   };
 
@@ -55,7 +79,8 @@ export const Lobby: React.FC = () => {
             <input
               type="text"
               value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
+              onChange={handlePlayerNameChange}
+              onBlur={handlePlayerNameBlur}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter your name"
               maxLength={20}
@@ -84,7 +109,9 @@ export const Lobby: React.FC = () => {
               <input
                 type="text"
                 value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
+                onChange={handleRoomIdChange}
+                onBlur={handleRoomIdBlur}
+                onKeyDown={handleRoomIdKeyDown}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter room ID"
                 maxLength={20}
