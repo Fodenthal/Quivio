@@ -42,3 +42,39 @@ export interface RoomSettings {
   maxPlayers: number;
   isPrivate: boolean;
 }
+
+// Client-side game state interface (matches TriviaRoomState structure)
+export interface GameState {
+  // Room settings
+  targetScore: number;
+  roundTime: number;
+  maxPlayers: number;
+  isPrivate: boolean;
+
+  // Game state
+  gameStarted: boolean;
+  gameEnded: boolean;
+  gamePaused: boolean;
+  canStart: boolean;
+  currentRound: number;
+  hostId: string;
+  winnerId: string;
+
+  // Round state
+  roundStartTime: number;
+  roundTimeRemaining: number;
+  roundEnded: boolean;
+  correctAnswer: string;
+
+  // Players
+  players: Map<string, PlayerData>;
+
+  // Current prompt
+  currentPrompt: Prompt;
+
+  // Round guesses
+  roundGuesses: Map<string, Guess>;
+
+  // Chat messages
+  chatMessages: Map<string, ChatMessage>;
+}
