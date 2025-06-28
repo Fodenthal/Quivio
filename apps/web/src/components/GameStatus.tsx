@@ -22,7 +22,7 @@ export const GameStatus: React.FC = () => {
         
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600">
-            {gameState.currentRound}
+            {gameState.currentRound || 0}
           </div>
           <div className="text-sm text-gray-600">Round</div>
         </div>
@@ -30,7 +30,7 @@ export const GameStatus: React.FC = () => {
         {gameState.gameStarted && (
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {formatTime(gameState.roundTimeRemaining)}
+              {formatTime(gameState.roundTimeRemaining || 0)}
             </div>
             <div className="text-sm text-gray-600">Time Left</div>
           </div>
@@ -38,7 +38,7 @@ export const GameStatus: React.FC = () => {
         
         <div className="text-center">
           <div className="text-2xl font-bold text-purple-600">
-            {gameState.targetScore}
+            {gameState.targetScore || 10}
           </div>
           <div className="text-sm text-gray-600">Target Score</div>
         </div>

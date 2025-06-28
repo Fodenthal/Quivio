@@ -6,6 +6,17 @@ export const GameControls: React.FC = () => {
 
   if (!gameState) return null;
 
+  if (!gameState.players) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Game Controls</h2>
+        <div className="text-center text-gray-600">
+          Loading game state...
+        </div>
+      </div>
+    );
+  }
+
   const currentPlayer = Array.from(gameState.players.values()).find(
     player => player.id === gameState.hostId
   );
@@ -77,15 +88,15 @@ export const GameControls: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Target Score:</span>
-              <span className="ml-2 font-medium">{gameState.targetScore}</span>
+              <span className="ml-2 font-medium">{gameState.targetScore || 10}</span>
             </div>
             <div>
               <span className="text-gray-600">Round Time:</span>
-              <span className="ml-2 font-medium">{Math.ceil(gameState.roundTime / 1000)}s</span>
+              <span className="ml-2 font-medium">{Math.ceil((gameState.roundTime || 30000) / 1000)}s</span>
             </div>
             <div>
               <span className="text-gray-600">Max Players:</span>
-              <span className="ml-2 font-medium">{gameState.maxPlayers}</span>
+              <span className="ml-2 font-medium">{gameState.maxPlayers || 8}</span>
             </div>
             <div>
               <span className="text-gray-600">Current Players:</span>
