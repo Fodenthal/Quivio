@@ -1,8 +1,6 @@
 import React from 'react';
 import { useGame } from './GameProvider';
-import { GameStatus } from './GameStatus';
-import { GamePrompt } from './GamePrompt';
-import { GameControls } from './GameControls';
+import { GameStatus, GamePrompt, GameControls } from './index';
 
 export const GameArea: React.FC = () => {
   const { gameState } = useGame();

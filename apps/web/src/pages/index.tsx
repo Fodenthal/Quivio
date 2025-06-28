@@ -1,7 +1,5 @@
 import React from 'react';
-import { GameProvider, useGame } from '../components/GameProvider';
-import { Lobby } from '../components/Lobby';
-import { GameRoom } from '../components/GameRoom';
+import { GameProvider, useGame, Lobby, GameRoom } from '../components';
 
 const GameApp: React.FC = () => {
   return (

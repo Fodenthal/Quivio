@@ -70,11 +70,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     try {
       setError(null);
+      console.log('Joining room:', roomId);
       
       const newRoom = await clientRef.current.joinById(roomId, {
         playerName: playerName
       });
       
+      console.log('Room joined:', newRoom);
       setupRoomListeners(newRoom);
       setRoom(newRoom);
       roomRef.current = newRoom;
@@ -82,6 +84,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsInRoom(true);
       
     } catch (err) {
+      console.error('Error joining room:', err);
       setError(`Failed to join room: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
@@ -94,11 +97,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     try {
       setError(null);
+      console.log('Creating room...');
       
       const newRoom = await clientRef.current.create('trivia_room', {
         playerName: playerName
       });
       
+      console.log('Room created:', newRoom);
       setupRoomListeners(newRoom);
       setRoom(newRoom);
       roomRef.current = newRoom;
@@ -106,6 +111,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsInRoom(true);
       
     } catch (err) {
+      console.error('Error creating room:', err);
       setError(`Failed to create room: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
@@ -113,14 +119,27 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const setupRoomListeners = (newRoom: Room) => {
     // Set up room state listeners
     newRoom.state.onChange = () => {
+      console.log('Room state changed:', newRoom.state);
       setGameState(newRoom.state as GameState);
     };
     
+    // Set initial state immediately
+    if (newRoom.state) {
+      console.log('Setting initial room state:', newRoom.state);
+      setGameState(newRoom.state as GameState);
+    }
+    
     newRoom.onLeave(() => {
+      console.log('Room left');
       setRoom(null);
       roomRef.current = null;
       setIsInRoom(false);
       setGameState(null);
+    });
+
+    newRoom.onError((code, message) => {
+      console.error('Room error:', code, message);
+      setError(`Room error: ${message}`);
     });
   };
 

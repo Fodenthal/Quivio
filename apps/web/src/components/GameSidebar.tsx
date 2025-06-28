@@ -1,6 +1,5 @@
 import React from 'react';
-import { PlayerList } from './PlayerList';
-import { Chat } from './Chat';
+import { PlayerList, Chat } from './index';
 
 export const GameSidebar: React.FC = () => {
   return (
