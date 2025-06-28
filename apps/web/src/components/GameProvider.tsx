@@ -119,23 +119,15 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const setupRoomListeners = (newRoom: Room) => {
     console.log('Setting up room listeners for room:', newRoom.sessionId);
     
-    // Set up room state listeners
-    newRoom.state.onChange = () => {
-      console.log('Room state changed:', newRoom.state);
-      console.log('Players:', newRoom.state.players);
-      console.log('Players size:', newRoom.state.players?.size);
-      setGameState(newRoom.state as GameState);
-    };
-    
-    // Set initial state immediately
-    if (newRoom.state) {
-      console.log('Setting initial room state:', newRoom.state);
-      console.log('Initial players:', newRoom.state.players);
-      console.log('Initial players size:', newRoom.state.players?.size);
-      setGameState(newRoom.state as GameState);
-    } else {
-      console.log('No initial state available');
-    }
+    // Wait for state to be available before setting up listeners
+    newRoom.onStateChange((state) => {
+      console.log('Room state synchronized:', state);
+      console.log('Players:', state.players);
+      console.log('Players size:', state.players?.size);
+      console.log('Target score:', state.targetScore);
+      console.log('Round time:', state.roundTime);
+      setGameState(state as GameState);
+    });
     
     newRoom.onLeave(() => {
       console.log('Room left');
