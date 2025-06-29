@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "tsx watch src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "loadtest": "tsx loadtest/example.ts --room my_room --numClients 2",
     "loadtest:trivia": "tsx loadtest/trivia_test.ts",
     "build": "npm run clean && tsc",

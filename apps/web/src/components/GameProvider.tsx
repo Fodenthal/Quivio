@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Client, Room } from 'colyseus.js';
-import { GameState } from '@shared/index';
+import { GameState, PlayerData } from '@shared/index';
 
 interface GameContextType {
   client: Client | null;
@@ -172,6 +172,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       console.log('Host ID:', state.hostId);
       console.log('Target score:', state.targetScore);
       console.log('Round time:', state.roundTime);
+      console.log('Can start:', state.canStart);
+      console.log('Game started:', state.gameStarted);
+      
+      // Log each player's details
+      if (state.players) {
+        console.log('Player details:');
+        state.players.forEach((player: PlayerData, id: string) => {
+          console.log(`  ${id}: ${player.name} (ready: ${player.ready}, host: ${player.isHost})`);
+        });
+      }
+      
       setGameState(state as GameState);
     });
     
@@ -198,7 +209,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   const setReady = (ready: boolean) => {
     if (room) {
+      console.log(`Sending ready message: ${ready}`);
       room.send('player_ready', { ready });
+    } else {
+      console.error('Cannot send ready message: no room connection');
     }
   };
 
