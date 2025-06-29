@@ -116,20 +116,25 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.startGameLoop();
   }
 
-  onJoin(client: Client, options: any) {
-    console.log(`Player ${client.sessionId} joined room ${this.roomId}`);
-    
-    // Add player to state
+  async onAuth(client: Client, options: any, req: any) {
+    // Add player to state before join
+    console.log('onAuth called for', client.sessionId, 'with options:', options);
     this.state.addPlayer(client.sessionId, options.playerName || `Player ${client.sessionId.slice(0, 6)}`);
-    
+    console.log('State after addPlayer - Players size:', this.state.players.size);
+    return true;
+  }
+
+  onJoin(client: Client, options: any) {
+    console.log(`Player ${client.sessionId} joined room ${this.roomId} - Total players: ${this.state.players.size}`);
     // If this is the first player, make them the host
     if (this.state.players.size === 1) {
       this.state.setHost(client.sessionId);
+      console.log(`Set ${client.sessionId} as host`);
     }
-    
     // If we have enough players and game hasn't started, allow starting
     if (this.state.players.size >= 2 && !this.state.gameStarted) {
       this.state.canStart = true;
+      console.log('Game can now start');
     }
   }
 
@@ -167,6 +172,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private setupMessageHandlers() {
+    // Handle playground message types (development only)
+    this.onMessage("__playground_message_types", (client, message) => {
+      // Ignore playground messages in production
+      if (process.env.NODE_ENV === "production") {
+        return;
+      }
+      // Log playground message for debugging
+      console.log("Playground message received:", message);
+    });
+
     // Handle player ready state
     this.onMessage(MSG.PLAYER_READY, (client, message: PlayerReadyMessage) => {
       // ✅ Ignore malformed payloads
