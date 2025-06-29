@@ -46,6 +46,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room | null>(null);
+  const listenersSetupRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     // Initialize Colyseus client
@@ -66,6 +67,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     if (!clientRef.current || !playerName.trim()) {
       setError('Please enter a player name');
       return;
+    }
+
+    // Prevent duplicate room connections
+    if (roomRef.current) {
+      console.log('Already in a room, leaving first');
+      roomRef.current.leave();
     }
 
     try {
@@ -95,6 +102,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       return;
     }
 
+    // Prevent duplicate room creation
+    if (roomRef.current) {
+      console.log('Already in a room, leaving first');
+      roomRef.current.leave();
+    }
+
     try {
       setError(null);
       console.log('Creating room...');
@@ -117,11 +130,20 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   };
 
   const setupRoomListeners = (newRoom: Room) => {
-    console.log('Setting up room listeners for room:', newRoom.sessionId);
+    const roomId = newRoom.sessionId;
+    
+    // Prevent duplicate listeners for the same room
+    if (listenersSetupRef.current.has(roomId)) {
+      console.log('Listeners already set up for room:', roomId);
+      return;
+    }
+    
+    console.log('Setting up room listeners for room:', roomId);
+    listenersSetupRef.current.add(roomId);
     
     // Wait for state to be available before setting up listeners
     newRoom.onStateChange((state) => {
-      console.log('Room state synchronized:', state);
+      console.log('Room state synchronized for room:', roomId, state);
       console.log('Players:', state.players);
       console.log('Players size:', state.players?.size);
       console.log('Target score:', state.targetScore);
@@ -130,7 +152,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     });
     
     newRoom.onLeave(() => {
-      console.log('Room left');
+      console.log('Room left:', roomId);
+      listenersSetupRef.current.delete(roomId);
       setRoom(null);
       roomRef.current = null;
       setIsInRoom(false);
