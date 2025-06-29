@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Client, Room } from 'colyseus.js';
-import { GameState, PlayerData } from '@shared/index';
+import { GameState, PlayerData, MSG } from '@shared/index';
 
 interface GameContextType {
   client: Client | null;
@@ -19,6 +19,7 @@ interface GameContextType {
   isInRoom: boolean;
   error: string | null;
   clearError: () => void;
+  currentPlayerId: string | null;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -43,6 +44,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isInRoom, setIsInRoom] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
   
   const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -143,6 +145,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     console.log('Setting up room listeners for room:', roomId);
     listenersSetupRef.current.add(roomId);
     
+    // Set current player ID - in Colyseus, the sessionId is the player ID
+    console.log('Setting current player ID:', newRoom.sessionId);
+    setCurrentPlayerId(newRoom.sessionId);
+    
     // Wait for state to be available before setting up listeners
     newRoom.onStateChange((state) => {
       const now = Date.now();
@@ -193,6 +199,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       roomRef.current = null;
       setIsInRoom(false);
       setGameState(null);
+      setCurrentPlayerId(null);
     });
 
     newRoom.onError((code, message) => {
@@ -210,7 +217,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const setReady = (ready: boolean) => {
     if (room) {
       console.log(`Sending ready message: ${ready}`);
-      room.send('player_ready', { ready });
+      room.send(MSG.PLAYER_READY, { ready });
     } else {
       console.error('Cannot send ready message: no room connection');
     }
@@ -218,19 +225,19 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   const startGame = () => {
     if (room) {
-      room.send('start_game', {});
+      room.send(MSG.START_GAME, {});
     }
   };
 
   const submitGuess = (guess: string) => {
     if (room) {
-      room.send('submit_guess', { guess });
+      room.send(MSG.SUBMIT_GUESS, { guess });
     }
   };
 
   const sendChat = (text: string) => {
     if (room) {
-      room.send('chat', { text });
+      room.send(MSG.CHAT, { text });
     }
   };
 
@@ -251,6 +258,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     isInRoom,
     error,
     clearError,
+    currentPlayerId,
   };
 
   return (

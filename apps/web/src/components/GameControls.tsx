@@ -2,7 +2,7 @@ import React from 'react';
 import { useGame } from './GameProvider';
 
 export const GameControls: React.FC = () => {
-  const { gameState, setReady, startGame } = useGame();
+  const { gameState, setReady, startGame, currentPlayerId } = useGame();
 
   if (!gameState) return null;
 
@@ -17,10 +17,7 @@ export const GameControls: React.FC = () => {
     );
   }
 
-  const currentPlayer = Array.from(gameState.players.values()).find(
-    player => player.id === gameState.hostId
-  );
-
+  const currentPlayer = currentPlayerId ? gameState.players.get(currentPlayerId) : null;
   const readyPlayers = Array.from(gameState.players.values()).filter(p => p.ready);
   const totalPlayers = gameState.players.size;
 
