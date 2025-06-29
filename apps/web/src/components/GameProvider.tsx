@@ -47,6 +47,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room | null>(null);
   const listenersSetupRef = useRef<Set<string>>(new Set());
+  const lastStateUpdateRef = useRef<number>(0);
+  const lastStateHashRef = useRef<string>('');
 
   useEffect(() => {
     // Initialize Colyseus client
@@ -143,9 +145,31 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     
     // Wait for state to be available before setting up listeners
     newRoom.onStateChange((state) => {
+      const now = Date.now();
+      
+      // Create a simple hash of the state to detect duplicates
+      const stateHash = JSON.stringify({
+        playersSize: state.players?.size,
+        gameStarted: state.gameStarted,
+        currentRound: state.currentRound,
+        targetScore: state.targetScore,
+        roundTime: state.roundTime,
+        hostId: state.hostId
+      });
+      
+      // Reduce debounce time to 50ms for more responsive updates
+      if (now - lastStateUpdateRef.current < 50 && stateHash === lastStateHashRef.current) {
+        console.log('Skipping duplicate state update for room:', roomId);
+        return;
+      }
+      
+      lastStateUpdateRef.current = now;
+      lastStateHashRef.current = stateHash;
+      
       console.log('Room state synchronized for room:', roomId, state);
       console.log('Players:', state.players);
       console.log('Players size:', state.players?.size);
+      console.log('Host ID:', state.hostId);
       console.log('Target score:', state.targetScore);
       console.log('Round time:', state.roundTime);
       setGameState(state as GameState);

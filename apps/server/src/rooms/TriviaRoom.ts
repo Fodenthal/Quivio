@@ -126,8 +126,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   onJoin(client: Client, options: any) {
     console.log(`Player ${client.sessionId} joined room ${this.roomId} - Total players: ${this.state.players.size}`);
-    // If this is the first player, make them the host
-    if (this.state.players.size === 1) {
+    // If there's no host yet, make this player the host
+    if (!this.state.hostId) {
       this.state.setHost(client.sessionId);
       console.log(`Set ${client.sessionId} as host`);
     }

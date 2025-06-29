@@ -27,10 +27,12 @@ export const Lobby: React.FC = () => {
 
   const handlePlayerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPlayerName(e.target.value);
+    console.log('Player name:', e.target.value);
   };
 
   const handleRoomIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomId(e.target.value);
+    console.log('Room ID:', e.target.value);
   };
 
   const handleRoomIdBlur = () => {
