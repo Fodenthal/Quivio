@@ -49,8 +49,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [room, setRoom] = useState<Room | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [playerName, setPlayerName] = useState(() => {
-    // Initialize player name from localStorage
-    return localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || '';
+    // Initialize player name from localStorage (only in browser)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || '';
+    }
+    return '';
   });
   const [isConnected, setIsConnected] = useState(false);
   const [isInRoom, setIsInRoom] = useState(false);
@@ -67,7 +70,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   // Save player name to localStorage whenever it changes
   useEffect(() => {
-    if (playerName) {
+    if (playerName && typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, playerName);
       } catch (err) {
@@ -84,6 +87,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     // Try to reconnect to room if we have stored room info
     const attemptReconnection = async () => {
+      if (typeof window === 'undefined') {
+        setIsLoading(false);
+        return;
+      }
+      
       const storedRoomId = localStorage.getItem(STORAGE_KEYS.ROOM_ID);
       const storedSessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID);
       
@@ -149,11 +157,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsInRoom(true);
       
       // Save room info to localStorage
-      try {
-        localStorage.setItem(STORAGE_KEYS.ROOM_ID, roomId);
-        localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
-      } catch (err) {
-        console.warn('Failed to save room info to localStorage:', err);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.ROOM_ID, roomId);
+          localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
+        } catch (err) {
+          console.warn('Failed to save room info to localStorage:', err);
+        }
       }
       
     } catch (err) {
@@ -161,11 +171,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setError(`Failed to join room: ${err instanceof Error ? err.message : 'Unknown error'}`);
       
       // Clear stored data if join fails
-      try {
-        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
-        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
-      } catch (storageErr) {
-        console.warn('Failed to clear localStorage:', storageErr);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+          localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+        } catch (storageErr) {
+          console.warn('Failed to clear localStorage:', storageErr);
+        }
       }
     }
   };
@@ -198,11 +210,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsInRoom(true);
       
       // Save room info to localStorage
-      try {
-        localStorage.setItem(STORAGE_KEYS.ROOM_ID, newRoom.roomId);
-        localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
-      } catch (err) {
-        console.warn('Failed to save room info to localStorage:', err);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.ROOM_ID, newRoom.roomId);
+          localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
+        } catch (err) {
+          console.warn('Failed to save room info to localStorage:', err);
+        }
       }
       
     } catch (err) {
@@ -210,11 +224,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setError(`Failed to create room: ${err instanceof Error ? err.message : 'Unknown error'}`);
       
       // Clear stored data if creation fails
-      try {
-        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
-        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
-      } catch (storageErr) {
-        console.warn('Failed to clear localStorage:', storageErr);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+          localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+        } catch (storageErr) {
+          console.warn('Failed to clear localStorage:', storageErr);
+        }
       }
     }
   };
@@ -288,11 +304,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setCurrentPlayerId(null);
       
       // Clear stored room data when leaving
-      try {
-        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
-        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
-      } catch (err) {
-        console.warn('Failed to clear localStorage:', err);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+          localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+        } catch (err) {
+          console.warn('Failed to clear localStorage:', err);
+        }
       }
     });
 
@@ -301,11 +319,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setError(`Room error: ${message}`);
       
       // Clear stored data on room error
-      try {
-        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
-        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
-      } catch (err) {
-        console.warn('Failed to clear localStorage:', err);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+          localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+        } catch (err) {
+          console.warn('Failed to clear localStorage:', err);
+        }
       }
     });
   };
