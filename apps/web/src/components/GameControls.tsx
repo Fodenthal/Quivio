@@ -1,5 +1,10 @@
 import React from 'react';
 import { useGame } from './GameProvider';
+import { PlayerData } from '@shared/index';
+
+function isPlayerMap(players: unknown): players is Map<string, PlayerData> {
+  return typeof (players as { get?: unknown }).get === 'function';
+}
 
 export const GameControls: React.FC = () => {
   const { gameState, setReady, startGame, currentPlayerId } = useGame();
@@ -17,9 +22,29 @@ export const GameControls: React.FC = () => {
     );
   }
 
-  const currentPlayer = currentPlayerId ? gameState.players.get(currentPlayerId) : null;
-  const readyPlayers = Array.from(gameState.players.values()).filter(p => p.ready);
-  const totalPlayers = gameState.players.size;
+  let currentPlayer: PlayerData | null = null;
+  let readyPlayers: PlayerData[] = [];
+  let totalPlayers = 0;
+
+  if (isPlayerMap(gameState.players)) {
+    // Server-side or test
+    currentPlayer = currentPlayerId ? gameState.players.get(currentPlayerId) ?? null : null;
+    readyPlayers = Array.from(gameState.players.values()).filter((p) => p.ready);
+    totalPlayers = gameState.players.size;
+  } else {
+    // Client-side Colyseus serialization
+    const playersObj = gameState.players as Record<string, PlayerData>;
+    currentPlayer = currentPlayerId ? playersObj[currentPlayerId] ?? null : null;
+    readyPlayers = Object.values(playersObj).filter((p) => p.ready);
+    totalPlayers = Object.keys(playersObj).length;
+  }
+
+  let isHost = false;
+  if (currentPlayer) {
+    isHost = currentPlayer.isHost || (currentPlayerId === gameState.hostId);
+  }
+  console.log('Current player:', currentPlayer, 'isHost:', isHost, 'hostId:', gameState.hostId);
+  console.log('All players:', gameState.players);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -52,7 +77,7 @@ export const GameControls: React.FC = () => {
         </div>
 
         {/* Start Game */}
-        {gameState.canStart && currentPlayer?.isHost && (
+        {gameState.canStart && isHost && (
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <div className="text-center">
               <p className="text-sm text-blue-800 mb-3">
