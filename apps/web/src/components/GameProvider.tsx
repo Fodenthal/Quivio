@@ -2,6 +2,13 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { Client, Room } from 'colyseus.js';
 import { GameState, PlayerData, MSG } from '@shared/index';
 
+// Storage keys for persistence
+const STORAGE_KEYS = {
+  PLAYER_NAME: 'popreplay_player_name',
+  ROOM_ID: 'popreplay_room_id',
+  SESSION_ID: 'popreplay_session_id',
+} as const;
+
 interface GameContextType {
   client: Client | null;
   room: Room | null;
@@ -20,6 +27,7 @@ interface GameContextType {
   error: string | null;
   clearError: () => void;
   currentPlayerId: string | null;
+  isLoading: boolean;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -40,17 +48,33 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [client, setClient] = useState<Client | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => {
+    // Initialize player name from localStorage
+    return localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || '';
+  });
   const [isConnected, setIsConnected] = useState(false);
   const [isInRoom, setIsInRoom] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room | null>(null);
   const listenersSetupRef = useRef<Set<string>>(new Set());
   const lastStateUpdateRef = useRef<number>(0);
   const lastStateHashRef = useRef<string>('');
+  const isReconnectingRef = useRef(false);
+
+  // Save player name to localStorage whenever it changes
+  useEffect(() => {
+    if (playerName) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, playerName);
+      } catch (err) {
+        console.warn('Failed to save player name to localStorage:', err);
+      }
+    }
+  }, [playerName]);
 
   useEffect(() => {
     // Initialize Colyseus client
@@ -58,12 +82,42 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     clientRef.current = colyseusClient;
     setClient(colyseusClient);
 
+    // Try to reconnect to room if we have stored room info
+    const attemptReconnection = async () => {
+      const storedRoomId = localStorage.getItem(STORAGE_KEYS.ROOM_ID);
+      const storedSessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID);
+      
+      if (storedRoomId && storedSessionId && playerName) {
+        console.log('Attempting to reconnect to room:', storedRoomId);
+        isReconnectingRef.current = true;
+        
+        try {
+          await connectToRoom(storedRoomId);
+          console.log('Successfully reconnected to room');
+        } catch (err) {
+          console.log('Failed to reconnect to room, clearing stored data:', err);
+          // Clear stored data if reconnection fails
+          localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+          localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+        } finally {
+          isReconnectingRef.current = false;
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    // Attempt reconnection after a short delay to ensure client is ready
+    const reconnectionTimer = setTimeout(attemptReconnection, 100);
+
     return () => {
+      clearTimeout(reconnectionTimer);
       if (roomRef.current) {
         roomRef.current.leave();
       }
     };
-  }, []);
+  }, [playerName]);
 
   const clearError = () => setError(null);
 
@@ -94,9 +148,25 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsConnected(true);
       setIsInRoom(true);
       
+      // Save room info to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEYS.ROOM_ID, roomId);
+        localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
+      } catch (err) {
+        console.warn('Failed to save room info to localStorage:', err);
+      }
+      
     } catch (err) {
       console.error('Error joining room:', err);
       setError(`Failed to join room: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      
+      // Clear stored data if join fails
+      try {
+        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+      } catch (storageErr) {
+        console.warn('Failed to clear localStorage:', storageErr);
+      }
     }
   };
 
@@ -127,9 +197,25 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsConnected(true);
       setIsInRoom(true);
       
+      // Save room info to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEYS.ROOM_ID, newRoom.roomId);
+        localStorage.setItem(STORAGE_KEYS.SESSION_ID, newRoom.sessionId);
+      } catch (err) {
+        console.warn('Failed to save room info to localStorage:', err);
+      }
+      
     } catch (err) {
       console.error('Error creating room:', err);
       setError(`Failed to create room: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      
+      // Clear stored data if creation fails
+      try {
+        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+      } catch (storageErr) {
+        console.warn('Failed to clear localStorage:', storageErr);
+      }
     }
   };
 
@@ -200,11 +286,27 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsInRoom(false);
       setGameState(null);
       setCurrentPlayerId(null);
+      
+      // Clear stored room data when leaving
+      try {
+        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+      } catch (err) {
+        console.warn('Failed to clear localStorage:', err);
+      }
     });
 
     newRoom.onError((code, message) => {
       console.error('Room error:', code, message);
       setError(`Room error: ${message}`);
+      
+      // Clear stored data on room error
+      try {
+        localStorage.removeItem(STORAGE_KEYS.ROOM_ID);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+      } catch (err) {
+        console.warn('Failed to clear localStorage:', err);
+      }
     });
   };
 
@@ -259,6 +361,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     error,
     clearError,
     currentPlayerId,
+    isLoading,
   };
 
   return (

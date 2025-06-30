@@ -2,12 +2,8 @@ import React from 'react';
 import { useGame } from './GameProvider';
 import { PlayerData } from '@shared/index';
 
-function isPlayerMap(players: unknown): players is Map<string, PlayerData> {
-  return typeof (players as { get?: unknown }).get === 'function';
-}
-
 export const GameControls: React.FC = () => {
-  const { gameState, setReady, startGame, currentPlayerId } = useGame();
+  const { gameState, setReady, startGame, currentPlayerId, leaveRoom } = useGame();
 
   if (!gameState) return null;
 
@@ -22,29 +18,33 @@ export const GameControls: React.FC = () => {
     );
   }
 
-  let currentPlayer: PlayerData | null = null;
-  let readyPlayers: PlayerData[] = [];
-  let totalPlayers = 0;
+  // Unified helpers for MapSchema or plain object
+  const getPlayerById = (id: string): PlayerData | undefined => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p: any = gameState.players;
+    if (p && typeof p.get === 'function') {
+      return p.get(id);
+    }
+    return (gameState.players as unknown as Record<string, PlayerData>)[id];
+  };
 
-  if (isPlayerMap(gameState.players)) {
-    // Server-side or test
-    currentPlayer = currentPlayerId ? gameState.players.get(currentPlayerId) ?? null : null;
-    readyPlayers = Array.from(gameState.players.values()).filter((p) => p.ready);
-    totalPlayers = gameState.players.size;
-  } else {
-    // Client-side Colyseus serialization
-    const playersObj = gameState.players as Record<string, PlayerData>;
-    currentPlayer = currentPlayerId ? playersObj[currentPlayerId] ?? null : null;
-    readyPlayers = Object.values(playersObj).filter((p) => p.ready);
-    totalPlayers = Object.keys(playersObj).length;
-  }
+  const listPlayers = (): PlayerData[] => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p: any = gameState.players;
+    if (p && typeof p.values === 'function') {
+      return Array.from(p.values());
+    }
+    return Object.values(gameState.players as unknown as Record<string, PlayerData>);
+  };
 
-  let isHost = false;
-  if (currentPlayer) {
-    isHost = currentPlayer.isHost || (currentPlayerId === gameState.hostId);
-  }
+  const currentPlayer = currentPlayerId ? getPlayerById(currentPlayerId) ?? null : null;
+  const allPlayers = listPlayers();
+  const readyPlayers = allPlayers.filter(pl => pl.ready);
+  const totalPlayers = allPlayers.length;
+
+  const isHost = currentPlayer?.isHost || (currentPlayerId === gameState.hostId);
   console.log('Current player:', currentPlayer, 'isHost:', isHost, 'hostId:', gameState.hostId);
-  console.log('All players:', gameState.players);
+  console.log('All players:', allPlayers);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -125,6 +125,16 @@ export const GameControls: React.FC = () => {
               <span className="ml-2 font-medium">{totalPlayers}</span>
             </div>
           </div>
+        </div>
+
+        {/* Leave Room */}
+        <div className="border-t pt-4">
+          <button
+            onClick={leaveRoom}
+            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+          >
+            Leave Room
+          </button>
         </div>
       </div>
     </div>
