@@ -7,6 +7,8 @@ import { playground } from "@colyseus/playground";
  */
 import { TriviaRoom } from "./rooms/TriviaRoom";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
 export default config({
 
     initializeGameServer: (gameServer) => {
@@ -15,6 +17,12 @@ export default config({
          */
         gameServer.define('trivia_room', TriviaRoom);
 
+        // Development-specific configurations
+        if (isDevelopment) {
+            console.log("🔥 Development mode enabled - Hot reloading active");
+            console.log("🎮 Playground available at: http://localhost:2567");
+            console.log("📊 Monitor available at: http://localhost:2567/monitor");
+        }
     },
 
     initializeExpress: (app) => {
@@ -47,5 +55,8 @@ export default config({
         /**
          * Before before gameServer.listen() is called.
          */
+        if (isDevelopment) {
+            console.log("🚀 Starting Colyseus server in development mode...");
+        }
     }
 });

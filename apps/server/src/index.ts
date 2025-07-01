@@ -8,6 +8,10 @@
  *
  * See: https://docs.colyseus.io/server/api/#constructor-options
  */
+
+// Load environment variables
+import "dotenv/config";
+
 import { listen } from "@colyseus/tools";
 
 // Import Colyseus config

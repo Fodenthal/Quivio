@@ -78,8 +78,12 @@ export class TriviaRoomState extends Schema {
   }
 
   setHost(id: string) {
+    console.log(`setHost called with id: ${id}`);
     // Clear previous host
     for (const player of this.players.values()) {
+      if (player.isHost) {
+        console.log(`Clearing host flag for player: ${player.id}`);
+      }
       player.isHost = false;
     }
     
@@ -88,6 +92,13 @@ export class TriviaRoomState extends Schema {
     if (player) {
       player.isHost = true;
       this.hostId = id;
+      console.log(`Set player ${id} as host. Player object:`, {
+        id: player.id,
+        name: player.name,
+        isHost: player.isHost
+      });
+    } else {
+      console.log(`Warning: Could not find player ${id} to set as host`);
     }
   }
 

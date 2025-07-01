@@ -42,9 +42,16 @@ export const GameControls: React.FC = () => {
   const readyPlayers = allPlayers.filter(pl => pl.ready);
   const totalPlayers = allPlayers.length;
 
-  const isHost = currentPlayer?.isHost || (currentPlayerId === gameState.hostId);
+  const isHost = currentPlayerId === gameState.hostId;
   console.log('Current player:', currentPlayer, 'isHost:', isHost, 'hostId:', gameState.hostId);
   console.log('All players:', allPlayers);
+  console.log('GameControls Debug:');
+  console.log('  - gameState.canStart:', gameState.canStart);
+  console.log('  - currentPlayerId:', currentPlayerId);
+  console.log('  - gameState.hostId:', gameState.hostId);
+  console.log('  - currentPlayer?.isHost:', currentPlayer?.isHost);
+  console.log('  - isHost (final):', isHost);
+  console.log('  - Show Start Game?:', gameState.canStart && isHost);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">

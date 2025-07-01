@@ -144,6 +144,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.state.setHost(client.sessionId);
       console.log(`Set ${client.sessionId} as host`);
     }
+
     // If we have enough players and game hasn't started, allow starting
     if (this.state.players.size >= 2 && !this.state.gameStarted) {
       this.state.canStart = true;
