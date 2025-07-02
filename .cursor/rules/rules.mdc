@@ -5,8 +5,6 @@ alwaysApply: true
 ---
 # ────────────────────────────────────────────────────────────────
 # PopReplay .cursorrules ― house style & project context
-# Paste at repo root; Cursor prepends this to every prompt.
-# Keep < 4 KB and update when conventions change.
 # ────────────────────────────────────────────────────────────────
 
 ##################################################################

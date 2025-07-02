@@ -75,6 +75,52 @@ importers:
 
   apps/web:
     dependencies:
+      '@shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      colyseus.js:
+        specifier: ^0.16.19
+        version: 0.16.19
+      next:
+        specifier: 15.3.4
+        version: 15.3.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3
+        version: 3.3.1
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.11
+      '@types/node':
+        specifier: ^20
+        version: 20.19.1
+      '@types/react':
+        specifier: ^19
+        version: 19.1.8
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.1.6(@types/react@19.1.8)
+      eslint:
+        specifier: ^9
+        version: 9.29.0(jiti@2.4.2)
+      eslint-config-next:
+        specifier: 15.3.4
+        version: 15.3.4(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.11
+      typescript:
+        specifier: ^5
+        version: 5.8.3
+
+  apps/web-backup:
+    dependencies:
       colyseus.js:
         specifier: ^0.16.19
         version: 0.16.19
@@ -118,6 +164,8 @@ importers:
       typescript:
         specifier: ^5
         version: 5.8.3
+
+  packages/shared: {}
 
 packages:
 
