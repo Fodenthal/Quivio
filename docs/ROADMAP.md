@@ -5,10 +5,14 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 
 ## Current Status
 - ✅ Monorepo setup with pnpm workspace
-- ✅ Colyseus server foundation
+- ✅ Colyseus server foundation (COMPLETE & ROBUST)
 - ✅ Next.js client foundation
 - ✅ Basic room system structure
-- ❌ Core game logic implementation
+- ✅ Core game logic implementation (COMPLETE)
+- ✅ Game State & Types (COMPLETE) 
+- ✅ Client-side testing infrastructure (COMPLETE)
+- ✅ Prompt System with 40+ static prompts (COMPLETE)
+- 🏗️ **CURRENT: Phase 3A - Connection Foundation**
 - ❌ Game UI/UX
 - ❌ Real-time gameplay features
 
@@ -18,9 +22,9 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 **Priority: HIGH** | **Estimated Time: 2-3 days**
 
 ### 1.1 Create TriviaRoom class extending Colyseus Room
-- [ ] Create `apps/server/src/rooms/TriviaRoom.ts`
-- [ ] Extend Colyseus Room with game-specific logic
-- [ ] Implement basic room lifecycle methods
+- [] Create `apps/server/src/rooms/TriviaRoom.ts`
+- [] Extend Colyseus Room with game-specific logic
+- [] Implement basic room lifecycle methods
 
 ### 1.2 Design game state schema (TriviaRoomState)
 - [ ] Create `apps/server/src/rooms/schema/TriviaRoomState.ts`
@@ -95,49 +99,99 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ---
 
 ## Phase 3: Client-Side Game Interface
-**Priority: HIGH** | **Estimated Time: 3-4 days**
+**Priority: HIGH**
 
-### 3.1 Replace Next.js template with game UI
-- [ ] Create game layout components
-- [ ] Design responsive game interface
-- [ ] Add game-specific styling
-- [ ] Implement dark/light theme support
+### Phase 3A: Connection Foundation
+**Goal: Basic Colyseus connection and simple game layout**
 
-### 3.2 Create Colyseus client connection manager
-- [ ] Implement connection management
-- [ ] Add reconnection logic
-- [ ] Handle connection errors
-- [ ] Add connection status indicators
+#### 3A.1 Create Colyseus client connection manager
+- [ ] Create `src/lib/gameClient.ts` with connection logic
+- [ ] Implement basic connection to trivia room
+- [ ] Add connection status state management
+- [ ] Write unit tests for connection manager
+- [ ] Handle connection errors gracefully
 
-### 3.3 Build game lobby/room selection interface
-- [ ] Create room list component
-- [ ] Add room creation form
+#### 3A.2 Basic game layout foundation
+- [ ] Replace home page with simple game layout
+- [ ] Create `GameLayout` component with basic structure
+- [ ] Add connection status indicator
+- [ ] Test connection + basic UI integration
+
+### Phase 3B: Lobby Interface
+**Goal: Players can join rooms and see each other**
+
+#### 3B.1 Build minimal lobby interface
+- [ ] Create `GameLobby` component
+- [ ] Show current players in room
+- [ ] Display player ready states
+- [ ] Add "Ready" toggle button for players
+
+#### 3B.2 Room joining functionality
+- [ ] Add simple room creation (fixed room name for now)
 - [ ] Implement room joining logic
-- [ ] Add room filtering and search
+- [ ] Show host controls (start game button)
+- [ ] Test multi-player joining flow
 
-### 3.4 Implement real-time game view with prompt display
-- [ ] Create prompt display component
-- [ ] Add round timer visualization
-- [ ] Implement real-time state updates
-- [ ] Add round transition animations
+### Phase 3C: Basic Game View
+**Goal: Core gameplay - see prompts, submit guesses**
 
-### 3.5 Add guess input with instant feedback
+#### 3C.1 Game state display
+- [ ] Create `GameView` component
+- [ ] Display current prompt text and category
+- [ ] Show basic round information
+- [ ] Add game state indicators (waiting, playing, ended)
+
+#### 3C.2 Guess input system
 - [ ] Create guess input component
-- [ ] Add instant feedback system
-- [ ] Implement input validation
-- [ ] Add keyboard shortcuts
+- [ ] Handle guess submission to server
+- [ ] Show basic feedback (correct/incorrect)
+- [ ] Add enter key submission
 
-### 3.6 Create scoreboard and round progression display
-- [ ] Build player scoreboard component
-- [ ] Add round progress indicator
-- [ ] Implement leaderboard display
-- [ ] Add score animations
+### Phase 3D: Real-time Features
+**Goal: Live updates and interactive gameplay**
 
-### 3.7 Add basic chat interface
+#### 3D.1 Real-time state synchronization
+- [ ] Implement real-time state updates from server
+- [ ] Update UI when game state changes
+- [ ] Handle round transitions
+- [ ] Show other players' guesses (basic)
+
+#### 3D.2 Timer and round progression
+- [ ] Add round timer display
+- [ ] Implement visual countdown
+- [ ] Handle round end transitions
+- [ ] Show correct answer reveal
+
+### Phase 3E: Scoreboard & Polish
+**Goal: Complete game experience with scores**
+
+#### 3E.1 Player scoreboard
+- [ ] Create scoreboard component
+- [ ] Display player scores in real-time
+- [ ] Show round-by-round score updates
+- [ ] Highlight current leader
+
+#### 3E.2 Game completion
+- [ ] Handle game end state
+- [ ] Show winner announcement
+- [ ] Add "Play Again" functionality
+- [ ] Return to lobby after game
+
+### Phase 3F: Chat & Enhancement
+**Goal: Social features and user experience polish**
+
+#### 3F.1 Basic chat system
 - [ ] Create chat component
-- [ ] Add message input and display
-- [ ] Implement emoji support
-- [ ] Add chat moderation features
+- [ ] Implement message sending/receiving
+- [ ] Display chat alongside game
+- [ ] Add basic message styling
+
+#### 3F.2 UX improvements
+- [ ] Add loading states
+- [ ] Improve responsive design
+- [ ] Add basic animations/transitions
+- [ ] Handle error states gracefully
+- [ ] Add keyboard shortcuts (Enter to submit, etc.)
 
 ---
 

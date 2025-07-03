@@ -32,8 +32,8 @@ alwaysApply: true
 - Default to **React Server Components**; add `"use client"` only when an event handler or browser API is required.
 - Use **shadcn/ui** primitives (`Button`, `Card`, `Dialog`); compose further, never fork library code.
 - Styling: Tailwind utility classes; no inline `style={{ … }}`.
-- Group page code under `app/<route>/`, with:
-  • `page.tsx`  – top-level component  
+- Group page code under `app/<route>/`, with:  
+  • `page.tsx` – top-level component  
   • `components/` – local UI pieces  
   • `actions.ts` – server actions if needed.
 - Use `class-variance-authority` or `clsx` for dynamic class names; avoid string concat.
@@ -57,9 +57,24 @@ alwaysApply: true
 # 4. Testing & commit messages
 ##################################################################
 
+### Local development flow (solo-dev MVP)
+
+1. **Build small feature** – implement minimal code + types.  
+2. **Add unit tests** – Vitest for front-end, Mocha for back-end.  
+3. **Add integration test** – whenever a client ↔ server boundary changes.  
+4. **Maintain a minimal E2E test** – one happy path via Playwright (`login → join → play`).  
+5. **Run full check locally** – `pnpm run check` (`lint && typecheck && test`) before every push.
+
+### Test locations & conventions
+
 - Unit tests live in `apps/**/test/**/*.test.ts`.
-- Use **Mocha** + `@colyseus/testing`; always call `await colyseus.cleanup()` in `beforeEach`.
+- Use **Mocha** + `@colyseus/testing` for back-end; always call `await colyseus.cleanup()` in `beforeEach`.
+- Use **Vitest** + RTL + jsdom for front-end component and DOM tests.
 - Assertions: Node `assert.*`; avoid Chai.
 - Name tests in plain English: `"should award points for correct guess"`.
-- Git commits follow **Conventional Commits**:  
+
+### Commit messages
+
+- Follow **Conventional Commits**:  
   `feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`, `perf:`.
+
