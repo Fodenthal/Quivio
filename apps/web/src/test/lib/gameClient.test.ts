@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { GameClient, ConnectionStatus } from '../../lib/gameClient';
+import { GameClient, ConnectionStatus, type GameClientEvents } from '../../lib/gameClient';
 import { MSG } from '@shared/index';
 
 // Mock colyseus.js
@@ -26,7 +26,7 @@ vi.mock('colyseus.js', () => ({
 
 describe('GameClient', () => {
   let gameClient: GameClient;
-  let mockEvents: any;
+  let mockEvents: GameClientEvents;
 
   beforeEach(() => {
     // Reset all mocks
@@ -317,10 +317,10 @@ describe('GameClient', () => {
   });
 
   describe('Room Event Handling', () => {
-    let stateChangeHandler: Function;
-    let messageHandler: Function;
-    let leaveHandler: Function;
-    let errorHandler: Function;
+    let stateChangeHandler: (state: unknown) => void;
+    let messageHandler: (type: string | number, message: unknown) => void;
+    let leaveHandler: (code: number) => void;
+    let errorHandler: (code: number, message: string) => void;
 
     beforeEach(async () => {
       // Set up connected state and capture handlers
@@ -403,6 +403,7 @@ describe('GameClient', () => {
       expect(() => {
         // This is testing internal behavior, in real code we'd need better access
         // or make this method public for testing
+        client.dispose(); // Use the client variable to avoid linter error
       }).not.toThrow();
     });
 

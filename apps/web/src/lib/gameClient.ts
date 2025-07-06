@@ -205,7 +205,7 @@ export class GameClient {
 
     // Handle messages
     this.room.onMessage("*", (type, message) => {
-      this.events.onMessage?.(type, message);
+      this.events.onMessage?.(String(type), message);
     });
 
     // Handle disconnection
@@ -248,7 +248,7 @@ export class GameClient {
         // The actual reconnection would need additional state management
         // to remember the room and player details
         
-      } catch (_error) {
+      } catch {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
           this.setConnectionStatus(ConnectionStatus.ERROR);
           this.events.onError?.(new Error("Max reconnection attempts reached"));
