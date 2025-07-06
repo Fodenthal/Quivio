@@ -2,9 +2,40 @@
 
 import { useState, useEffect } from "react";
 import { GameClient, ConnectionStatus } from "@/lib/gameClient";
+import { GameLobby } from "./GameLobby";
+import { GameState, PlayerData } from "@shared/index";
 
 interface GameLayoutProps {
   children?: React.ReactNode;
+}
+
+// Type for the raw Colyseus room state as received by the client
+interface RawRoomState {
+  targetScore?: number;
+  roundTime?: number;
+  maxPlayers?: number;
+  isPrivate?: boolean;
+  gameStarted?: boolean;
+  gameEnded?: boolean;
+  gamePaused?: boolean;
+  canStart?: boolean;
+  currentRound?: number;
+  hostId?: string;
+  winnerId?: string;
+  roundStartTime?: number;
+  roundTimeRemaining?: number;
+  roundEnded?: boolean;
+  correctAnswer?: string;
+  players?: Record<string, PlayerData>;
+  currentPrompt?: {
+    id?: string;
+    text?: string;
+    category?: string;
+    difficulty?: string;
+    answer?: string;
+  };
+  roundGuesses?: Record<string, unknown>;
+  chatMessages?: Record<string, unknown>;
 }
 
 export function GameLayout({ children }: GameLayoutProps) {
@@ -14,12 +45,73 @@ export function GameLayout({ children }: GameLayoutProps) {
   );
   const [playerName, setPlayerName] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string>("");
 
   useEffect(() => {
     // Set up event handlers for connection status changes
     gameClient.setEventHandlers({
       onConnectionStatusChange: (status) => {
         setConnectionStatus(status);
+      },
+      onStateChange: (state) => {
+        // Convert the Colyseus room state to our GameState interface
+        if (state && typeof state === 'object') {
+          const roomState = state as RawRoomState;
+          
+          // Convert MapSchema to Map for players
+          const playersMap = new Map<string, PlayerData>();
+          if (roomState.players) {
+            for (const [playerId, player] of Object.entries(roomState.players)) {
+              playersMap.set(playerId, player as PlayerData);
+            }
+          }
+
+          // Convert other MapSchemas to Maps as needed
+          const roundGuesses = new Map();
+          if (roomState.roundGuesses) {
+            for (const [playerId, guess] of Object.entries(roomState.roundGuesses)) {
+              roundGuesses.set(playerId, guess);
+            }
+          }
+
+          const chatMessages = new Map();
+          if (roomState.chatMessages) {
+            for (const [messageId, message] of Object.entries(roomState.chatMessages)) {
+              chatMessages.set(messageId, message);
+            }
+          }
+
+          const convertedState: GameState = {
+            targetScore: roomState.targetScore || 10,
+            roundTime: roomState.roundTime || 30000,
+            maxPlayers: roomState.maxPlayers || 8,
+            isPrivate: roomState.isPrivate || false,
+            gameStarted: roomState.gameStarted || false,
+            gameEnded: roomState.gameEnded || false,
+            gamePaused: roomState.gamePaused || false,
+            canStart: roomState.canStart || false,
+            currentRound: roomState.currentRound || 0,
+            hostId: roomState.hostId || "",
+            winnerId: roomState.winnerId || "",
+            roundStartTime: roomState.roundStartTime || 0,
+            roundTimeRemaining: roomState.roundTimeRemaining || 0,
+            roundEnded: roomState.roundEnded || false,
+            correctAnswer: roomState.correctAnswer || "",
+            players: playersMap,
+            currentPrompt: {
+              id: roomState.currentPrompt?.id || "",
+              text: roomState.currentPrompt?.text || "",
+              category: roomState.currentPrompt?.category || "",
+              difficulty: (roomState.currentPrompt?.difficulty as "easy" | "medium" | "hard") || "easy",
+              answer: roomState.currentPrompt?.answer || ""
+            },
+            roundGuesses,
+            chatMessages,
+          };
+
+          setGameState(convertedState);
+        }
       },
       onError: (error) => {
         console.error("Game client error:", error);
@@ -32,6 +124,14 @@ export function GameLayout({ children }: GameLayoutProps) {
       gameClient.dispose();
     };
   }, [gameClient]);
+
+  // Get current player ID from the room
+  useEffect(() => {
+    const room = gameClient.getRoom();
+    if (room && room.sessionId) {
+      setCurrentPlayerId(room.sessionId);
+    }
+  }, [gameClient, connectionStatus]);
 
   const handleJoinRoom = async () => {
     if (!playerName.trim()) {
@@ -49,6 +149,24 @@ export function GameLayout({ children }: GameLayoutProps) {
       alert("Failed to join room. Please try again.");
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handlePlayerReady = async (ready: boolean) => {
+    try {
+      gameClient.sendPlayerReady(ready);
+    } catch (error) {
+      console.error("Failed to update ready state:", error);
+      throw error; // Re-throw so GameLobby can handle it
+    }
+  };
+
+  const handleStartGame = () => {
+    try {
+      gameClient.startGame();
+    } catch (error) {
+      console.error("Failed to start game:", error);
+      alert("Failed to start game. Please try again.");
     }
   };
 
@@ -81,6 +199,86 @@ export function GameLayout({ children }: GameLayoutProps) {
     }
   };
 
+  // Determine which view to show
+  const renderMainContent = () => {
+    if (connectionStatus === ConnectionStatus.DISCONNECTED) {
+      // Show join form when disconnected
+      return (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Join Game
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
+                Your Name
+              </label>
+              <input
+                id="playerName"
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isJoining) {
+                    handleJoinRoom();
+                  }
+                }}
+              />
+            </div>
+            <button
+              onClick={handleJoinRoom}
+              disabled={isJoining || !playerName.trim()}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isJoining ? "Joining..." : "Join Game"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (connectionStatus === ConnectionStatus.CONNECTED && gameState) {
+      if (!gameState.gameStarted) {
+        // Show lobby when connected but game hasn't started
+        return (
+          <GameLobby
+            gameState={gameState}
+            currentPlayerId={currentPlayerId}
+            onPlayerReady={handlePlayerReady}
+            onStartGame={handleStartGame}
+          />
+        );
+      } else {
+        // Show game interface when game has started
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Game Interface
+            </h2>
+            <p className="text-gray-600">
+              Game is now in progress! Game interface will be implemented in the next phase.
+            </p>
+            {children}
+          </div>
+        );
+      }
+    }
+
+    // Show loading/connecting state
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Connecting...
+        </h2>
+        <p className="text-gray-600">
+          Please wait while we connect you to the game.
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with connection status */}
@@ -104,52 +302,7 @@ export function GameLayout({ children }: GameLayoutProps) {
 
       {/* Main Game Area */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {connectionStatus === ConnectionStatus.DISCONNECTED ? (
-          // Join Room Interface
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Join Game
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Name
-                </label>
-                <input
-                  id="playerName"
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isJoining) {
-                      handleJoinRoom();
-                    }
-                  }}
-                />
-              </div>
-              <button
-                onClick={handleJoinRoom}
-                disabled={isJoining || !playerName.trim()}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isJoining ? "Joining..." : "Join Game"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          // Game Interface (placeholder for now)
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Game Interface
-            </h2>
-            <p className="text-gray-600">
-              Connected to game! Game interface will be implemented in the next phase.
-            </p>
-            {children}
-          </div>
-        )}
+        {renderMainContent()}
       </main>
     </div>
   );

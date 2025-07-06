@@ -9,6 +9,9 @@ const mockGameClient = {
   joinRoom: vi.fn(),
   dispose: vi.fn(),
   getConnectionStatus: vi.fn(() => ConnectionStatus.DISCONNECTED),
+  getRoom: vi.fn(),
+  sendPlayerReady: vi.fn(),
+  startGame: vi.fn(),
 };
 
 // Mock the GameClient constructor
@@ -56,6 +59,7 @@ describe("GameLayout", () => {
       
       expect(mockGameClient.setEventHandlers).toHaveBeenCalledWith({
         onConnectionStatusChange: expect.any(Function),
+        onStateChange: expect.any(Function),
         onError: expect.any(Function),
       });
     });
@@ -68,22 +72,23 @@ describe("GameLayout", () => {
       // Get the event handlers that were set
       const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
       
-      // Test different status changes
+      // Test different status changes - be specific about which element we're checking
       eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTING);
       rerender(<GameLayout />);
-      expect(screen.getByText("Connecting...")).toBeInTheDocument();
+      // Check the header status specifically
+      expect(screen.getByRole("banner")).toHaveTextContent("Connecting...");
       
       eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
       rerender(<GameLayout />);
-      expect(screen.getByText("Connected")).toBeInTheDocument();
+      expect(screen.getByRole("banner")).toHaveTextContent("Connected");
       
       eventHandlers.onConnectionStatusChange(ConnectionStatus.RECONNECTING);
       rerender(<GameLayout />);
-      expect(screen.getByText("Reconnecting...")).toBeInTheDocument();
+      expect(screen.getByRole("banner")).toHaveTextContent("Reconnecting...");
       
       eventHandlers.onConnectionStatusChange(ConnectionStatus.ERROR);
       rerender(<GameLayout />);
-      expect(screen.getByText("Connection Error")).toBeInTheDocument();
+      expect(screen.getByRole("banner")).toHaveTextContent("Connection Error");
     });
 
     it("applies correct CSS classes for status indicators", () => {
@@ -296,20 +301,117 @@ describe("GameLayout", () => {
   });
 
   describe("Connected State", () => {
-    it("shows game interface when connected", () => {
+    it("shows lobby when connected but game not started", () => {
       const { rerender } = render(<GameLayout />);
       
-      // Simulate connection
+      // Get the event handlers that were set
       const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      
+             // Mock the room with a session ID
+       mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      // Simulate connection
       eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Simulate game state update
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false, // Game not started yet
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 0,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      
+      // Re-render to see the change
+      rerender(<GameLayout />);
+      
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("TestPlayer")).toBeInTheDocument();
+      expect(screen.getByText("Host")).toBeInTheDocument();
+      
+      // Should not show join form heading
+      expect(screen.queryByRole("heading", { name: "Join Game" })).not.toBeInTheDocument();
+    });
+
+    it("shows game interface when game has started", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      // Get the event handlers that were set
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      
+             // Mock the room with a session ID
+       mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      // Simulate connection
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Simulate game state update with game started
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: true, // Game has started
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 1,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: Date.now(),
+        roundTimeRemaining: 30000,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 0,
+            ready: true,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        currentPrompt: { id: "1", text: "What is the capital of France?", category: "Geography", difficulty: "easy", answer: "Paris" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
       
       // Re-render to see the change
       rerender(<GameLayout />);
       
       expect(screen.getByText("Game Interface")).toBeInTheDocument();
-      expect(screen.getByText("Connected to game! Game interface will be implemented in the next phase.")).toBeInTheDocument();
+      expect(screen.getByText("Game is now in progress! Game interface will be implemented in the next phase.")).toBeInTheDocument();
       
-      // Should not show join form heading
+      // Should not show lobby or join form
+      expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "Join Game" })).not.toBeInTheDocument();
     });
   });
