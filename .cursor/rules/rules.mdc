@@ -23,7 +23,7 @@ alwaysApply: true
 - Prefer `interface` for public shapes, `type` for unions / utility types.
 - Always provide an explicit return type on exported functions.
 - Use single quotes, trailing commas, 2-space indent (Prettier default).
-- Document non-obvious code paths with a one-line JSDoc.
+- Document non-obvious code paths with requisite length JSDoc.
 
 ##################################################################
 # 2. Front-end (Next 14 + shadcn/ui + Tailwind CSS)
