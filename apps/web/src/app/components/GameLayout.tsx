@@ -9,6 +9,14 @@ interface GameLayoutProps {
   children?: React.ReactNode;
 }
 
+// Type for Colyseus MapSchema internal structure
+interface MapSchemaLike {
+  $items?: Map<string, unknown>;
+  $indexes?: Map<string, unknown>;
+  deletedItems?: unknown;
+  [key: string]: unknown;
+}
+
 // Type for the raw Colyseus room state as received by the client
 interface RawRoomState {
   targetScore?: number;
@@ -26,7 +34,7 @@ interface RawRoomState {
   roundTimeRemaining?: number;
   roundEnded?: boolean;
   correctAnswer?: string;
-  players?: Record<string, PlayerData>;
+  players?: MapSchemaLike | Record<string, PlayerData>;
   currentPrompt?: {
     id?: string;
     text?: string;
@@ -34,8 +42,8 @@ interface RawRoomState {
     difficulty?: string;
     answer?: string;
   };
-  roundGuesses?: Record<string, unknown>;
-  chatMessages?: Record<string, unknown>;
+  roundGuesses?: MapSchemaLike | Record<string, unknown>;
+  chatMessages?: MapSchemaLike | Record<string, unknown>;
 }
 
 export function GameLayout({ children }: GameLayoutProps) {
@@ -62,10 +70,41 @@ export function GameLayout({ children }: GameLayoutProps) {
           // Convert MapSchema to Map for players
           const playersMap = new Map<string, PlayerData>();
           if (roomState.players) {
-            for (const [playerId, player] of Object.entries(roomState.players)) {
-              playersMap.set(playerId, player as PlayerData);
+            // Handle Colyseus MapSchema properly
+            // MapSchema can be iterated directly or we can access its entries
+            if (roomState.players instanceof Map) {
+              // If it's already a Map, use it directly
+              for (const [playerId, player] of roomState.players) {
+                playersMap.set(playerId, player as PlayerData);
+              }
+                         } else if (roomState.players && typeof roomState.players === 'object') {
+               // If it's a MapSchema, iterate through its actual values
+               // MapSchema objects can be iterated with for...in or Object.keys on the actual data
+               const playersObj = roomState.players as MapSchemaLike;
+              
+              // Check if it has $items (Colyseus MapSchema internal structure)
+              if (playersObj.$items && playersObj.$items instanceof Map) {
+                for (const [playerId, player] of playersObj.$items) {
+                  if (player && typeof player === 'object') {
+                    playersMap.set(playerId, player as PlayerData);
+                  }
+                }
+              } else {
+                // Try direct iteration over the object
+                for (const playerId in playersObj) {
+                  if (playersObj.hasOwnProperty(playerId) && !playerId.startsWith('$') && playerId !== 'deletedItems') {
+                    const player = playersObj[playerId];
+                    if (player && typeof player === 'object') {
+                      playersMap.set(playerId, player as PlayerData);
+                    }
+                  }
+                }
+              }
             }
           }
+          
+          console.log('Final playersMap size:', playersMap.size);
+          console.log('Final playersMap entries:', Array.from(playersMap.entries()));
 
           // Convert other MapSchemas to Maps as needed
           const roundGuesses = new Map();

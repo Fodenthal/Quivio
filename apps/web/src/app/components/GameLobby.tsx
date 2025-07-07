@@ -36,11 +36,16 @@ export function GameLobby({
    * 
    * @returns Array of PlayerData sorted by host status (host first) then join time (earliest first)
    */
-  const playersArray = Array.from(gameState.players.values()).sort((a, b) => {
-    // Sort by: host first, then by join time
-    if (a.isHost !== b.isHost) return a.isHost ? -1 : 1;
-    return a.joinedAt - b.joinedAt;
-  });
+  const playersArray = Array.from(gameState.players.values())
+    .filter(player => player && player.id) // Filter out any invalid players
+    .sort((a, b) => {
+      // Sort by: host first, then by join time
+      if (a.isHost !== b.isHost) return a.isHost ? -1 : 1;
+      return a.joinedAt - b.joinedAt;
+    });
+
+  // Debug logging to help identify the issue
+  console.log('Players array:', playersArray.map(p => ({ id: p.id, name: p.name })));
 
   const readyCount = playersArray.filter(p => p.ready).length;
   const totalPlayers = playersArray.length;
@@ -129,15 +134,17 @@ export function GameLobby({
       <div className="mb-6">
         <h3 className="text-lg font-medium text-gray-800 mb-3">Players</h3>
         <div className="space-y-2">
-          {playersArray.map((player) => (
-            <div
-              key={player.id}
-              className={`flex items-center justify-between p-3 rounded-lg border ${
-                player.id === currentPlayerId
-                  ? "bg-blue-50 border-blue-200"
-                  : "bg-gray-50 border-gray-200"
-              }`}
-            >
+          {playersArray.map((player, index) => {
+            const uniqueKey = `${player.id}-${player.name}-${index}`;
+            return (
+              <div
+                key={uniqueKey}
+                className={`flex items-center justify-between p-3 rounded-lg border ${
+                  player.id === currentPlayerId
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-gray-50 border-gray-200"
+                }`}
+              >
               <div className="flex items-center space-x-3">
                 <span className="text-lg">{getPlayerStatusIcon(player)}</span>
                 <div>
@@ -179,7 +186,8 @@ export function GameLobby({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
