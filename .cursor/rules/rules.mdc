@@ -23,7 +23,14 @@ alwaysApply: true
 - Prefer `interface` for public shapes, `type` for unions / utility types.
 - Always provide an explicit return type on exported functions.
 - Use single quotes, trailing commas, 2-space indent (Prettier default).
-- Document non-obvious code paths with requisite length JSDoc.
+- **Document all non-trivial code paths with comprehensive JSDoc:**
+  • **Functions/methods**: Include `@param`, `@returns`, `@async`, `@throws` tags as appropriate
+  • **Complex logic**: Multi-line comments explaining business context and implementation decisions
+  • **Conditional rendering**: Explain when/why elements are shown/hidden with UX considerations
+  • **Async operations**: Document loading states, error handling, and state management
+  • **Sorting/filtering**: Explain criteria and reasoning for data transformations
+  • **React components**: Document all props, component purpose, and key behaviors
+  • **State calculations**: Explain validation logic and multi-condition checks
 
 ##################################################################
 # 2. Front-end (Next 14 + shadcn/ui + Tailwind CSS)
