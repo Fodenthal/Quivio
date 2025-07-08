@@ -425,4 +425,373 @@ describe("GameLayout", () => {
       expect(mockGameClient.dispose).toHaveBeenCalled();
     });
   });
+
+  describe("MapSchema Conversion", () => {
+    it("correctly converts Colyseus MapSchema to JavaScript Map", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      // Get the event handlers that were set
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      
+      // Mock the room with a session ID
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      // Simulate connection
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Create a mock MapSchema structure like what Colyseus sends
+      const mockMapSchema = {
+        $items: new Map([
+          ["player1", {
+            id: "player1",
+            name: "TestPlayer",
+            score: 0,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }]
+        ]),
+        $indexes: new Map([["player1", 0]]),
+        deletedItems: {}
+      };
+      
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: mockMapSchema, // This simulates the MapSchema structure
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      // Should show the lobby with the player data correctly converted
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("TestPlayer")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
+      expect(screen.getByText("Host")).toBeInTheDocument();
+    });
+
+    it("handles MapSchema with no $items property", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Create a mock state with direct player object (fallback case)
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "DirectPlayer",
+            score: 5,
+            ready: true,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("DirectPlayer")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 • Ready: 1/1")).toBeInTheDocument();
+      expect(screen.getByText("Score: 5")).toBeInTheDocument();
+    });
+
+    it("filters out invalid player entries", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Create a mock MapSchema with both valid and invalid entries
+      const mockMapSchema = {
+        $items: new Map([
+          ["player1", {
+            id: "player1",
+            name: "ValidPlayer",
+            score: 0,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }],
+          ["invalid", null], // Invalid entry
+          ["empty", undefined] // Another invalid entry
+        ]),
+        $indexes: new Map(),
+        deletedItems: {}
+      };
+      
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: mockMapSchema,
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      // Should only show the valid player, filtered out the invalid ones
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("ValidPlayer")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
+    });
+
+    it("handles empty MapSchema gracefully", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Create a mock state with empty MapSchema
+      const mockMapSchema = {
+        $items: new Map(),
+        $indexes: new Map(),
+        deletedItems: {}
+      };
+      
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: mockMapSchema,
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players: 0/8 • Ready: 0/0")).toBeInTheDocument();
+      expect(screen.getByText("💡 Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
+    });
+  });
+
+  describe("Lobby Integration", () => {
+    it("passes correct props to GameLobby component", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      const mockGameState = {
+        targetScore: 15,
+        roundTime: 45000,
+        maxPlayers: 6,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 0,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      // Check that the game settings are properly displayed (passed to GameLobby)
+      expect(screen.getByText("Target Score: 15 points")).toBeInTheDocument();
+      expect(screen.getByText("Round Time: 45 seconds")).toBeInTheDocument();
+      expect(screen.getByText("Max Players: 6")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/6 • Ready: 0/1")).toBeInTheDocument();
+    });
+
+    it("calls sendPlayerReady when ready button is clicked", async () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 0,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      fireEvent.click(readyButton);
+      
+      expect(mockGameClient.sendPlayerReady).toHaveBeenCalledWith(true);
+    });
+
+    it("calls startGame when start game button is clicked", async () => {
+      const { rerender } = render(<GameLayout />);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      mockGameClient.getRoom.mockReturnValueOnce({ sessionId: "player1" });
+      
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Create state with enough ready players to enable start button
+      const mockGameState = {
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gameStarted: false,
+        gameEnded: false,
+        gamePaused: false,
+        canStart: true,
+        currentRound: 0,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        players: {
+          player1: {
+            id: "player1",
+            name: "HostPlayer",
+            score: 0,
+            ready: true,
+            isHost: true,
+            joinedAt: Date.now()
+          },
+          player2: {
+            id: "player2",
+            name: "SecondPlayer",
+            score: 0,
+            ready: true,
+            isHost: false,
+            joinedAt: Date.now() + 1000
+          }
+        },
+        currentPrompt: { id: "", text: "", category: "", difficulty: "", answer: "" },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+      
+      eventHandlers.onStateChange(mockGameState);
+      rerender(<GameLayout />);
+      
+      const startButton = screen.getByRole("button", { name: "Start Game" });
+      fireEvent.click(startButton);
+      
+      expect(mockGameClient.startGame).toHaveBeenCalled();
+    });
+  });
 }); 

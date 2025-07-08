@@ -44,8 +44,7 @@ export function GameLobby({
       return a.joinedAt - b.joinedAt;
     });
 
-  // Debug logging to help identify the issue
-  console.log('Players array:', playersArray.map(p => ({ id: p.id, name: p.name })));
+
 
   const readyCount = playersArray.filter(p => p.ready).length;
   const totalPlayers = playersArray.length;
