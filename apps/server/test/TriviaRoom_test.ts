@@ -200,6 +200,60 @@ describe("testing TriviaRoom", () => {
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
     
+    await waitForState(200);
+    
+    // Start game
+    await client1.send("player_ready", { ready: true });
+    await client2.send("player_ready", { ready: true });
+    await waitForState(200);
+    await client1.send("start_game", {});
+    await waitForState(300);
+    
+    // Verify game is active
+    assert.strictEqual(room.state.gameStarted, true);
+    assert.strictEqual(room.state.gamePaused, false);
+    
+    // Player leaves, should pause game
+    await client2.leave();
+    await waitForState(200);
+    
+    assert.strictEqual(room.state.gamePaused, true);
+    assert.strictEqual(room.state.gameStarted, true); // Still started, just paused
+  });
+
+  it("should resume game when enough players rejoin", async () => {
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
+    const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
+    const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
+    
+    await waitForState(200);
+    
+    // Start game
+    await client1.send("player_ready", { ready: true });
+    await client2.send("player_ready", { ready: true });
+    await waitForState(200);
+    await client1.send("start_game", {});
+    await waitForState(300);
+    
+    // Player leaves, causing pause
+    await client2.leave();
+    await waitForState(200);
+    assert.strictEqual(room.state.gamePaused, true);
+    
+    // New player joins, should resume game
+    const client3 = await colyseus.connectTo(room, { playerName: "Player3" });
+    await waitForState(200);
+    
+    assert.strictEqual(room.state.gamePaused, false);
+    assert.strictEqual(room.state.gameStarted, true);
+    assert.strictEqual(room.state.players.size, 2);
+  });
+
+  it("should handle edge case: player rejoining paused game", async () => {
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
+    const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
+    const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
+    
     await waitForState(300);
     
     // Verify initial state

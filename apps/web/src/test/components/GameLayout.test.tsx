@@ -7,12 +7,24 @@ import { ConnectionStatus } from "../../lib/gameClient";
 const mockGameClient = {
   setEventHandlers: vi.fn(),
   joinRoom: vi.fn(),
+  leaveRoom: vi.fn(),
   dispose: vi.fn(),
   getConnectionStatus: vi.fn(() => ConnectionStatus.DISCONNECTED),
   getRoom: vi.fn(),
   sendPlayerReady: vi.fn(),
   startGame: vi.fn(),
 };
+
+// Mock the GameView component
+vi.mock("../../app/components/GameView", () => ({
+  GameView: vi.fn(({ gameState, currentPlayerId }) => (
+    <div data-testid="game-view">
+      <div>Game View - Round {gameState.currentRound}</div>
+      <div>Player: {currentPlayerId}</div>
+      <div>Game Started: {gameState.gameStarted.toString()}</div>
+    </div>
+  ))
+}));
 
 // Mock the GameClient constructor
 vi.mock("../../lib/gameClient", () => ({
@@ -407,8 +419,9 @@ describe("GameLayout", () => {
       // Re-render to see the change
       rerender(<GameLayout />);
       
-      expect(screen.getByText("Game Interface")).toBeInTheDocument();
-      expect(screen.getByText("Game is now in progress! Game interface will be implemented in the next phase.")).toBeInTheDocument();
+      // Should show GameView instead of the old placeholder
+      expect(screen.getByTestId("game-view")).toBeInTheDocument();
+      expect(screen.getByText("Game View - Round 1")).toBeInTheDocument();
       
       // Should not show lobby or join form
       expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
@@ -792,6 +805,154 @@ describe("GameLayout", () => {
       fireEvent.click(startButton);
       
       expect(mockGameClient.startGame).toHaveBeenCalled();
+    });
+  });
+
+  describe("Game State Transitions", () => {
+    it("shows join form when disconnected", () => {
+      render(<GameLayout />);
+      
+      expect(screen.getByRole("heading", { name: "Join Game" })).toBeInTheDocument();
+      expect(screen.getByLabelText("Your Name")).toBeInTheDocument();
+      expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("game-view")).not.toBeInTheDocument();
+    });
+
+    it("shows game view when game is active", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      // Mock the room to return session ID
+      mockGameClient.getRoom.mockReturnValue({ sessionId: "player1" });
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      const mockActiveGameState = {
+        gameStarted: true,
+        gameEnded: false,
+        currentRound: 2,
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 5,
+            ready: true,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gamePaused: false,
+        canStart: false,
+        hostId: "player1",
+        winnerId: "",
+        roundStartTime: Date.now() - 5000,
+        roundTimeRemaining: 25000,
+        roundEnded: false,
+        correctAnswer: "",
+        currentPrompt: { 
+          id: "prompt1", 
+          text: "What is the capital of France?", 
+          category: "Geography", 
+          difficulty: "easy", 
+          answer: "Paris" 
+        },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+
+      eventHandlers.onStateChange(mockActiveGameState);
+      rerender(<GameLayout />);
+      
+      // Should show game view instead of lobby
+      expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-view")).toBeInTheDocument();
+      expect(screen.getByText("Game View - Round 2")).toBeInTheDocument();
+      expect(screen.getByText("Player: player1")).toBeInTheDocument();
+      expect(screen.getByText("Game Started: true")).toBeInTheDocument();
+    });
+
+    it("transitions from lobby to game view when game starts", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      mockGameClient.getRoom.mockReturnValue({ sessionId: "player1" });
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      // Start with lobby state
+      const lobbyState = {
+        gameStarted: false,
+        gameEnded: false,
+        currentRound: 0,
+        players: {
+          player1: {
+            id: "player1", 
+            name: "TestPlayer", 
+            score: 0, 
+            ready: true, 
+            isHost: true, 
+            joinedAt: Date.now()
+          }
+        },
+        targetScore: 10, 
+        roundTime: 30000, 
+        maxPlayers: 8, 
+        isPrivate: false,
+        gamePaused: false, 
+        canStart: true, 
+        hostId: "player1", 
+        winnerId: "",
+        roundStartTime: 0, 
+        roundTimeRemaining: 0, 
+        roundEnded: false, 
+        correctAnswer: "",
+        currentPrompt: { id: "", text: "", category: "", difficulty: "easy", answer: "" },
+        roundGuesses: {}, 
+        chatMessages: {}
+      };
+
+      eventHandlers.onStateChange(lobbyState);
+      rerender(<GameLayout />);
+      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.queryByTestId("game-view")).not.toBeInTheDocument();
+      
+      // Transition to active game
+      const activeState = { ...lobbyState, gameStarted: true, currentRound: 1 };
+      eventHandlers.onStateChange(activeState);
+      rerender(<GameLayout />);
+      
+      expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-view")).toBeInTheDocument();
+      expect(screen.getByText("Game View - Round 1")).toBeInTheDocument();
+    });
+
+    it("shows leave game button when connected and handles click", async () => {
+      const { rerender } = render(<GameLayout />);
+      
+      mockGameClient.leaveRoom.mockResolvedValue(undefined);
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      
+      // Initially disconnected - no leave button
+      expect(screen.queryByRole("button", { name: "Leave Game" })).not.toBeInTheDocument();
+      
+      // Connect - should show leave button
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      rerender(<GameLayout />);
+      
+      const leaveButton = screen.getByRole("button", { name: "Leave Game" });
+      expect(leaveButton).toBeInTheDocument();
+      
+      // Click leave button
+      fireEvent.click(leaveButton);
+      
+      await waitFor(() => {
+        expect(mockGameClient.leaveRoom).toHaveBeenCalled();
+      });
     });
   });
 }); 

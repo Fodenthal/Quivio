@@ -3,11 +3,8 @@
 import { useState, useEffect } from "react";
 import { GameClient, ConnectionStatus } from "@/lib/gameClient";
 import { GameLobby } from "./GameLobby";
+import { GameView } from "./GameView";
 import { GameState, PlayerData } from "@shared/index";
-
-interface GameLayoutProps {
-  children?: React.ReactNode;
-}
 
 // Type for Colyseus MapSchema internal structure
 interface MapSchemaLike {
@@ -46,7 +43,7 @@ interface RawRoomState {
   chatMessages?: MapSchemaLike | Record<string, unknown>;
 }
 
-export function GameLayout({ children }: GameLayoutProps) {
+export function GameLayout() {
   const [gameClient] = useState(() => new GameClient());
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     ConnectionStatus.DISCONNECTED
@@ -209,6 +206,18 @@ export function GameLayout({ children }: GameLayoutProps) {
     }
   };
 
+  const handleLeaveGame = async () => {
+    try {
+      await gameClient.leaveRoom();
+      // Reset local state
+      setGameState(null);
+      setCurrentPlayerId("");
+      setPlayerName("");
+    } catch (error) {
+      console.error("Failed to leave game:", error);
+    }
+  };
+
   const getStatusColor = (status: ConnectionStatus) => {
     switch (status) {
       case ConnectionStatus.CONNECTED:
@@ -292,15 +301,10 @@ export function GameLayout({ children }: GameLayoutProps) {
       } else {
         // Show game interface when game has started
         return (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Game Interface
-            </h2>
-            <p className="text-gray-600">
-              Game is now in progress! Game interface will be implemented in the next phase.
-            </p>
-            {children}
-          </div>
+          <GameView
+            gameState={gameState}
+            currentPlayerId={currentPlayerId}
+          />
         );
       }
     }
@@ -326,14 +330,26 @@ export function GameLayout({ children }: GameLayoutProps) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">PopReplay</h1>
             
-            {/* Connection Status Indicator */}
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-3 h-3 rounded-full ${getStatusColor(connectionStatus)}`}
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {getStatusText(connectionStatus)}
-              </span>
+            <div className="flex items-center space-x-4">
+              {/* Leave Game Button - shown when connected */}
+              {connectionStatus === ConnectionStatus.CONNECTED && (
+                <button
+                  onClick={handleLeaveGame}
+                  className="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                >
+                  Leave Game
+                </button>
+              )}
+              
+              {/* Connection Status Indicator */}
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-3 h-3 rounded-full ${getStatusColor(connectionStatus)}`}
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {getStatusText(connectionStatus)}
+                </span>
+              </div>
             </div>
           </div>
         </div>

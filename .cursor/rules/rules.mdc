@@ -7,6 +7,8 @@ alwaysApply: true
 # PopReplay .cursorrules ― house style & project context
 # ────────────────────────────────────────────────────────────────
 
+**Key Principle**: Break down tasks into small incremental steps instead of tackling everything at once
+
 ##################################################################
 # 1. General TypeScript / Node / Next conventions
 ##################################################################

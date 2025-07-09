@@ -150,6 +150,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.state.canStart = true;
       console.log('Game can now start');
     }
+
+    // Resume paused game if we now have enough players
+    if (this.state.players.size >= 2 && this.state.gameStarted && this.state.gamePaused) {
+      this.resumeGame();
+      console.log('Resumed paused game - sufficient players joined');
+    }
   }
 
   onLeave(client: Client, consented: boolean) {
@@ -476,6 +482,25 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.roundTimer) {
       clearTimeout(this.roundTimer);
       this.roundTimer = undefined;
+    }
+  }
+
+  private resumeGame() {
+    if (!this.state.gamePaused || !this.state.gameStarted) {
+      return;
+    }
+
+    this.state.gamePaused = false;
+    
+    // If we're in the middle of a round, restart the round timer
+    if (this.state.currentRound > 0 && !this.state.roundEnded) {
+      // Reset round timer based on remaining time
+      if (this.state.roundTimeRemaining > 0) {
+        this.state.roundStartTime = Date.now() - (this.state.roundTime - this.state.roundTimeRemaining);
+      } else {
+        // If no time remaining, start a new round
+        this.startNewRound();
+      }
     }
   }
 
