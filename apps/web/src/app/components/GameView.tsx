@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GameState } from "@shared/index";
+import { PlayerList } from "./PlayerList";
 
 interface GameViewProps {
   gameState: GameState;
@@ -152,7 +153,9 @@ export function GameView({
   const phase = getGamePhase();
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+    <div className="flex gap-6">
+      {/* Main Game Content */}
+      <div className="flex-1 bg-white rounded-lg shadow-md p-6 space-y-6">
       {/* Game Header with Round Info */}
       <div className="border-b border-gray-200 pb-4">
         <div className="flex items-center justify-between mb-2">
@@ -332,6 +335,15 @@ export function GameView({
           )}
         </div>
       )}
+      </div>
+
+      {/* Player List Sidebar */}
+      <div className="w-80 bg-white rounded-lg shadow-md p-6">
+        <PlayerList 
+          gameState={gameState}
+          currentPlayerId={currentPlayerId}
+        />
+      </div>
     </div>
   );
 }
