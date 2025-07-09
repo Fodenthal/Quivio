@@ -206,6 +206,15 @@ export function GameLayout() {
     }
   };
 
+  const handleSubmitGuess = async (guess: string) => {
+    try {
+      gameClient.submitGuess(guess);
+    } catch (error) {
+      console.error("Failed to submit guess:", error);
+      throw error; // Re-throw so GameView can handle it
+    }
+  };
+
   const handleLeaveGame = async () => {
     try {
       await gameClient.leaveRoom();
@@ -304,6 +313,7 @@ export function GameLayout() {
           <GameView
             gameState={gameState}
             currentPlayerId={currentPlayerId}
+            onSubmitGuess={handleSubmitGuess}
           />
         );
       }

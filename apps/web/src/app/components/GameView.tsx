@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { GameState } from "@shared/index";
 
 interface GameViewProps {
   gameState: GameState;
   currentPlayerId: string;
+  onSubmitGuess?: (guess: string) => void;
 }
 
 /**
@@ -13,12 +15,16 @@ interface GameViewProps {
  * 
  * @param gameState - The current game state containing prompt, round info, and player data
  * @param currentPlayerId - The session ID of the current player
+ * @param onSubmitGuess - Callback function to submit a guess to the server
  * @returns React component displaying the active game interface
  */
 export function GameView({ 
   gameState, 
-  currentPlayerId 
+  currentPlayerId,
+  onSubmitGuess
 }: GameViewProps) {
+  const [currentGuess, setCurrentGuess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   /**
    * Determines the current game phase for display purposes.
@@ -93,6 +99,52 @@ export function GameView({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  /**
+   * Handles guess form submission with validation and error handling.
+   * Prevents duplicate submissions and validates input before sending to server.
+   * 
+   * @param e - Form submission event
+   */
+  const handleGuessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!currentGuess.trim() || isSubmitting || !onSubmitGuess) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      await onSubmitGuess(currentGuess.trim());
+      setCurrentGuess(""); // Clear input on successful submission
+    } catch (error) {
+      console.error("Failed to submit guess:", error);
+      // Keep the guess in the input so user can try again
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Checks if the current player has already submitted a guess for this round.
+   * Used to disable input and show feedback after guess submission.
+   * 
+   * @returns Boolean indicating if current player has guessed
+   */
+  const hasPlayerGuessed = (): boolean => {
+    return gameState.roundGuesses.has(currentPlayerId);
+  };
+
+  /**
+   * Gets the current player's guess state for the round.
+   * Used to display feedback about whether their guess was correct.
+   * 
+   * @returns GuessState object if player has guessed, undefined otherwise
+   */
+  const getPlayerGuess = () => {
+    return gameState.roundGuesses.get(currentPlayerId);
   };
 
   const currentPlayer = gameState.players.get(currentPlayerId);
@@ -209,11 +261,65 @@ export function GameView({
         </div>
       )}
 
-      {/* Placeholder for guess input - will be implemented in next phase */}
+      {/* Guess Input Section - shown during active play */}
       {phase === "playing" && (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <p className="text-gray-500 font-medium">Guess Input Component</p>
-          <p className="text-sm text-gray-400 mt-1">Will be implemented in Phase 3C.2</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          {hasPlayerGuessed() ? (
+            // Show guess feedback when player has already guessed
+            <div className="text-center space-y-3">
+              {(() => {
+                const playerGuess = getPlayerGuess();
+                return playerGuess ? (
+                  <>
+                    <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                      playerGuess.isCorrect 
+                        ? "bg-green-100 text-green-800 border border-green-200"
+                        : "bg-red-100 text-red-800 border border-red-200"
+                    }`}>
+                      {playerGuess.isCorrect ? "✅ Correct!" : "❌ Incorrect"}
+                    </div>
+                    <p className="text-gray-600">
+                      Your guess: <span className="font-medium">{playerGuess.guess}</span>
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Waiting for round to end...
+                    </p>
+                  </>
+                ) : null;
+              })()}
+            </div>
+          ) : (
+            // Show guess input form when player hasn't guessed yet
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-gray-900 text-center">
+                Submit Your Guess
+              </h4>
+              <form onSubmit={handleGuessSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    value={currentGuess}
+                    onChange={(e) => setCurrentGuess(e.target.value)}
+                    placeholder="Enter your answer..."
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    autoComplete="off"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Press Enter or click Submit to send your answer
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={!currentGuess.trim() || isSubmitting}
+                  className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Guess"}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -150,16 +150,10 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ### Phase 3D: Real-time Features
 **Goal: Live updates and interactive gameplay**
 
-#### 3D.1 Real-time state synchronization
 - [ ] Implement real-time state updates from server
 - [ ] Update UI when game state changes
 - [ ] Handle round transitions
 - [ ] Show other players' guesses (basic)
-
-#### 3D.2 Timer and round progression
-- [ ] Add round timer display
-- [ ] Implement visual countdown
-- [ ] Handle round end transitions
 - [ ] Show correct answer reveal
 
 ### Phase 3E: Scoreboard & Polish

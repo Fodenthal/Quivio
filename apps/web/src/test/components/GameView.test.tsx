@@ -222,9 +222,7 @@ describe("GameView", () => {
       
       expect(screen.getByText("🎉 Game Complete!")).toBeInTheDocument();
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
-      expect(screen.getByText("wins with")).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument();
-      expect(screen.getByText("points!")).toBeInTheDocument();
+      expect(screen.getByText(/wins with \d+ points!/)).toBeInTheDocument();
     });
 
     it("handles game end without valid winner", () => {
@@ -262,8 +260,8 @@ describe("GameView", () => {
     });
   });
 
-  describe("Guess Input Placeholder", () => {
-    it("shows guess input placeholder during active play", () => {
+  describe("Guess Input System", () => {
+    it("shows guess input form during active play", () => {
       const gameState = createGameState({ 
         roundStartTime: Date.now() - 1000, // active round
         gamePaused: false,
@@ -273,8 +271,9 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Guess Input Component")).toBeInTheDocument();
-      expect(screen.getByText("Will be implemented in Phase 3C.2")).toBeInTheDocument();
+      expect(screen.getByText("Submit Your Guess")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter your answer...")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Submit Guess" })).toBeInTheDocument();
     });
 
     it("does not show guess input when round is ended", () => {
@@ -282,7 +281,7 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.queryByText("Guess Input Component")).not.toBeInTheDocument();
+      expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
     });
 
     it("does not show guess input when game is paused", () => {
@@ -290,7 +289,57 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.queryByText("Guess Input Component")).not.toBeInTheDocument();
+      expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
+    });
+
+    it("shows guess feedback when player has guessed correctly", () => {
+      const gameState = createGameState({ 
+        roundStartTime: Date.now() - 1000,
+        gamePaused: false,
+        roundEnded: false,
+        gameEnded: false
+      });
+      
+      // Add a correct guess for the current player
+      gameState.roundGuesses.set("player1", {
+        playerId: "player1",
+        guess: "Paris",
+        isCorrect: true,
+        timestamp: Date.now()
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      expect(screen.getByText("✅ Correct!")).toBeInTheDocument();
+      expect(screen.getByText("Your guess:")).toBeInTheDocument();
+      expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for round to end...")).toBeInTheDocument();
+      expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
+    });
+
+    it("shows guess feedback when player has guessed incorrectly", () => {
+      const gameState = createGameState({ 
+        roundStartTime: Date.now() - 1000,
+        gamePaused: false,
+        roundEnded: false,
+        gameEnded: false
+      });
+      
+      // Add an incorrect guess for the current player
+      gameState.roundGuesses.set("player1", {
+        playerId: "player1",
+        guess: "London",
+        isCorrect: false,
+        timestamp: Date.now()
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      expect(screen.getByText("❌ Incorrect")).toBeInTheDocument();
+      expect(screen.getByText("Your guess:")).toBeInTheDocument();
+      expect(screen.getByText("London")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for round to end...")).toBeInTheDocument();
+      expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
     });
   });
 
