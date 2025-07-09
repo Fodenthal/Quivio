@@ -41,9 +41,15 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private gameLoopTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 30000; // 30 seconds
-  private readonly ROUND_END_DELAY = 2000; // 2 seconds to show correct answer
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
+  private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
+  private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
   private disposeTimer?: NodeJS.Timeout;
+  private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
+  
+  // Performance monitoring
+  private roundStartTimestamp: number = 0;
+  private roundTransitionMetrics: { duration: number; reason: string; playerCount: number; }[] = [];
 
   // Static prompt database
   private static readonly PROMPTS: StaticPrompt[] = [
@@ -285,23 +291,35 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private startGameLoop() {
-    // Game loop runs every 50ms to update timers and check game state
+    // Game loop runs every 100ms for better performance vs 50ms
     this.gameLoopTimer = setInterval(() => {
       if (this.state.gameStarted && !this.state.gamePaused) {
         this.updateGameState();
       }
-    }, 50);
+    }, this.GAME_LOOP_INTERVAL);
   }
 
   private updateGameState() {
     // Update round timer
     if (this.state.currentRound > 0 && this.state.roundStartTime > 0) {
       const elapsed = Date.now() - this.state.roundStartTime;
-      this.state.roundTimeRemaining = Math.max(0, this.state.roundTime - elapsed);
+      const newTimerValue = Math.max(0, this.state.roundTime - elapsed);
       
-      // Check if round time expired
-      if (this.state.roundTimeRemaining <= 0 && !this.state.roundEnded) {
-        this.endRound();
+      // Only update timer state if it has changed significantly (reduces network traffic)
+      if (Math.abs(newTimerValue - this.lastTimerValue) >= this.TIMER_UPDATE_THRESHOLD || newTimerValue === 0) {
+        this.state.roundTimeRemaining = newTimerValue;
+        this.lastTimerValue = newTimerValue;
+      }
+      
+      // Check if round should end (timer expired OR all players answered correctly)
+      if (!this.state.roundEnded) {
+        if (newTimerValue <= 0) {
+          console.log("Round ending due to timer expiration");
+          this.endRound();
+        } else if (this.checkAllPlayersAnswered()) {
+          console.log("Round ending because all players answered correctly");
+          this.endRound();
+        }
       }
     }
   }
@@ -333,6 +351,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundTimeRemaining = this.state.roundTime;
     this.state.roundEnded = false;
     this.state.correctAnswer = "";
+    
+    // Reset timer tracking for optimized updates
+    this.lastTimerValue = this.state.roundTime;
+    
+    // Performance monitoring - track round start
+    this.roundStartTimestamp = Date.now();
     
     // Clear previous round's guesses
     this.state.clearRoundGuesses();
@@ -417,7 +441,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Award points
     this.state.addScore(playerId, score);
     
-    // Set correct answer in state for display
+    // Set correct answer in state for display (but don't end round yet)
     this.state.correctAnswer = this.currentRoundAnswer;
     
     // Check for game winner immediately
@@ -427,14 +451,61 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       return;
     }
     
-    // End round after delay
-    this.roundTimer = setTimeout(() => {
+    // Check if all active players have answered correctly
+    if (this.checkAllPlayersAnswered()) {
+      console.log("All players have answered correctly, ending round early");
       this.endRound();
-    }, this.ROUND_END_DELAY);
+    }
+    // Otherwise, let the round continue until timer expires
+  }
+
+  /**
+   * Checks if all active players in the game have answered correctly.
+   * Returns true if all players have submitted correct answers, false otherwise.
+   * This enables JKLM-style round completion where rounds end early when everyone gets it right.
+   */
+  private checkAllPlayersAnswered(): boolean {
+    // Get all active players (those who are in the game, not just lobby)
+    const activePlayers = Array.from(this.state.players.values());
+    
+    if (activePlayers.length === 0) {
+      return false;
+    }
+    
+    // Check if every active player has a correct guess for this round
+    for (const player of activePlayers) {
+      const playerGuess = this.state.roundGuesses.get(player.id);
+      
+      // If player hasn't guessed yet, or their guess was incorrect, return false
+      if (!playerGuess || !playerGuess.isCorrect) {
+        return false;
+      }
+    }
+    
+    console.log(`All ${activePlayers.length} players have answered correctly`);
+    return true;
   }
 
   private endRound() {
     if (this.state.roundEnded) return;
+    
+    // Performance monitoring - track round completion
+    const roundDuration = Date.now() - this.roundStartTimestamp;
+    const playerCount = this.state.players.size;
+    const reason = this.state.roundTimeRemaining <= 0 ? "timer_expired" : "all_answered_correctly";
+    
+    this.roundTransitionMetrics.push({
+      duration: roundDuration,
+      reason: reason,
+      playerCount: playerCount
+    });
+    
+    // Keep only last 10 rounds of metrics to prevent memory bloat
+    if (this.roundTransitionMetrics.length > 10) {
+      this.roundTransitionMetrics.shift();
+    }
+    
+    console.log(`Round ${this.state.currentRound} completed in ${roundDuration}ms (${reason}, ${playerCount} players)`);
     
     this.state.roundEnded = true;
     this.state.roundTimeRemaining = 0;
@@ -567,5 +638,23 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       .replace(/<[^>]*>/g, '') // Remove all HTML tags
       .substring(0, 200)
       .trim();
+  }
+
+  /**
+   * Get performance metrics for monitoring and debugging.
+   * Returns round transition metrics including duration, completion reason, and player count.
+   */
+  getPerformanceMetrics() {
+    const avgDuration = this.roundTransitionMetrics.length > 0 
+      ? this.roundTransitionMetrics.reduce((sum, m) => sum + m.duration, 0) / this.roundTransitionMetrics.length 
+      : 0;
+      
+    return {
+      recentRounds: this.roundTransitionMetrics,
+      averageRoundDuration: Math.round(avgDuration),
+      currentPlayers: this.state.players.size,
+      gameLoopInterval: this.GAME_LOOP_INTERVAL,
+      timerUpdateThreshold: this.TIMER_UPDATE_THRESHOLD
+    };
   }
 }

@@ -386,10 +386,10 @@ describe("testing TriviaRoom", () => {
     assert.ok(room.state.gameStarted, "Game should be started");
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
-    // Wait for round to timeout
-    await waitForState(1800); // Wait longer than round time
+    // Wait for round to timeout (1000ms round + some buffer)
+    await waitForState(1200); // Wait just past round time
     
-    // Round should have ended
+    // Round should have ended and timer should be 0
     assert.ok(room.state.roundEnded, "Round should have ended due to timeout");
     assert.strictEqual(room.state.roundTimeRemaining, 0, "Round time should be 0");
   });
@@ -627,21 +627,27 @@ describe("testing TriviaRoom", () => {
     else if (promptText.includes("Grand Slam tennis")) round1Answer = "4";
     else if (promptText.includes("New York Yankees")) round1Answer = "The Bronx Bombers";
     
-    // Player 1 submits correct answer immediately
+    // JKLM-style: Both players submit correct answers so round ends early
     await client1.send("submit_guess", { guess: round1Answer });
-    await waitForState(6000); // Wait for round end delay (2s) + transition delay (3s) + buffer
+    await waitForState(100);
+    await client2.send("submit_guess", { guess: round1Answer });
+    await waitForState(4000); // Wait for transition delay (3s) + buffer
     
     // Game should NOT have ended - should progress to round 2
     assert.ok(!room.state.gameEnded, "Game should not have ended after round 1");
     assert.ok(room.state.gameStarted, "Game should still be running");
     assert.strictEqual(room.state.currentRound, 2, "Should have progressed to round 2");
     
-    // Player 1 should have reasonable score (10-20 points, not 30+)
+    // Both players should have reasonable scores (10-20 points each)
     const player1 = room.state.players.get(client1.sessionId);
+    const player2 = room.state.players.get(client2.sessionId);
     assert.ok(player1, "Player 1 should exist");
-    assert.ok(player1.score >= 10, "Player should have at least 10 points for correct answer");
-    assert.ok(player1.score <= 20, "Player should not have excessive points (max 20 with full time bonus)");
-    assert.ok(player1.score < 100, "Player should not have reached target score in one round");
+    assert.ok(player2, "Player 2 should exist");
+    assert.ok(player1.score >= 10, "Player 1 should have at least 10 points for correct answer");
+    assert.ok(player1.score <= 20, "Player 1 should not have excessive points (max 20 with full time bonus)");
+    assert.ok(player2.score >= 10, "Player 2 should have at least 10 points for correct answer");
+    assert.ok(player2.score <= 20, "Player 2 should not have excessive points (max 20 with full time bonus)");
+    assert.ok(player1.score < 100 && player2.score < 100, "Neither player should have reached target score in one round");
     
     // Verify round 2 has a new prompt
     assert.ok(room.state.currentPrompt.text, "Round 2 should have a prompt");
