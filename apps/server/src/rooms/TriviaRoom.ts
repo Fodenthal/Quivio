@@ -441,9 +441,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Award points
     this.state.addScore(playerId, score);
     
-    // Set correct answer in state for display (but don't end round yet)
-    this.state.correctAnswer = this.currentRoundAnswer;
-    
     // Check for game winner immediately
     const winner = this.checkForWinner();
     if (winner) {
@@ -509,6 +506,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     this.state.roundEnded = true;
     this.state.roundTimeRemaining = 0;
+    
+    // Always set the correct answer when round ends so it displays regardless of how the round ended
+    this.state.correctAnswer = this.currentRoundAnswer;
     
     // Clear the round timer if it exists
     if (this.roundTimer) {

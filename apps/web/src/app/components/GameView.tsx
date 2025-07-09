@@ -261,8 +261,8 @@ export function GameView({
         </div>
       )}
 
-      {/* Guess Input Section - shown during active play */}
-      {phase === "playing" && (
+      {/* Guess Input Section - shown during active play AND when paused */}
+      {(phase === "playing" || phase === "paused") && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           {hasPlayerGuessed() ? (
             // Show guess feedback when player has already guessed
@@ -282,7 +282,7 @@ export function GameView({
                       Your guess: <span className="font-medium">{playerGuess.guess}</span>
                     </p>
                     <p className="text-sm text-gray-500">
-                      Waiting for round to end...
+                      {phase === "paused" ? "Game is paused..." : "Waiting for round to end..."}
                     </p>
                   </>
                 ) : null;
@@ -294,6 +294,13 @@ export function GameView({
               <h4 className="text-lg font-medium text-gray-900 text-center">
                 Submit Your Guess
               </h4>
+              {phase === "paused" && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800 text-center">
+                    ⏸️ Game is paused - waiting for other players to reconnect
+                  </p>
+                </div>
+              )}
               <form onSubmit={handleGuessSubmit} className="space-y-4">
                 <div>
                   <input
@@ -301,21 +308,24 @@ export function GameView({
                     value={currentGuess}
                     onChange={(e) => setCurrentGuess(e.target.value)}
                     placeholder="Enter your answer..."
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || phase === "paused"}
                     className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     autoComplete="off"
                     maxLength={100}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Press Enter or click Submit to send your answer
+                    {phase === "paused" 
+                      ? "Input disabled while game is paused"
+                      : "Press Enter or click Submit to send your answer"
+                    }
                   </p>
                 </div>
                 <button
                   type="submit"
-                  disabled={!currentGuess.trim() || isSubmitting}
+                  disabled={!currentGuess.trim() || isSubmitting || phase === "paused"}
                   className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Guess"}
+                  {isSubmitting ? "Submitting..." : phase === "paused" ? "Game Paused" : "Submit Guess"}
                 </button>
               </form>
             </div>
@@ -324,4 +334,4 @@ export function GameView({
       )}
     </div>
   );
-} 
+}

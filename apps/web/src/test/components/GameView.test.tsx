@@ -116,7 +116,8 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Game Paused")).toBeInTheDocument();
+      // Should show "Game Paused" in the phase indicator  
+      expect(screen.getAllByText("Game Paused")).toHaveLength(2); // Phase indicator + button
     });
 
     it("shows 'Game Finished' when game has ended", () => {
@@ -284,14 +285,6 @@ describe("GameView", () => {
       expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
     });
 
-    it("does not show guess input when game is paused", () => {
-      const gameState = createGameState({ gamePaused: true });
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
-    });
-
     it("shows guess feedback when player has guessed correctly", () => {
       const gameState = createGameState({ 
         roundStartTime: Date.now() - 1000,
@@ -340,6 +333,21 @@ describe("GameView", () => {
       expect(screen.getByText("London")).toBeInTheDocument();
       expect(screen.getByText("Waiting for round to end...")).toBeInTheDocument();
       expect(screen.queryByText("Submit Your Guess")).not.toBeInTheDocument();
+    });
+
+    it("shows guess input with disabled state when game is paused", () => {
+      const gameState = createGameState({ 
+        gamePaused: true,
+        roundStartTime: Date.now() - 1000
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      // Should still show the guess input form but disabled
+      expect(screen.getByText("Submit Your Guess")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter your answer...")).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Game Paused" })).toBeDisabled();
+      expect(screen.getByText("⏸️ Game is paused - waiting for other players to reconnect")).toBeInTheDocument();
     });
   });
 
