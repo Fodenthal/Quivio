@@ -559,4 +559,93 @@ describe("testing TriviaRoom", () => {
     assert.strictEqual(message.text, "Hello!", "HTML should be removed");
     assert.notStrictEqual(message.text, "<script>alert('xss')</script>Hello!", "Original message should not match");
   });
+
+  it("should allow multiple rounds with fixed scoring system", async () => {
+    // Test that the game continues for multiple rounds instead of ending after round 1
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
+      targetScore: 100 // High enough to require multiple rounds
+    });
+    const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
+    const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
+    
+    await waitForState(300);
+    
+    // Start the game
+    await client1.send("player_ready", { ready: true });
+    await client2.send("player_ready", { ready: true });
+    await waitForState(100);
+    await client1.send("start_game", {});
+    await waitForState(500);
+    
+    // Verify game started
+    assert.ok(room.state.gameStarted, "Game should be started");
+    assert.strictEqual(room.state.currentRound, 1, "Should be in round 1");
+    
+    // Get the correct answer for round 1
+    await waitForState(200);
+    const promptText = room.state.currentPrompt.text;
+    let round1Answer = "Paris"; // fallback
+    
+    // Map prompt text to correct answer (same as in other tests)
+    if (promptText.includes("capital of France")) round1Answer = "Paris";
+    else if (promptText.includes("Emperor of Rome")) round1Answer = "Augustus";
+    else if (promptText.includes("largest desert")) round1Answer = "Sahara";
+    else if (promptText.includes("national sport of Japan")) round1Answer = "Sumo";
+    else if (promptText.includes("Berlin Wall")) round1Answer = "1989";
+    else if (promptText.includes("Simpsons")) round1Answer = "Springfield";
+    else if (promptText.includes("largest country")) round1Answer = "Russia";
+    else if (promptText.includes("chemical formula for water")) round1Answer = "H2O";
+    else if (promptText.includes("capital of Japan")) round1Answer = "Tokyo";
+    else if (promptText.includes("chemical symbol for gold")) round1Answer = "Au";
+    else if (promptText.includes("highest mountain")) round1Answer = "Mount Everest";
+    else if (promptText.includes("longest river")) round1Answer = "Nile";
+    else if (promptText.includes("capital of Australia")) round1Answer = "Canberra";
+    else if (promptText.includes("capital of Brazil")) round1Answer = "Brasília";
+    else if (promptText.includes("World War II")) round1Answer = "1945";
+    else if (promptText.includes("first President")) round1Answer = "George Washington";
+    else if (promptText.includes("Columbus discover")) round1Answer = "1492";
+    else if (promptText.includes("Alexandria")) round1Answer = "Lighthouse";
+    else if (promptText.includes("Titanic sink")) round1Answer = "1912";
+    else if (promptText.includes("main character in the movie 'Titanic'")) round1Answer = "Jack";
+    else if (promptText.includes("Iron Man")) round1Answer = "Robert Downey Jr";
+    else if (promptText.includes("first iPhone")) round1Answer = "2007";
+    else if (promptText.includes("lead singer of Queen")) round1Answer = "Freddie Mercury";
+    else if (promptText.includes("Breaking Bad")) round1Answer = "Walter White";
+    else if (promptText.includes("Harry Potter")) round1Answer = "Hogwarts";
+    else if (promptText.includes("Office' (US version)")) round1Answer = "Greg Daniels";
+    else if (promptText.includes("hardest natural substance")) round1Answer = "Diamond";
+    else if (promptText.includes("largest planet")) round1Answer = "Jupiter";
+    else if (promptText.includes("atomic number of carbon")) round1Answer = "6";
+    else if (promptText.includes("speed of light")) round1Answer = "186282";
+    else if (promptText.includes("force that keeps planets")) round1Answer = "Gravity";
+    else if (promptText.includes("largest organ")) round1Answer = "Skin";
+    else if (promptText.includes("FIFA World Cups")) round1Answer = "Brazil";
+    else if (promptText.includes("basketball court")) round1Answer = "10";
+    else if (promptText.includes("Super Bowl")) round1Answer = "Vince Lombardi Trophy";
+    else if (promptText.includes("first modern Olympic")) round1Answer = "1896";
+    else if (promptText.includes("most popular sport")) round1Answer = "Soccer";
+    else if (promptText.includes("Grand Slam tennis")) round1Answer = "4";
+    else if (promptText.includes("New York Yankees")) round1Answer = "The Bronx Bombers";
+    
+    // Player 1 submits correct answer immediately
+    await client1.send("submit_guess", { guess: round1Answer });
+    await waitForState(6000); // Wait for round end delay (2s) + transition delay (3s) + buffer
+    
+    // Game should NOT have ended - should progress to round 2
+    assert.ok(!room.state.gameEnded, "Game should not have ended after round 1");
+    assert.ok(room.state.gameStarted, "Game should still be running");
+    assert.strictEqual(room.state.currentRound, 2, "Should have progressed to round 2");
+    
+    // Player 1 should have reasonable score (10-20 points, not 30+)
+    const player1 = room.state.players.get(client1.sessionId);
+    assert.ok(player1, "Player 1 should exist");
+    assert.ok(player1.score >= 10, "Player should have at least 10 points for correct answer");
+    assert.ok(player1.score <= 20, "Player should not have excessive points (max 20 with full time bonus)");
+    assert.ok(player1.score < 100, "Player should not have reached target score in one round");
+    
+    // Verify round 2 has a new prompt
+    assert.ok(room.state.currentPrompt.text, "Round 2 should have a prompt");
+    assert.ok(room.state.roundStartTime > 0, "Round 2 should have started");
+    assert.ok(!room.state.roundEnded, "Round 2 should be active");
+  });
 }); 

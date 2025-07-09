@@ -39,7 +39,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8;
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
-  private readonly DEFAULT_TARGET_SCORE = 10;
+  private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 30000; // 30 seconds
   private readonly ROUND_END_DELAY = 2000; // 2 seconds to show correct answer
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
@@ -408,9 +408,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private handleCorrectGuess(playerId: string) {
-    // Calculate score based on time
+    // Calculate score based on time (base 10 points + time bonus up to 10 more)
     const elapsed = Date.now() - this.state.roundStartTime;
-    const score = Math.max(1, Math.floor((this.state.roundTime - elapsed) / 1000) + 1);
+    const remainingTime = this.state.roundTime - elapsed;
+    const timeBonus = Math.max(0, Math.floor((remainingTime / this.state.roundTime) * 10));
+    const score = 10 + timeBonus; // Base 10 points + 0-10 bonus points
     
     // Award points
     this.state.addScore(playerId, score);
@@ -472,7 +474,37 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gameStarted = false;
     this.state.gamePaused = false;
     
+    // Reset game state for next game
+    this.state.currentRound = 0;
+    this.state.roundStartTime = 0;
+    this.state.roundTimeRemaining = 0;
+    this.state.roundEnded = false;
+    this.state.correctAnswer = "";
+    
+    // Clear round guesses
+    this.state.clearRoundGuesses();
+    
+    // Reset all player ready states and scores for next game
+    for (const player of this.state.players.values()) {
+      player.ready = false;
+      player.score = 0;
+    }
+    
+    // Reset used prompts for next game
+    this.usedPrompts.clear();
+    this.currentRoundAnswer = "";
+    
+    // Clear any timers
+    if (this.roundTimer) {
+      clearTimeout(this.roundTimer);
+      this.roundTimer = undefined;
+    }
+    
+    // Update canStart status based on current players
+    this.checkGameStart();
+    
     console.log(`Game ended in room ${this.roomId}. Winner: ${winnerId}`);
+    console.log('Game state reset for next game');
   }
 
   private pauseGame() {

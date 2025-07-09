@@ -121,31 +121,31 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 **Goal: Players can join rooms and see each other**
 
 #### 3B.1 Build minimal lobby interface
-- [ ] Create `GameLobby` component
-- [ ] Show current players in room
-- [ ] Display player ready states
-- [ ] Add "Ready" toggle button for players
+- [x] Create `GameLobby` component
+- [x] Show current players in room
+- [x] Display player ready states
+- [x] Add "Ready" toggle button for players
 
 #### 3B.2 Room joining functionality
-- [ ] Add simple room creation (fixed room name for now)
-- [ ] Implement room joining logic
-- [ ] Show host controls (start game button)
-- [ ] Test multi-player joining flow
+- [x] Add simple room creation (fixed room name for now)
+- [x] Implement room joining logic
+- [x] Show host controls (start game button)
+- [x] Test multi-player joining flow
 
 ### Phase 3C: Basic Game View
 **Goal: Core gameplay - see prompts, submit guesses**
 
 #### 3C.1 Game state display
-- [ ] Create `GameView` component
-- [ ] Display current prompt text and category
-- [ ] Show basic round information
-- [ ] Add game state indicators (waiting, playing, ended)
+- [x] Create `GameView` component
+- [x] Display current prompt text and category
+- [x] Show basic round information
+- [x] Add game state indicators
 
 #### 3C.2 Guess input system
-- [ ] Create guess input component
-- [ ] Handle guess submission to server
-- [ ] Show basic feedback (correct/incorrect)
-- [ ] Add enter key submission
+- [x] Create guess input component
+- [x] Handle guess submission to server
+- [] Show basic feedback (correct/incorrect)
+- [x] Add enter key submission
 
 ### Phase 3D: Real-time Features
 **Goal: Live updates and interactive gameplay**
