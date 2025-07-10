@@ -219,15 +219,8 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [ ] Add error handling for malformed or invalid guesses
 - [ ] Ensure guess state consistency across all clients
 
-### 3D.3 Integrated Player List Scoreboard 📊 IMMEDIATE
-**Score display within the player list component (JKLM-style)**
 
-- [ ] Display player scores directly in the player list component
-- [ ] Add smooth score update animations (+points effects)
-- [ ] Highlight score changes when players earn points
-- [ ] Maintain score visibility alongside guess display and highlighting
-
-### 3D.4 Enhanced Game Flow & Transitions ⚡ HIGH PRIORITY
+### 3D.3 Enhanced Game Flow & Transitions ⚡ HIGH PRIORITY
 **Smooth, responsive state transitions**
 
 - [ ] Implement smooth round-to-round transitions
@@ -261,17 +254,8 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [ ] Optimize network efficiency for frequent guess updates
 - [ ] Add guess validation and sanitization before broadcasting
 
-### 3E.2 Advanced Player Interaction
-- [ ] Implement spectator mode for full rooms
-- [ ] Add player emoji reactions during rounds
-- [ ] Show connection quality indicators per player
-- [ ] Add player typing indicators (optional enhancement)
-
 ### 3E.3 Enhanced Chat & Social Features
-- [ ] Create in-game chat component
-- [ ] Add emoji reactions and quick responses
-- [ ] Implement chat during gameplay (non-disruptive)
-- [ ] Add player muting/blocking options
+- [ ] Create in-game chat component (do we make this from scratch/use colyseus/bootstrap from something already out there)
 
 ### 3E.4 Performance Optimizations
 - [ ] Implement client-side prediction for inputs

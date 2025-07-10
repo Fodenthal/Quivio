@@ -223,7 +223,10 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       expect(screen.getByText("🎉 Game Complete!")).toBeInTheDocument();
-      expect(screen.getByText(/TestPlayer wins with \d+ points!/)).toBeInTheDocument();
+      
+      // Check the specific game end section for the winner text
+      const gameEndSection = screen.getByText("🎉 Game Complete!").closest("div");
+      expect(gameEndSection).toHaveTextContent("TestPlayer wins with 5 points!");
     });
 
     it("handles game end without valid winner", () => {
@@ -248,10 +251,10 @@ describe("GameView", () => {
       expect(screen.getByText("Your Score")).toBeInTheDocument();
       expect(screen.getByText("Target")).toBeInTheDocument();
       
-      // Get the player status section specifically
-      const playerStatusSection = screen.getByText("Your Score").closest("div");
-      expect(playerStatusSection).toHaveTextContent("5"); // current score
-      expect(playerStatusSection).toHaveTextContent("10"); // target score
+      // Get the specific player status container (the blue-50 section)
+      const playerStatusContainer = screen.getByText("Your Score").closest(".bg-blue-50");
+      expect(playerStatusContainer).toHaveTextContent("5"); // current score
+      expect(playerStatusContainer).toHaveTextContent("10"); // target score
     });
 
     it("handles missing current player gracefully", () => {
