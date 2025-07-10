@@ -190,16 +190,16 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [x] Add comprehensive unit tests for PlayerList component
 
 **Step 2: Server-side Guess Tracking 🔥 NEXT**
-- [ ] Add server-side state to track each player's most recent incorrect guess
-- [ ] Modify TriviaRoom guess validation to distinguish correct vs incorrect guesses
-- [ ] Store and manage per-player guess state in room schema
-- [ ] Add guess state cleanup between rounds
+- [x] Add server-side state to track each player's most recent incorrect guess
+- [x] Modify TriviaRoom guess validation to distinguish correct vs incorrect guesses
+- [x] Store and manage per-player guess state in room schema
+- [x] Add guess state cleanup between rounds
 
 **Step 3: Real-time Guess Broadcasting**
-- [ ] Implement guess broadcasting to all clients when guesses are incorrect
-- [ ] Add new message type for guess updates
-- [ ] Optimize network efficiency for frequent guess updates
-- [ ] Add guess validation and sanitization before broadcasting
+- [x] Implement guess broadcasting to all clients when guesses are incorrect
+- [x] Add new message type for guess updates
+- [x] Optimize network efficiency for frequent guess updates
+- [x] Add guess validation and sanitization before broadcasting
 
 **Step 4: Live Guess Display on Client**
 - [ ] Show real-time incorrect guesses under each player name
@@ -207,13 +207,8 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [ ] Add smooth transitions for guess text updates
 - [ ] Handle guess clearing/reset between rounds
 
-**Step 5: Enhanced Animations & Polish**
-- [ ] Add smooth animations for guess updates and score-based reordering
-- [ ] Implement score change animations (+points effects)
-- [ ] Add highlighting transitions for correct guesses
+**Step 5: Persistence & Edge Cases**
 - [ ] Optimize rendering performance for frequent updates
-
-**Step 6: Persistence & Edge Cases**
 - [ ] Persist incorrect guesses until round ends (no auto-clearing)
 - [ ] Handle player disconnection/reconnection with guess state
 - [ ] Add error handling for malformed or invalid guesses
@@ -346,8 +341,7 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ### 7.2 Monitoring & analytics
 - [ ] Add performance monitoring
 - [ ] Implement error tracking
-- [ ] Add user analytics
-- [ ] Create operational dashboard
+- [ ] Find software for opertional dashboards
 
 ---
 

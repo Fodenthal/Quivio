@@ -8,11 +8,10 @@ interface PlayerListProps {
 
 /**
  * PlayerList component displays all players in JKLM-style boxes ordered by score.
- * This will be the foundation for showing real-time guess display and highlighting effects.
+ * Shows real-time incorrect guesses under each player's name for enhanced gameplay experience.
  * 
  * @param gameState - The current game state containing all player information
- * @param currentPlayerId - The session ID of the current player for highlighting
- * @returns React component displaying the player list with scores
+ * @returns React component displaying the player list with scores and live guess display
  */
 export function PlayerList({ gameState }: PlayerListProps) {
   /**
@@ -77,6 +76,18 @@ export function PlayerList({ gameState }: PlayerListProps) {
     return isCorrect;
   };
 
+  /**
+   * Gets the most recent incorrect guess for a player.
+   * Returns the guess text to display under the player's name.
+   * 
+   * @param player - The player data object to check
+   * @returns String containing the incorrect guess, or empty string if none
+   */
+  const getPlayerIncorrectGuess = (player: PlayerData): string => {
+    const incorrectGuess = gameState.playerIncorrectGuesses.get(player.id);
+    return incorrectGuess?.guess || "";
+  };
+
   const players = getPlayersByScore();
 
   return (
@@ -88,6 +99,7 @@ export function PlayerList({ gameState }: PlayerListProps) {
       <div className="space-y-2">
         {players.map((player, index) => {
           const hasCorrectGuess = hasGuessedCorrectly(player);
+          const incorrectGuess = getPlayerIncorrectGuess(player);
           const isLeader = index === 0 && player.score > 0; // First player with points is leader
           
           return (
@@ -128,12 +140,18 @@ export function PlayerList({ gameState }: PlayerListProps) {
                       )}
                     </div>
                     
-                    {/* Placeholder for future guess display */}
-                    <div className="mt-1 min-h-[20px]">
-                      {/* This space will be used for displaying incorrect guesses in future iterations */}
-                      <span className="text-sm text-gray-400 italic">
-                        {/* Placeholder - will show last incorrect guess here */}
-                      </span>
+                    {/* Live incorrect guess display */}
+                    <div className="mt-1 min-h-[20px] transition-all duration-200 ease-in-out">
+                                             {incorrectGuess ? (
+                         <span className="text-sm text-gray-500 italic animate-fade-in">
+                           &ldquo;{incorrectGuess}&rdquo;
+                         </span>
+                       ) : (
+                        <span className="text-sm text-transparent">
+                          {/* Invisible placeholder to maintain consistent spacing */}
+                          .
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

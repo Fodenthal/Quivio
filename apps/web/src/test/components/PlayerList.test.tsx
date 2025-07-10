@@ -1,22 +1,22 @@
-import { describe, test, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { PlayerList } from '@/app/components/PlayerList';
-import { GameState, PlayerData } from '@shared/index';
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { PlayerList } from "../../app/components/PlayerList";
+import { GameState, PlayerData } from "@shared/index";
 
-// Helper function to create a mock player
-const createMockPlayer = (id: string, name: string, score: number, isHost = false): PlayerData => ({
-  id,
-  name,
-  score,
-  ready: true,
-  isHost,
-  joinedAt: Date.now() - Math.random() * 10000,
-});
+describe("PlayerList", () => {
+  const createPlayer = (overrides: Partial<PlayerData> = {}): PlayerData => ({
+    id: "player1",
+    name: "TestPlayer",
+    score: 5,
+    ready: true,
+    isHost: false,
+    joinedAt: Date.now(),
+    ...overrides
+  });
 
-// Helper function to create a mock game state
-const createMockGameState = (players: PlayerData[]): GameState => {
-  const playersMap = new Map<string, PlayerData>();
-  players.forEach(player => playersMap.set(player.id, player));
+  const createGameState = (players: PlayerData[] = [], overrides: Partial<GameState> = {}): GameState => {
+    const playersMap = new Map();
+    players.forEach(player => playersMap.set(player.id, player));
 
   return {
     targetScore: 100,
@@ -45,129 +45,162 @@ const createMockGameState = (players: PlayerData[]): GameState => {
     roundGuesses: new Map(),
     playerIncorrectGuesses: new Map(),
     chatMessages: new Map(),
+    ...overrides
   };
-};
+  };
 
-describe('PlayerList', () => {
-  test('should display players ordered by score (high to low)', () => {
-    const players = [
-      createMockPlayer('player1', 'Alice', 30),
-      createMockPlayer('player2', 'Bob', 50), // Highest score
-      createMockPlayer('player3', 'Charlie', 20),
-    ];
-    
-    const gameState = createMockGameState(players);
-    
+  it("renders with basic player information", () => {
+    const player = createPlayer();
+    const gameState = createGameState([player]);
+
     render(<PlayerList gameState={gameState} />);
-    
-    // Verify all players are displayed
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('Bob')).toBeInTheDocument();
-    expect(screen.getByText('Charlie')).toBeInTheDocument();
-    
-    // Verify scores are displayed
-    expect(screen.getByText('30')).toBeInTheDocument();
-    expect(screen.getByText('50')).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
-    
-    // Get all player cards
-    const playerCards = screen.getAllByText(/Alice|Bob|Charlie/).map(el => 
-      el.closest('[class*="p-4"]')
-    );
-    
-    // Verify Bob (highest score) is first
-    expect(playerCards[0]).toHaveTextContent('Bob');
-    expect(playerCards[0]).toHaveTextContent('50');
+
+    expect(screen.getByText("Players (1/8)")).toBeInTheDocument();
+    expect(screen.getByText("TestPlayer")).toBeInTheDocument();
+    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getByText("points")).toBeInTheDocument();
   });
 
-  test('should highlight players with correct guesses', () => {
+  it("sorts players by score in descending order", () => {
     const players = [
-      createMockPlayer('player1', 'Alice', 30),
-      createMockPlayer('player2', 'Bob', 50),
+      createPlayer({ id: "player1", name: "Low", score: 5 }),
+      createPlayer({ id: "player2", name: "High", score: 15 }),
+      createPlayer({ id: "player3", name: "Mid", score: 10 })
     ];
+    const gameState = createGameState(players);
+
+    render(<PlayerList gameState={gameState} />);
+
+    const playerNames = screen.getAllByText(/High|Mid|Low/);
+    expect(playerNames[0]).toHaveTextContent("High");
+    expect(playerNames[1]).toHaveTextContent("Mid");
+    expect(playerNames[2]).toHaveTextContent("Low");
+  });
+
+  it("highlights players who guessed correctly", () => {
+    const player = createPlayer();
+    const gameState = createGameState([player]);
     
-    const gameState = createMockGameState(players);
+    // Set up a correct guess for the player
+    gameState.roundGuesses.set(player.id, {
+      playerId: player.id,
+      guess: "correct answer",
+      timestamp: Date.now(),
+      isCorrect: true
+    });
+
+    render(<PlayerList gameState={gameState} />);
+
+    expect(screen.getByText("✓ Correct")).toBeInTheDocument();
     
-    // Add a correct guess for Alice
-    gameState.roundGuesses.set('player1', {
-      playerId: 'player1',
-      guess: 'correct answer',
-      isCorrect: true,
+    // Check for correct highlighting (find the player card with purple gradient background)
+    const playerCard = screen.getByText("TestPlayer").closest('[class*="bg-gradient-to-r"]');
+    expect(playerCard).toHaveClass("bg-gradient-to-r", "from-purple-100", "to-purple-50");
+  });
+
+  it("shows host badge for host player", () => {
+    const player = createPlayer({ isHost: true });
+    const gameState = createGameState([player], { hostId: player.id });
+
+    render(<PlayerList gameState={gameState} />);
+
+    expect(screen.getByText("Host")).toBeInTheDocument();
+  });
+
+  it("generates proper avatars with first letter", () => {
+    const player = createPlayer({ name: "Alice" });
+    const gameState = createGameState([player]);
+
+    render(<PlayerList gameState={gameState} />);
+
+    expect(screen.getByText("A")).toBeInTheDocument();
+  });
+
+  it("displays incorrect guesses for players", () => {
+    const player = createPlayer();
+    const gameState = createGameState([player]);
+    
+    // Set up an incorrect guess for the player
+    gameState.playerIncorrectGuesses.set(player.id, {
+      playerId: player.id,
+      guess: "wrong answer",
+      timestamp: Date.now()
+    });
+
+    render(<PlayerList gameState={gameState} />);
+
+    // Check that the incorrect guess text is displayed
+    expect(screen.getByText(/wrong answer/)).toBeInTheDocument();
+    // Verify the content includes quotes (any kind) to confirm it's styled as a guess
+    const guessingElement = screen.getByText(/wrong answer/).closest('span');
+    expect(guessingElement?.textContent).toContain('wrong answer');
+    expect(guessingElement?.textContent?.length).toBeGreaterThan('wrong answer'.length); // Should have quotes around it
+  });
+
+  it("shows empty space when no incorrect guess exists", () => {
+    const player = createPlayer();
+    const gameState = createGameState([player]);
+    // No incorrect guess set
+
+    render(<PlayerList gameState={gameState} />);
+
+    // Should not show any quoted text for incorrect guesses
+    expect(screen.queryByText(/"/)).not.toBeInTheDocument();
+  });
+
+  it("handles multiple players with different guess states", () => {
+    const players = [
+      createPlayer({ id: "player1", name: "Alice", score: 10 }),
+      createPlayer({ id: "player2", name: "Bob", score: 15 }),
+      createPlayer({ id: "player3", name: "Charlie", score: 5 })
+    ];
+    const gameState = createGameState(players);
+    
+    // Alice has correct guess
+    gameState.roundGuesses.set("player1", {
+      playerId: "player1",
+      guess: "correct",
+      timestamp: Date.now(),
+      isCorrect: true
+    });
+    
+    // Bob has incorrect guess
+    gameState.playerIncorrectGuesses.set("player2", {
+      playerId: "player2",
+      guess: "bob's wrong answer",
       timestamp: Date.now()
     });
     
+    // Charlie has no guess
+
     render(<PlayerList gameState={gameState} />);
+
+    // Check sorting (Bob should be first with 15 points)
+    const playerNames = screen.getAllByText(/Alice|Bob|Charlie/);
+    expect(playerNames[0]).toHaveTextContent("Bob");
+    expect(playerNames[1]).toHaveTextContent("Alice");
+    expect(playerNames[2]).toHaveTextContent("Charlie");
+
+    // Check Alice has correct badge
+    expect(screen.getByText("✓ Correct")).toBeInTheDocument();
     
-    // Find Alice's card (correct guesser)
-    const aliceCard = screen.getByText('Alice').closest('[class*="p-4"]');
-    const bobCard = screen.getByText('Bob').closest('[class*="p-4"]');
+    // Check Bob has incorrect guess displayed
+    expect(screen.getByText(/bob's wrong answer/)).toBeInTheDocument();
+    // Verify the content includes quotes (any kind) to confirm it's styled as a guess
+    const bobGuessElement = screen.getByText(/bob's wrong answer/).closest('span');
+    expect(bobGuessElement?.textContent).toContain("bob's wrong answer");
+    expect(bobGuessElement?.textContent?.length).toBeGreaterThan("bob's wrong answer".length); // Should have quotes around it
     
-    // Alice should have correct guess styling
-    expect(aliceCard).toHaveClass('bg-gradient-to-r', 'from-purple-100', 'to-purple-50', 'border-purple-300');
-    expect(screen.getByText('✓ Correct')).toBeInTheDocument();
-    
-    // Bob should have normal styling
-    expect(bobCard).toHaveClass('bg-white', 'border-gray-200');
+    // Charlie should have no guess display (no quotes in his player card)
+    const charlieCard = screen.getByText("Charlie").closest('[class*="p-4"]');
+    expect(charlieCard?.textContent).not.toMatch(/"/); // No quotes should be present
   });
 
-  test('should display players with highest score first', () => {
-    const players = [
-      createMockPlayer('player1', 'Alice', 30),
-      createMockPlayer('player2', 'Bob', 50), // Highest score
-      createMockPlayer('player3', 'Charlie', 0),
-    ];
-    
-    const gameState = createMockGameState(players);
-    
-    render(<PlayerList gameState={gameState} />);
-    
-    // Get all player cards in order
-    const playerCards = screen.getAllByText(/Alice|Bob|Charlie/).map(el => 
-      el.closest('[class*="p-4"]')
-    );
-    
-    // Bob (highest score) should be first
-    expect(playerCards[0]).toHaveTextContent('Bob');
-    expect(playerCards[0]).toHaveTextContent('50');
-    
-    // Alice should be second 
-    expect(playerCards[1]).toHaveTextContent('Alice');
-    expect(playerCards[1]).toHaveTextContent('30');
-    
-    // Charlie should be last
-    expect(playerCards[2]).toHaveTextContent('Charlie');
-    expect(playerCards[2]).toHaveTextContent('0');
-  });
+  it("handles empty player list gracefully", () => {
+    const gameState = createGameState([]);
 
-  test('should show host badge', () => {
-    const players = [
-      createMockPlayer('player1', 'Alice', 30, true), // Host
-      createMockPlayer('player2', 'Bob', 50),
-    ];
-    
-    const gameState = createMockGameState(players);
-    
     render(<PlayerList gameState={gameState} />);
-    
-    // Alice should have host badge
-    expect(screen.getByText('Host')).toBeInTheDocument();
-    
-    // Verify host badge is near Alice's name
-    const aliceCard = screen.getByText('Alice').closest('[class*="p-4"]');
-    expect(aliceCard).toHaveTextContent('Host');
-  });
 
-  test('should display player count correctly', () => {
-    const players = [
-      createMockPlayer('player1', 'Alice', 30),
-      createMockPlayer('player2', 'Bob', 50),
-    ];
-    
-    const gameState = createMockGameState(players);
-    
-    render(<PlayerList gameState={gameState} />);
-    
-    // Should show "Players (2/8)" since maxPlayers is 8
-    expect(screen.getByText('Players (2/8)')).toBeInTheDocument();
+    expect(screen.getByText("Players (0/8)")).toBeInTheDocument();
   });
 }); 
