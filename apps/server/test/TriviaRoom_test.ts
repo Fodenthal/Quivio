@@ -355,8 +355,19 @@ describe("testing TriviaRoom", () => {
     await client2.send("submit_guess", { guess: correctAnswer });
     await waitForState(600); // Wait longer for processing
     
-    // Should have recorded both guesses
-    assert.strictEqual(room.state.roundGuesses.size, 2, "Should have recorded both guesses");
+    // Should have recorded incorrect guess separately from round guesses
+    assert.strictEqual(room.state.roundGuesses.size, 1, "Should have recorded only the correct guess in roundGuesses");
+    assert.strictEqual(room.state.playerIncorrectGuesses.size, 1, "Should have recorded the incorrect guess separately");
+    
+    // Check that the incorrect guess is tracked for player1
+    const incorrectGuess = room.state.playerIncorrectGuesses.get(client1.sessionId);
+    assert.ok(incorrectGuess, "Player1 should have an incorrect guess recorded");
+    assert.strictEqual(incorrectGuess?.guess, "Wrong Answer", "Incorrect guess should match what was submitted");
+    
+    // Check that the correct guess is tracked for player2
+    const correctGuessRecord = room.state.roundGuesses.get(client2.sessionId);
+    assert.ok(correctGuessRecord, "Player2 should have a correct guess recorded");
+    assert.strictEqual(correctGuessRecord?.isCorrect, true, "Recorded guess should be marked as correct");
     
     // Only second player should have points
     const player1 = room.state.players.get(client1.sessionId);

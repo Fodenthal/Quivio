@@ -181,14 +181,43 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ### 3D.2 JKLM-Style Player List Component 🟢 IMMEDIATE  
 **Real-time guess display and correct answer highlighting like JKLM**
 
-- [ ] Create player list component showing all players with avatars and scores
-- [ ] Implement live incorrect guess display under each player name (server-validated)
-- [ ] Show only the most recent incorrect guess (replacing previous guesses)
-- [ ] Add player box highlighting when they guess correctly (opaque + white glossy effect, no guess text)
-- [ ] Order players by score (high to low) with smooth reordering animations
-- [ ] Persist incorrect guesses until round ends (no auto-clearing)
-- [ ] Add smooth animations for guess updates and score-based reordering
+**Step 1: Basic Foundation ✅ COMPLETE**
+- [x] Create player list component showing all players with avatars and scores
+- [x] Order players by score (high to low) with tie-breaking logic
+- [x] Add player box highlighting when they guess correctly (purple glossy effect)
+- [x] Integrate into GameView with two-column layout (widened to 384px)
+- [x] Remove "You" tags across entire repository for cleaner UI
+- [x] Add comprehensive unit tests for PlayerList component
+
+**Step 2: Server-side Guess Tracking 🔥 NEXT**
+- [ ] Add server-side state to track each player's most recent incorrect guess
+- [ ] Modify TriviaRoom guess validation to distinguish correct vs incorrect guesses
+- [ ] Store and manage per-player guess state in room schema
+- [ ] Add guess state cleanup between rounds
+
+**Step 3: Real-time Guess Broadcasting**
+- [ ] Implement guess broadcasting to all clients when guesses are incorrect
+- [ ] Add new message type for guess updates
+- [ ] Optimize network efficiency for frequent guess updates
+- [ ] Add guess validation and sanitization before broadcasting
+
+**Step 4: Live Guess Display on Client**
+- [ ] Show real-time incorrect guesses under each player name
+- [ ] Display only the most recent incorrect guess (replacing previous guesses)
+- [ ] Add smooth transitions for guess text updates
 - [ ] Handle guess clearing/reset between rounds
+
+**Step 5: Enhanced Animations & Polish**
+- [ ] Add smooth animations for guess updates and score-based reordering
+- [ ] Implement score change animations (+points effects)
+- [ ] Add highlighting transitions for correct guesses
+- [ ] Optimize rendering performance for frequent updates
+
+**Step 6: Persistence & Edge Cases**
+- [ ] Persist incorrect guesses until round ends (no auto-clearing)
+- [ ] Handle player disconnection/reconnection with guess state
+- [ ] Add error handling for malformed or invalid guesses
+- [ ] Ensure guess state consistency across all clients
 
 ### 3D.3 Integrated Player List Scoreboard 📊 IMMEDIATE
 **Score display within the player list component (JKLM-style)**

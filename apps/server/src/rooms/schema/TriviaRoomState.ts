@@ -17,6 +17,12 @@ export class GuessState extends Schema {
   @type("number") timestamp: number = 0;
 }
 
+export class PlayerIncorrectGuessState extends Schema {
+  @type("string") playerId: string = "";
+  @type("string") guess: string = "";
+  @type("number") timestamp: number = 0;
+}
+
 export class ChatMessageState extends Schema {
   @type("string") playerId: string = "";
   @type("string") text: string = "";
@@ -60,6 +66,9 @@ export class TriviaRoomState extends Schema {
 
   // Round guesses
   @type({ map: GuessState }) roundGuesses = new MapSchema<GuessState>();
+
+  // Player incorrect guesses (live tracking of wrong answers)
+  @type({ map: PlayerIncorrectGuessState }) playerIncorrectGuesses = new MapSchema<PlayerIncorrectGuessState>();
 
   // Chat messages
   @type({ map: ChatMessageState }) chatMessages = new MapSchema<ChatMessageState>();
@@ -127,6 +136,42 @@ export class TriviaRoomState extends Schema {
 
   clearRoundGuesses() {
     this.roundGuesses.clear();
+  }
+
+  /**
+   * Records an incorrect guess for a player, replacing any previous incorrect guess.
+   * This tracks the most recent wrong answer to display under the player's name.
+   * 
+   * @param playerId - The ID of the player making the guess
+   * @param guess - The incorrect guess text
+   */
+  addIncorrectGuess(playerId: string, guess: string) {
+    const incorrectGuess = new PlayerIncorrectGuessState();
+    incorrectGuess.playerId = playerId;
+    incorrectGuess.guess = guess;
+    incorrectGuess.timestamp = Date.now();
+    this.playerIncorrectGuesses.set(playerId, incorrectGuess);
+  }
+
+  /**
+   * Removes a player's incorrect guess (called when they answer correctly).
+   * This ensures correct answers don't show the old incorrect guess.
+   * 
+   * @param playerId - The ID of the player whose incorrect guess to remove
+   */
+  removeIncorrectGuess(playerId: string) {
+    // Only delete if the player actually has an incorrect guess
+    if (this.playerIncorrectGuesses.has(playerId)) {
+      this.playerIncorrectGuesses.delete(playerId);
+    }
+  }
+
+  /**
+   * Clears all incorrect guesses between rounds.
+   * This resets the display for the next round.
+   */
+  clearIncorrectGuesses() {
+    this.playerIncorrectGuesses.clear();
   }
 
   addChatMessage(playerId: string, text: string) {

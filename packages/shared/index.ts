@@ -30,6 +30,12 @@ export interface Guess {
   timestamp: number;
 }
 
+export interface PlayerIncorrectGuess {
+  playerId: string;
+  guess: string;
+  timestamp: number;
+}
+
 export interface ChatMessage {
   playerId: string;
   text: string;
@@ -74,6 +80,9 @@ export interface GameState {
 
   // Round guesses
   roundGuesses: Map<string, Guess>;
+
+  // Player incorrect guesses (live tracking)
+  playerIncorrectGuesses: Map<string, PlayerIncorrectGuess>;
 
   // Chat messages
   chatMessages: Map<string, ChatMessage>;

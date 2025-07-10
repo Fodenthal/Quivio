@@ -40,6 +40,7 @@ interface RawRoomState {
     answer?: string;
   };
   roundGuesses?: MapSchemaLike | Record<string, unknown>;
+  playerIncorrectGuesses?: MapSchemaLike | Record<string, unknown>;
   chatMessages?: MapSchemaLike | Record<string, unknown>;
 }
 
@@ -111,6 +112,13 @@ export function GameLayout() {
             }
           }
 
+          const playerIncorrectGuesses = new Map();
+          if (roomState.playerIncorrectGuesses) {
+            for (const [playerId, incorrectGuess] of Object.entries(roomState.playerIncorrectGuesses)) {
+              playerIncorrectGuesses.set(playerId, incorrectGuess);
+            }
+          }
+
           const chatMessages = new Map();
           if (roomState.chatMessages) {
             for (const [messageId, message] of Object.entries(roomState.chatMessages)) {
@@ -143,6 +151,7 @@ export function GameLayout() {
               answer: roomState.currentPrompt?.answer || ""
             },
             roundGuesses,
+            playerIncorrectGuesses,
             chatMessages,
           };
 

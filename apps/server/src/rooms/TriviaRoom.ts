@@ -358,8 +358,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Performance monitoring - track round start
     this.roundStartTimestamp = Date.now();
     
-    // Clear previous round's guesses
+    // Clear previous round's guesses and incorrect guesses
     this.state.clearRoundGuesses();
+    this.state.clearIncorrectGuesses();
     
     // Load new prompt
     this.loadNewPrompt();
@@ -423,11 +424,21 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Check if guess is correct
     const isCorrect = normalizedGuess === correctAnswer;
     
-    // Record the guess
-    this.state.addGuess(playerId, guess, isCorrect);
-    
     if (isCorrect) {
+      // Remove any previous incorrect guess since they got it right
+      this.state.removeIncorrectGuess(playerId);
+      
+      // Record the correct guess
+      this.state.addGuess(playerId, guess, isCorrect);
+      
       this.handleCorrectGuess(playerId);
+    } else {
+      // Track this incorrect guess for live display
+      this.state.addIncorrectGuess(playerId, guess.trim());
+      
+      // Note: We don't add incorrect guesses to roundGuesses yet
+      // This allows multiple attempts until they get it right or the round ends
+      console.log(`Player ${playerId} made incorrect guess: "${guess.trim()}"`);
     }
   }
 
@@ -552,8 +563,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundEnded = false;
     this.state.correctAnswer = "";
     
-    // Clear round guesses
+    // Clear round guesses and incorrect guesses
     this.state.clearRoundGuesses();
+    this.state.clearIncorrectGuesses();
     
     // Reset all player ready states and scores for next game
     for (const player of this.state.players.values()) {
