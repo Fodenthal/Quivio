@@ -119,8 +119,16 @@ export function GameLayout() {
 
           const playerIncorrectGuesses = new Map();
           if (roomState.playerIncorrectGuesses) {
-            for (const [playerId, incorrectGuess] of Object.entries(roomState.playerIncorrectGuesses)) {
-              playerIncorrectGuesses.set(playerId, incorrectGuess);
+            // Handle MapSchema properly - iterate over $items
+            if (roomState.playerIncorrectGuesses.$items && roomState.playerIncorrectGuesses.$items instanceof Map) {
+              for (const [playerId, incorrectGuess] of roomState.playerIncorrectGuesses.$items) {
+                playerIncorrectGuesses.set(playerId, incorrectGuess);
+              }
+            } else {
+              // Fallback for regular objects
+              for (const [playerId, incorrectGuess] of Object.entries(roomState.playerIncorrectGuesses)) {
+                playerIncorrectGuesses.set(playerId, incorrectGuess);
+              }
             }
           }
 

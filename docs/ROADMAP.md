@@ -172,13 +172,11 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ### 3D.1 Fix Core Round Logic 🔥 IMMEDIATE
 **Critical architectural changes to match JKLM behavior**
 
-- [ ] **Fix round continuation logic** - Rounds should continue until timer expires OR all players have answered
-- [ ] Remove 2-second delay after correct answer (causes perceived lag)
-- [ ] Implement "all players answered" detection for early round completion
-- [ ] Optimize state update batching to reduce network roundtrips
-- [ ] Add server-side performance monitoring for round transitions
+- [x] **Fix round continuation logic** - Rounds should continue until timer expires OR all players have answered
+- [x] Remove 2-second delay after correct answer (causes perceived lag)
+- [x] Implement "all players answered" detection for early round completion
 
-### 3D.2 JKLM-Style Player List Component 🟢 IMMEDIATE  
+### 3D.2 JKLM-Style Player List Component ✅ COMPLETE  
 **Real-time guess display and correct answer highlighting like JKLM**
 
 **Step 1: Basic Foundation ✅ COMPLETE**
@@ -201,28 +199,29 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [x] Optimize network efficiency for frequent guess updates
 - [x] Add guess validation and sanitization before broadcasting
 
-**Step 4: Live Guess Display on Client**
-- [ ] Show real-time incorrect guesses under each player name
-- [ ] Display only the most recent incorrect guess (replacing previous guesses)
-- [ ] Add smooth transitions for guess text updates
-- [ ] Handle guess clearing/reset between rounds
+**Step 4: Live Guess Display on Client ✅ COMPLETE**
+- [x] Show real-time incorrect guesses under each player name
+- [x] Display only the most recent incorrect guess (replacing previous guesses)
+- [x] Add smooth transitions for guess text updates
+- [x] Handle guess clearing/reset between rounds
 
-**Step 5: Persistence & Edge Cases**
-- [ ] Optimize rendering performance for frequent updates
-- [ ] Persist incorrect guesses until round ends (no auto-clearing)
-- [ ] Handle player disconnection/reconnection with guess state
-- [ ] Add error handling for malformed or invalid guesses
-- [ ] Ensure guess state consistency across all clients
+**Step 5: Persistence & Edge Cases ✅ COMPLETE**
+- [x] Optimize rendering performance for frequent updates
+- [x] Persist incorrect guesses until round ends (no auto-clearing)
+- [x] Handle player disconnection/reconnection with guess state
+- [x] Add error handling for malformed or invalid guesses
+- [x] Ensure guess state consistency across all clients
 
 
 ### 3D.3 Enhanced Game Flow & Transitions ⚡ HIGH PRIORITY
 **Smooth, responsive state transitions**
 
 - [ ] Implement smooth round-to-round transitions
-- [ ] Add countdown timers for round starts
 - [ ] Create proper loading states between game phases
 - [ ] Implement optimistic UI updates for reduced perceived latency
 - [ ] Add smooth animations for all state changes
+- [ ] Optimize state update batching to reduce network roundtrips
+- [ ] Add server-side performance monitoring for round transitions
 
 ### 3D.5 Winner Screen & Game Completion 🎉 HIGH PRIORITY
 **Proper celebration and game-end experience**
@@ -239,20 +238,10 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ## Phase 3E: Advanced Real-time Features
 **Priority: HIGH** | **Goal: Complete JKLM-style interactivity**
 
-### 3E.1 Player List Component Technical Implementation
-**Server-side support for JKLM-style real-time guess display**
-
-- [ ] Add server-side guess tracking per player (incorrect guesses only)
-- [ ] Implement guess broadcasting to all clients in real-time
-- [ ] Add correct answer sequence tracking for player reordering
-- [ ] Create guess state cleanup between rounds
-- [ ] Optimize network efficiency for frequent guess updates
-- [ ] Add guess validation and sanitization before broadcasting
-
-### 3E.3 Enhanced Chat & Social Features
+### 3E.1 Enhanced Chat & Social Features
 - [ ] Create in-game chat component (do we make this from scratch/use colyseus/bootstrap from something already out there)
 
-### 3E.4 Performance Optimizations
+### 3E.2 Performance Optimizations
 - [ ] Implement client-side prediction for inputs
 - [ ] Add state compression for large player counts
 - [ ] Optimize network payload sizes
@@ -269,13 +258,7 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [x] Add prompt categories (geography, history, pop culture, science, sports)
 - [x] Implement prompt loading system
 
-### 4.2 Enhanced prompt selection
-- [ ] Add difficulty-based progression within games
-- [ ] Implement category balancing across rounds
-- [ ] Add prompt variation tracking to avoid repetition
-- [ ] Create prompt rating system for quality control
-
-### 4.3 Advanced answer validation
+### 4.2 Advanced answer validation
 - [ ] Improve fuzzy string matching algorithm
 - [ ] Add support for multiple correct answers per prompt
 - [ ] Implement answer synonym detection
