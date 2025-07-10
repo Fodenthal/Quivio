@@ -101,15 +101,32 @@ export function GameLayout() {
             }
           }
           
-          console.log('Final playersMap size:', playersMap.size);
-          console.log('Final playersMap entries:', Array.from(playersMap.entries()));
-
           // Convert other MapSchemas to Maps as needed
           const roundGuesses = new Map();
           if (roomState.roundGuesses) {
-            for (const [playerId, guess] of Object.entries(roomState.roundGuesses)) {
-              roundGuesses.set(playerId, guess);
+            // 🔍 DEBUG: Check if this is a MapSchema with $items property
+            if (roomState.roundGuesses.$items && roomState.roundGuesses.$items instanceof Map) {
+              // Handle MapSchema properly - iterate over $items
+              console.log('🔍 MapSchema detected - processing $items:', roomState.roundGuesses.$items.size, 'entries');
+              for (const [playerId, guess] of roomState.roundGuesses.$items) {
+                const guessObj = guess as { isCorrect?: boolean };
+                console.log(`🔍 Adding guess: ${playerId} -> isCorrect: ${guessObj?.isCorrect}`);
+                roundGuesses.set(playerId, guess);
+              }
+            } else {
+              // Handle as regular object
+              console.log('🔍 Regular object detected - processing entries');
+              for (const [playerId, guess] of Object.entries(roomState.roundGuesses)) {
+                // Skip MapSchema internal properties
+                if (playerId.startsWith('$') || playerId === 'deletedItems') {
+                  continue;
+                }
+                const guessObj = guess as { isCorrect?: boolean };
+                console.log(`🔍 Adding guess: ${playerId} -> isCorrect: ${guessObj?.isCorrect}`);
+                roundGuesses.set(playerId, guess);
+              }
             }
+            console.log('🔍 Final roundGuesses Map size:', roundGuesses.size);
           }
 
           const playerIncorrectGuesses = new Map();

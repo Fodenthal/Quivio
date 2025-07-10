@@ -126,77 +126,58 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   async onAuth(client: Client, options: any, req: any) {
     // Add player to state before join
-    console.log('onAuth called for', client.sessionId, 'with options:', options);
     this.state.addPlayer(client.sessionId, options.playerName || `Player ${client.sessionId.slice(0, 6)}`);
-    console.log('State after addPlayer - Players size:', this.state.players.size);
-    console.log('Current players:', Array.from(this.state.players.keys()));
     return true;
   }
 
   onJoin(client: Client, options: any) {
-    console.log(`Player ${client.sessionId} joined room ${this.roomId} - Total players: ${this.state.players.size}`);
-    console.log('Current host ID:', this.state.hostId);
-    console.log('All players:', Array.from(this.state.players.keys()));
+    console.log(`Player ${client.sessionId} joined - Total players: ${this.state.players.size}`);
     
     // Clear dispose timer if it exists (player rejoined)
     if (this.disposeTimer) {
       clearTimeout(this.disposeTimer);
       this.disposeTimer = undefined;
-      console.log('Cleared room disposal timer - player joined');
     }
     
     // If there's no host yet, make this player the host
     if (!this.state.hostId) {
       this.state.setHost(client.sessionId);
-      console.log(`Set ${client.sessionId} as host`);
     }
 
     // If we have enough players and game hasn't started, allow starting
     if (this.state.players.size >= 2 && !this.state.gameStarted) {
       this.state.canStart = true;
-      console.log('Game can now start');
     }
 
     // Resume paused game if we now have enough players
     if (this.state.players.size >= 2 && this.state.gameStarted && this.state.gamePaused) {
       this.resumeGame();
-      console.log('Resumed paused game - sufficient players joined');
     }
   }
 
   onLeave(client: Client, consented: boolean) {
-    console.log(`Player ${client.sessionId} left room ${this.roomId} (consented: ${consented})`);
-    console.log('Players before removal:', Array.from(this.state.players.keys()));
-    console.log('Current host ID:', this.state.hostId);
+    console.log(`Player ${client.sessionId} left - Remaining: ${this.state.players.size - 1}`);
     
     // Remove player from state
     this.state.removePlayer(client.sessionId);
-    
-    console.log('Players after removal:', Array.from(this.state.players.keys()));
-    console.log('Players size after removal:', this.state.players.size);
     
     // If host left, assign new host
     if (this.state.hostId === client.sessionId && this.state.players.size > 0) {
       const newHostId = Array.from(this.state.players.keys())[0];
       this.state.setHost(newHostId);
-      console.log(`Host left, assigned new host: ${newHostId}`);
     }
     
     // If not enough players, pause game
     if (this.state.players.size < 2 && this.state.gameStarted) {
       this.pauseGame();
-      console.log('Game paused due to insufficient players');
     }
     
     // Update can start status
     this.state.canStart = this.state.players.size >= 2 && !this.state.gameStarted;
-    console.log('Can start updated:', this.state.canStart);
     
     // If room is empty, schedule disposal with delay
     if (this.state.players.size === 0) {
-      console.log('Room is empty, scheduling disposal in 60 seconds');
       this.disposeTimer = setTimeout(() => {
-        console.log('Disposing empty room after delay');
         this.disconnect();
       }, this.ROOM_DISPOSE_DELAY);
     } else {
@@ -204,7 +185,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       if (this.disposeTimer) {
         clearTimeout(this.disposeTimer);
         this.disposeTimer = undefined;
-        console.log('Cleared room disposal timer - players still in room');
       }
     }
   }
@@ -237,15 +217,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle player ready state
     this.onMessage(MSG.PLAYER_READY, (client, message: PlayerReadyMessage) => {
-      console.log(`Received player_ready message from ${client.sessionId}:`, message);
       // ✅ Ignore malformed payloads
       if (typeof message?.ready === "boolean") {
-        console.log(`Setting player ${client.sessionId} ready state to: ${message.ready}`);
         this.state.setPlayerReady(client.sessionId, message.ready);
         this.checkGameStart();
-        console.log(`Updated ready state. Can start: ${this.state.canStart}`);
-      } else {
-        console.log(`Invalid player_ready message from ${client.sessionId}:`, message);
       }
     });
 
@@ -314,10 +289,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       // Check if round should end (timer expired OR all players answered correctly)
       if (!this.state.roundEnded) {
         if (newTimerValue <= 0) {
-          console.log("Round ending due to timer expiration");
           this.endRound();
         } else if (this.checkAllPlayersAnswered()) {
-          console.log("Round ending because all players answered correctly");
           this.endRound();
         }
       }
@@ -327,12 +300,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private checkGameStart() {
     const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
     const canStart = readyPlayers.length >= 2 && !this.state.gameStarted;
-    console.log(`checkGameStart: ${readyPlayers.length} ready players, ${this.state.players.size} total players, gameStarted: ${this.state.gameStarted}, canStart: ${canStart}`);
     this.state.canStart = canStart;
   }
 
   private startGame() {
-    console.log(`Starting game in room ${this.roomId}`);
+    console.log(`🎮 Starting game in room ${this.roomId}`);
     
     this.state.gameStarted = true;
     this.state.canStart = false;
@@ -365,7 +337,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Load new prompt
     this.loadNewPrompt();
     
-    console.log(`Started round ${this.state.currentRound} in room ${this.roomId}`);
+    console.log(`📝 Round ${this.state.currentRound}: ${this.state.currentPrompt.text}`);
   }
 
   private loadNewPrompt() {
@@ -392,8 +364,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Store the correct answer for this round
     this.currentRoundAnswer = selectedPrompt.answer;
-    
-    console.log(`Loaded prompt: ${selectedPrompt.text} (Answer: ${selectedPrompt.answer})`);
   }
 
   private handleGuess(playerId: string, guess: string) {
@@ -431,6 +401,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       // Record the correct guess
       this.state.addGuess(playerId, guess, isCorrect);
       
+      // 🔍 DEBUG: Log for purple highlighting issue
+      console.log(`✅ ${playerId} guessed correctly: "${guess}"`);
+      console.log(`📊 roundGuesses now has ${this.state.roundGuesses.size} entries`);
+      
       this.handleCorrectGuess(playerId);
     } else {
       // Track this incorrect guess for live display
@@ -438,7 +412,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       
       // Note: We don't add incorrect guesses to roundGuesses yet
       // This allows multiple attempts until they get it right or the round ends
-      console.log(`Player ${playerId} made incorrect guess: "${guess.trim()}"`);
+      console.log(`❌ ${playerId} guessed incorrectly: "${guess.trim()}"`);
     }
   }
 
@@ -490,7 +464,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       }
     }
     
-    console.log(`All ${activePlayers.length} players have answered correctly`);
+    console.log(`🎯 All ${activePlayers.length} players answered correctly!`);
     return true;
   }
 
@@ -513,7 +487,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.roundTransitionMetrics.shift();
     }
     
-    console.log(`Round ${this.state.currentRound} completed in ${roundDuration}ms (${reason}, ${playerCount} players)`);
+    console.log(`🏁 Round ${this.state.currentRound} ended (${reason}) - Answer: "${this.currentRoundAnswer}"`);
     
     this.state.roundEnded = true;
     this.state.roundTimeRemaining = 0;
@@ -586,8 +560,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Update canStart status based on current players
     this.checkGameStart();
     
-    console.log(`Game ended in room ${this.roomId}. Winner: ${winnerId}`);
-    console.log('Game state reset for next game');
+    console.log(`🏆 Game ended - Winner: ${winnerId}`);
   }
 
   private pauseGame() {

@@ -67,7 +67,14 @@ export function PlayerList({ gameState }: PlayerListProps) {
    */
   const hasGuessedCorrectly = (player: PlayerData): boolean => {
     const playerGuess = gameState.roundGuesses.get(player.id);
-    return playerGuess?.isCorrect === true;
+    const isCorrect = playerGuess?.isCorrect === true;
+    
+    // 🔍 DEBUG: Only log when there's actually a guess to investigate
+    if (playerGuess) {
+      console.log(`🟣 ${player.name} (${player.id}): guess="${playerGuess.guess}" isCorrect=${playerGuess.isCorrect} -> highlighting=${isCorrect}`);
+    }
+    
+    return isCorrect;
   };
 
   const players = getPlayersByScore();
