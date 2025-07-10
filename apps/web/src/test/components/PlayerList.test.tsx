@@ -57,7 +57,7 @@ describe('PlayerList', () => {
     
     const gameState = createMockGameState(players);
     
-    render(<PlayerList gameState={gameState} currentPlayerId="player1" />);
+    render(<PlayerList gameState={gameState} />);
     
     // Verify all players are displayed
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('PlayerList', () => {
     expect(playerCards[0]).toHaveTextContent('50');
   });
 
-  test('should highlight current player', () => {
+  test('should highlight players with correct guesses', () => {
     const players = [
       createMockPlayer('player1', 'Alice', 30),
       createMockPlayer('player2', 'Bob', 50),
@@ -87,40 +87,55 @@ describe('PlayerList', () => {
     
     const gameState = createMockGameState(players);
     
-    render(<PlayerList gameState={gameState} currentPlayerId="player1" />);
+    // Add a correct guess for Alice
+    gameState.roundGuesses.set('player1', {
+      playerId: 'player1',
+      guess: 'correct answer',
+      isCorrect: true,
+      timestamp: Date.now()
+    });
     
-    // Find Alice's card (current player)
+    render(<PlayerList gameState={gameState} />);
+    
+    // Find Alice's card (correct guesser)
     const aliceCard = screen.getByText('Alice').closest('[class*="p-4"]');
     const bobCard = screen.getByText('Bob').closest('[class*="p-4"]');
     
-    // Alice should have current player styling
-    expect(aliceCard).toHaveClass('bg-blue-50', 'border-blue-300');
-    expect(screen.getByText('You')).toBeInTheDocument();
+    // Alice should have correct guess styling
+    expect(aliceCard).toHaveClass('bg-gradient-to-r', 'from-purple-100', 'to-purple-50', 'border-purple-300');
+    expect(screen.getByText('✓ Correct')).toBeInTheDocument();
     
     // Bob should have normal styling
     expect(bobCard).toHaveClass('bg-white', 'border-gray-200');
   });
 
-  test('should show leader crown for highest scoring player', () => {
+  test('should display players with highest score first', () => {
     const players = [
       createMockPlayer('player1', 'Alice', 30),
-      createMockPlayer('player2', 'Bob', 50), // Leader
+      createMockPlayer('player2', 'Bob', 50), // Highest score
       createMockPlayer('player3', 'Charlie', 0),
     ];
     
     const gameState = createMockGameState(players);
     
-    render(<PlayerList gameState={gameState} currentPlayerId="player1" />);
+    render(<PlayerList gameState={gameState} />);
     
-    // Bob should have the crown emoji since he has the highest score
-    const bobCard = screen.getByText('Bob').closest('[class*="relative"]');
-    expect(bobCard).toHaveTextContent('👑');
+    // Get all player cards in order
+    const playerCards = screen.getAllByText(/Alice|Bob|Charlie/).map(el => 
+      el.closest('[class*="p-4"]')
+    );
     
-    // Others should not have crown
-    const aliceCard = screen.getByText('Alice').closest('[class*="relative"]');
-    const charlieCard = screen.getByText('Charlie').closest('[class*="relative"]');
-    expect(aliceCard).not.toHaveTextContent('👑');
-    expect(charlieCard).not.toHaveTextContent('👑');
+    // Bob (highest score) should be first
+    expect(playerCards[0]).toHaveTextContent('Bob');
+    expect(playerCards[0]).toHaveTextContent('50');
+    
+    // Alice should be second 
+    expect(playerCards[1]).toHaveTextContent('Alice');
+    expect(playerCards[1]).toHaveTextContent('30');
+    
+    // Charlie should be last
+    expect(playerCards[2]).toHaveTextContent('Charlie');
+    expect(playerCards[2]).toHaveTextContent('0');
   });
 
   test('should show host badge', () => {
@@ -131,7 +146,7 @@ describe('PlayerList', () => {
     
     const gameState = createMockGameState(players);
     
-    render(<PlayerList gameState={gameState} currentPlayerId="player2" />);
+    render(<PlayerList gameState={gameState} />);
     
     // Alice should have host badge
     expect(screen.getByText('Host')).toBeInTheDocument();
@@ -149,7 +164,7 @@ describe('PlayerList', () => {
     
     const gameState = createMockGameState(players);
     
-    render(<PlayerList gameState={gameState} currentPlayerId="player1" />);
+    render(<PlayerList gameState={gameState} />);
     
     // Should show "Players (2/8)" since maxPlayers is 8
     expect(screen.getByText('Players (2/8)')).toBeInTheDocument();

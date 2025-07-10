@@ -4,7 +4,6 @@ import { PlayerData, GameState } from "@shared/index";
 
 interface PlayerListProps {
   gameState: GameState;
-  currentPlayerId: string;
 }
 
 /**
@@ -15,7 +14,7 @@ interface PlayerListProps {
  * @param currentPlayerId - The session ID of the current player for highlighting
  * @returns React component displaying the player list with scores
  */
-export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
+export function PlayerList({ gameState }: PlayerListProps) {
   /**
    * Converts the players Map to a sorted array ordered by score (high to low).
    * This ensures the leaderboard shows highest scoring players at the top.
@@ -60,13 +59,15 @@ export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
   };
 
   /**
-   * Determines if a player is the current player for special styling.
+   * Determines if a player has guessed correctly in the current round.
+   * Used for highlighting players who got the answer right.
    * 
    * @param player - The player data object to check
-   * @returns Boolean indicating if this is the current player
+   * @returns Boolean indicating if this player guessed correctly
    */
-  const isCurrentPlayer = (player: PlayerData): boolean => {
-    return player.id === currentPlayerId;
+  const hasGuessedCorrectly = (player: PlayerData): boolean => {
+    const playerGuess = gameState.roundGuesses.get(player.id);
+    return playerGuess?.isCorrect === true;
   };
 
   const players = getPlayersByScore();
@@ -79,26 +80,20 @@ export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
       
       <div className="space-y-2">
         {players.map((player, index) => {
-          const isCurrentUser = isCurrentPlayer(player);
+          const hasCorrectGuess = hasGuessedCorrectly(player);
           const isLeader = index === 0 && player.score > 0; // First player with points is leader
           
           return (
             <div
               key={`${player.id}-${player.name}-${index}`}
-              className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
-                isCurrentUser
-                  ? "bg-blue-50 border-blue-300 shadow-md"
+              className={`relative p-4 rounded-lg border-2 transition-all duration-300 ${
+                hasCorrectGuess
+                  ? "bg-gradient-to-r from-purple-100 to-purple-50 border-purple-300 shadow-lg ring-2 ring-purple-300 ring-opacity-50"
                   : "bg-white border-gray-200 hover:border-gray-300"
               } ${
                 isLeader ? "ring-2 ring-yellow-400 ring-opacity-50" : ""
               }`}
             >
-              {/* Leader Crown */}
-              {isLeader && (
-                <div className="absolute -top-2 -right-2 text-xl">
-                  👑
-                </div>
-              )}
               
               <div className="flex items-center justify-between">
                 {/* Left side: Avatar and player info */}
@@ -108,7 +103,7 @@ export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <span className={`font-semibold ${
-                        isCurrentUser ? "text-blue-900" : "text-gray-900"
+                        hasCorrectGuess ? "text-purple-900" : "text-gray-900"
                       }`}>
                         {player.name}
                       </span>
@@ -119,9 +114,9 @@ export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
                           Host
                         </span>
                       )}
-                      {isCurrentUser && (
-                        <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
-                          You
+                      {hasCorrectGuess && (
+                        <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                          ✓ Correct
                         </span>
                       )}
                     </div>
@@ -139,7 +134,7 @@ export function PlayerList({ gameState, currentPlayerId }: PlayerListProps) {
                 {/* Right side: Score */}
                 <div className="text-right">
                   <div className={`text-2xl font-bold ${
-                    isCurrentUser ? "text-blue-900" : "text-gray-900"
+                    hasCorrectGuess ? "text-purple-900" : "text-gray-900"
                   }`}>
                     {player.score}
                   </div>

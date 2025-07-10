@@ -338,10 +338,9 @@ export function GameView({
       </div>
 
       {/* Player List Sidebar */}
-      <div className="w-80 bg-white rounded-lg shadow-md p-6">
+      <div className="w-96 bg-white rounded-lg shadow-md p-6">
         <PlayerList 
           gameState={gameState}
-          currentPlayerId={currentPlayerId}
         />
       </div>
     </div>

@@ -160,15 +160,7 @@ export function GameLobby({
                         Host
                       </span>
                     )}
-                    {/* 
-                      Current player indicator - helps user identify their own player card
-                      in the list, especially important in rooms with many players.
-                    */}
-                    {player.id === currentPlayerId && (
-                      <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
-                        You
-                      </span>
-                    )}
+
                   </div>
                   <span className={`text-sm ${
                     player.ready ? "text-green-600" : "text-gray-500"
