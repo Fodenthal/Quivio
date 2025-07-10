@@ -15,7 +15,8 @@
     "build": "npm run clean && tsc",
     "clean": "rimraf build",
     "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000",
-    "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000"
+    "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "author": "",
   "license": "UNLICENSED",

@@ -43,6 +43,7 @@ describe("GameView", () => {
         answer: "Paris" 
       },
       roundGuesses: new Map(),
+      playerIncorrectGuesses: new Map(),
       chatMessages: new Map(),
       ...overrides
     };
@@ -222,8 +223,7 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       expect(screen.getByText("🎉 Game Complete!")).toBeInTheDocument();
-      expect(screen.getByText("TestPlayer")).toBeInTheDocument();
-      expect(screen.getByText(/wins with \d+ points!/)).toBeInTheDocument();
+      expect(screen.getByText(/TestPlayer wins with \d+ points!/)).toBeInTheDocument();
     });
 
     it("handles game end without valid winner", () => {
@@ -246,9 +246,12 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       expect(screen.getByText("Your Score")).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument(); // current score
       expect(screen.getByText("Target")).toBeInTheDocument();
-      expect(screen.getByText("10")).toBeInTheDocument(); // target score
+      
+      // Get the player status section specifically
+      const playerStatusSection = screen.getByText("Your Score").closest("div");
+      expect(playerStatusSection).toHaveTextContent("5"); // current score
+      expect(playerStatusSection).toHaveTextContent("10"); // target score
     });
 
     it("handles missing current player gracefully", () => {

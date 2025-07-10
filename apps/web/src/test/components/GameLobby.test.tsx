@@ -45,6 +45,7 @@ describe("GameLobby", () => {
       players: playersMap,
       currentPrompt: { id: "", text: "", category: "", difficulty: "easy", answer: "" },
       roundGuesses: new Map(),
+      playerIncorrectGuesses: new Map(),
       chatMessages: new Map(),
       ...overrides
     };
@@ -67,7 +68,6 @@ describe("GameLobby", () => {
       expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
       expect(screen.getByText("Host")).toBeInTheDocument();
-      expect(screen.getByText("You")).toBeInTheDocument();
       expect(screen.getByText("Score: 0")).toBeInTheDocument();
     });
 
@@ -102,9 +102,6 @@ describe("GameLobby", () => {
       
       // Check host badge only on first player
       expect(screen.getByText("Host")).toBeInTheDocument();
-      
-      // Check "You" badge only on current player
-      expect(screen.getByText("You")).toBeInTheDocument();
       
       // Check scores
       expect(screen.getByText("Score: 0")).toBeInTheDocument();

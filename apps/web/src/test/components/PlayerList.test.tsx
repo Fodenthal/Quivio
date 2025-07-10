@@ -43,6 +43,7 @@ const createMockGameState = (players: PlayerData[]): GameState => {
       answer: "test answer"
     },
     roundGuesses: new Map(),
+    playerIncorrectGuesses: new Map(),
     chatMessages: new Map(),
   };
 };
