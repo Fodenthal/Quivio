@@ -10,16 +10,6 @@ interface GameLobbyProps {
   onStartGame?: () => void;
 }
 
-/**
- * GameLobby component displays the pre-game lobby where players can see each other,
- * mark themselves as ready, and the host can start the game.
- * 
- * @param gameState - The current game state containing all room information
- * @param currentPlayerId - The session ID of the current player
- * @param onPlayerReady - Callback function to toggle player ready state
- * @param onStartGame - Optional callback function for host to start the game
- * @returns React component displaying the game lobby interface
- */
 export function GameLobby({ 
   gameState, 
   currentPlayerId, 
@@ -30,42 +20,18 @@ export function GameLobby({
 
   const currentPlayer = gameState.players.get(currentPlayerId);
   const isHost = currentPlayer?.isHost || false;
-  /**
-   * Sorts players array with host first, then by join time.
-   * This ensures consistent player order display with the host always at the top.
-   * 
-   * @returns Array of PlayerData sorted by host status (host first) then join time (earliest first)
-   */
+
   const playersArray = Array.from(gameState.players.values())
-    .filter(player => player && player.id) // Filter out any invalid players
+    .filter(player => player && player.id)
     .sort((a, b) => {
-      // Sort by: host first, then by join time
       if (a.isHost !== b.isHost) return a.isHost ? -1 : 1;
       return a.joinedAt - b.joinedAt;
     });
 
-
-
   const readyCount = playersArray.filter(p => p.ready).length;
   const totalPlayers = playersArray.length;
-  /**
-   * Determines if the game can be started based on multiple conditions:
-   * - Server-side canStart flag (validates all server-side requirements)
-   * - At least 2 players must be ready (client-side validation for UX)
-   * 
-   * @returns Boolean indicating if the start game button should be enabled
-   */
   const canStartGame = gameState.canStart && readyCount > 1;
 
-  /**
-   * Handles toggling the current player's ready state.
-   * Includes loading state management and error handling to prevent duplicate requests
-   * and provide user feedback during the async operation.
-   * 
-   * @async
-   * @returns Promise that resolves when the ready state has been updated
-   * @throws Will log error to console if the ready state update fails
-   */
   const handleReadyToggle = async () => {
     if (isTogglingReady || !currentPlayer) return;
     
@@ -79,25 +45,12 @@ export function GameLobby({
     }
   };
 
-  /**
-   * Handles the start game action for the host.
-   * Validates that both the callback exists and the game can actually be started
-   * before attempting to start the game.
-   * 
-   * @returns void
-   */
   const handleStartGame = () => {
     if (onStartGame && canStartGame) {
       onStartGame();
     }
   };
 
-  /**
-   * Returns the appropriate emoji icon for a player's ready status.
-   * 
-   * @param player - The player data object
-   * @returns String emoji representing the player's ready state
-   */
   const getPlayerStatusIcon = (player: PlayerData) => {
     if (player.ready) {
       return "✅";
@@ -105,12 +58,6 @@ export function GameLobby({
     return "⏳";
   };
 
-  /**
-   * Returns the text description for a player's ready status.
-   * 
-   * @param player - The player data object
-   * @returns String text describing the player's ready state
-   */
   const getPlayerStatusText = (player: PlayerData) => {
     if (player.ready) {
       return "Ready";
@@ -119,143 +66,113 @@ export function GameLobby({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20">
+      <div className="mb-8 text-center">
+        <h2 className="text-4xl font-bold text-text-main mb-2">
           Game Lobby
         </h2>
-        <p className="text-gray-600">
-          Players: {totalPlayers}/{gameState.maxPlayers} • Ready: {readyCount}/{totalPlayers}
+        <p className="text-text-secondary">
+          Players: {totalPlayers}/{gameState.maxPlayers} | Ready: {readyCount}/{totalPlayers}
         </p>
       </div>
 
-      {/* Players List */}
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">Players</h3>
-        <div className="space-y-2">
-          {playersArray.map((player, index) => {
-            const uniqueKey = `${player.id}-${player.name}-${index}`;
-            return (
-              <div
-                key={uniqueKey}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  player.id === currentPlayerId
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-gray-50 border-gray-200"
-                }`}
-              >
-              <div className="flex items-center space-x-3">
-                <span className="text-lg">{getPlayerStatusIcon(player)}</span>
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold text-text-main mb-4">Players</h3>
+        <div className="space-y-3">
+          {playersArray.map((player, index) => (
+            <div
+              key={`${player.id}-${index}`}
+              className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 ${
+                player.id === currentPlayerId
+                  ? "bg-primary/20 border-primary"
+                  : "bg-white/10 border-white/20"
+              }`}
+            >
+              <div className="flex items-center space-x-4">
+                <span className="text-2xl">{getPlayerStatusIcon(player)}</span>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-semibold text-text-main">
                       {player.name}
                     </span>
-                    {/* 
-                      Host badge display - only shown for the designated host player.
-                      Host status is determined server-side and synchronized via gameState.
-                    */}
                     {player.isHost && (
-                      <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">
+                      <span className="px-2 py-1 text-xs font-bold text-background bg-accent rounded-full">
                         Host
                       </span>
                     )}
-
                   </div>
-                  <span className={`text-sm ${
-                    player.ready ? "text-green-600" : "text-gray-500"
+                  <span className={`text-sm font-medium ${
+                    player.ready ? "text-green-400" : "text-text-secondary"
                   }`}>
                     {getPlayerStatusText(player)}
                   </span>
                 </div>
               </div>
-              
-              {/* Score display */}
               <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">
-                  Score: {player.score}
+                <div className="text-lg font-bold text-text-main">
+                  {player.score}
                 </div>
+                <div className="text-sm text-text-secondary">Score</div>
               </div>
             </div>
-            );
-          })}
+          ))}
         </div>
       </div>
 
-      {/* Ready Toggle Button */}
       <div className="mb-6">
         <button
           onClick={handleReadyToggle}
           disabled={isTogglingReady}
-          className={`w-full px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+          className={`w-full px-4 py-3 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
             currentPlayer?.ready
-              ? "bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500"
-              : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500"
+              ? "bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400"
+              : "bg-green-500 hover:bg-green-600 text-white focus:ring-green-400"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {/* 
-            Dynamic button text based on current state:
-            - Shows loading state during async operation
-            - Changes text based on current ready status
-            - Provides clear action indication to user
-          */}
           {isTogglingReady
             ? "Updating..."
             : currentPlayer?.ready
-            ? "Mark as Not Ready"
-            : "Mark as Ready"
+            ? "I'm Not Ready"
+            : "I'm Ready!"
           }
         </button>
       </div>
 
-      {/* Host Controls - Only rendered for the designated host player */}
       {isHost && (
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="text-lg font-medium text-gray-800 mb-3">Host Controls</h3>
-          <div className="space-y-3">
+        <div className="pt-6 border-t border-white/20">
+          <h3 className="text-xl font-semibold text-text-main mb-4">Host Controls</h3>
+          <div className="space-y-4">
             <button
               onClick={handleStartGame}
               disabled={!canStartGame}
-              className={`w-full px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              className={`w-full px-4 py-3 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
                 canStartGame
-                  ? "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "bg-primary hover:bg-opacity-90 text-white focus:ring-primary"
+                  : "bg-gray-600 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {/* 
-                Dynamic start game button text:
-                - Shows "Start Game" when conditions are met
-                - Shows helpful message about how many more ready players are needed
-                - Calculates the deficit between ready players and minimum required (2)
-              */}
               {canStartGame ? "Start Game" : `Need ${Math.max(2 - readyCount, 0)} more ready players`}
             </button>
             
-            {/* Game Settings Display */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Game Settings</h4>
-              <div className="text-sm text-gray-600 space-y-1">
-                <div>Target Score: {gameState.targetScore} points</div>
-                <div>Round Time: {gameState.roundTime / 1000} seconds</div>
-                <div>Max Players: {gameState.maxPlayers}</div>
+            <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+              <h4 className="text-md font-semibold text-text-main mb-2">Game Settings</h4>
+              <div className="text-sm text-text-secondary space-y-1">
+                <div>Target Score: <span className="font-bold text-text-main">{gameState.targetScore}</span></div>
+                <div>Round Time: <span className="font-bold text-text-main">{gameState.roundTime / 1000}s</span></div>
+                <div>Max Players: <span className="font-bold text-text-main">{gameState.maxPlayers}</span></div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 
-        Conditional help message displayed when room has insufficient players.
-        Only shown when there are fewer than 2 players total (not just ready players).
-        Provides helpful guidance to users about inviting more players.
-      */}
       {totalPlayers < 2 && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800">
-            💡 Waiting for more players to join. Share the room link to invite friends!
+        <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <p className="text-sm text-yellow-300 text-center">
+            Waiting for more players to join. Share the room link to invite friends!
           </p>
         </div>
       )}
     </div>
   );
-} 
+}
