@@ -66,11 +66,11 @@ describe("GameLobby", () => {
         />
       );
 
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
-      expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 | Ready: 0/1")).toBeInTheDocument();
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
       expect(screen.getByText("Host")).toBeInTheDocument();
-      expect(screen.getByText("Score: 0")).toBeInTheDocument();
+      expect(screen.getByText("0")).toBeInTheDocument();
     });
 
     it("displays multiple players with correct sorting", () => {
@@ -96,7 +96,7 @@ describe("GameLobby", () => {
         />
       );
 
-      expect(screen.getByText("Players: 2/8 • Ready: 1/2")).toBeInTheDocument();
+      expect(screen.getByText("Players: 2/8 | Ready: 1/2")).toBeInTheDocument();
       
       // Check both players are displayed
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
@@ -106,8 +106,8 @@ describe("GameLobby", () => {
       expect(screen.getByText("Host")).toBeInTheDocument();
       
       // Check scores
-      expect(screen.getByText("Score: 0")).toBeInTheDocument();
-      expect(screen.getByText("Score: 5")).toBeInTheDocument();
+      expect(screen.getByText("0")).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
     });
 
     it("shows correct ready status icons and text", () => {
@@ -153,8 +153,8 @@ describe("GameLobby", () => {
         />
       );
 
-      expect(screen.getByText("Players: 0/8 • Ready: 0/0")).toBeInTheDocument();
-      expect(screen.getByText("💡 Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
+      expect(screen.getByText("Players: 0/8 | Ready: 0/0")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
     });
   });
 
@@ -170,7 +170,7 @@ describe("GameLobby", () => {
         />
       );
 
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       expect(readyButton).toBeInTheDocument();
       expect(readyButton).not.toBeDisabled();
     });
@@ -187,7 +187,7 @@ describe("GameLobby", () => {
         />
       );
 
-      const readyButton = screen.getByRole("button", { name: "Mark as Not Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Not Ready" });
       expect(readyButton).toBeInTheDocument();
       expect(readyButton).not.toBeDisabled();
     });
@@ -203,7 +203,7 @@ describe("GameLobby", () => {
         />
       );
 
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       fireEvent.click(readyButton);
 
       expect(mockOnPlayerReady).toHaveBeenCalledWith(true);
@@ -227,7 +227,7 @@ describe("GameLobby", () => {
         />
       );
 
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       fireEvent.click(readyButton);
 
       // Should show loading state
@@ -237,7 +237,7 @@ describe("GameLobby", () => {
       // Resolve the promise
       resolveReady!({});
       await waitFor(() => {
-        expect(screen.getByText("Mark as Ready")).toBeInTheDocument();
+        expect(screen.getByText("I'm Ready!")).toBeInTheDocument();
       });
     });
 
@@ -255,7 +255,7 @@ describe("GameLobby", () => {
         />
       );
 
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       fireEvent.click(readyButton);
 
       await waitFor(() => {
@@ -263,7 +263,7 @@ describe("GameLobby", () => {
       });
 
       // Should reset button state
-      expect(screen.getByText("Mark as Ready")).toBeInTheDocument();
+      expect(screen.getByText("I'm Ready!")).toBeInTheDocument();
       expect(readyButton).not.toBeDisabled();
 
       consoleError.mockRestore();
@@ -285,9 +285,12 @@ describe("GameLobby", () => {
 
       expect(screen.getByText("Host Controls")).toBeInTheDocument();
       expect(screen.getByText("Game Settings")).toBeInTheDocument();
-      expect(screen.getByText("Target Score: 10 points")).toBeInTheDocument();
-      expect(screen.getByText("Round Time: 30 seconds")).toBeInTheDocument();
-      expect(screen.getByText("Max Players: 8")).toBeInTheDocument();
+      expect(screen.getByText("Target Score:")).toBeInTheDocument();
+      expect(screen.getByText("10")).toBeInTheDocument();
+      expect(screen.getByText("Round Time:")).toBeInTheDocument();
+      expect(screen.getByText("30s")).toBeInTheDocument();
+      expect(screen.getByText("Max Players:")).toBeInTheDocument();
+      expect(screen.getByText("8")).toBeInTheDocument();
     });
 
     it("does not show host controls for non-host player", () => {
@@ -427,7 +430,7 @@ describe("GameLobby", () => {
         />
       );
 
-      expect(screen.getByText("💡 Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
     });
 
     it("does not show help message when 2 or more players", () => {
@@ -452,7 +455,7 @@ describe("GameLobby", () => {
         />
       );
 
-      expect(screen.queryByText("💡 Waiting for more players to join. Share the room link to invite friends!")).not.toBeInTheDocument();
+      expect(screen.queryByText("Waiting for more players to join. Share the room link to invite friends!")).not.toBeInTheDocument();
     });
 
     it("highlights current player's card", () => {
@@ -467,8 +470,8 @@ describe("GameLobby", () => {
       );
 
       // Find the player card container (the parent div with styling)
-      const playerCard = screen.getByText("TestPlayer").closest(".bg-blue-50");
-      expect(playerCard).toHaveClass("bg-blue-50", "border-blue-200");
+      const playerCard = screen.getByText("TestPlayer").closest(".bg-primary\\/20");
+      expect(playerCard).toHaveClass("bg-primary/20", "border-primary");
     });
   });
 
@@ -485,11 +488,11 @@ describe("GameLobby", () => {
       );
 
       // Should still render without crashing
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       
       // Ready button should still be enabled but clicking won't do anything
       // (the handleReadyToggle function handles missing currentPlayer)
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       expect(readyButton).not.toBeDisabled();
       
       // Clicking the button shouldn't call onPlayerReady
@@ -520,7 +523,7 @@ describe("GameLobby", () => {
       );
 
       expect(screen.getByText("IncompletePlayer")).toBeInTheDocument();
-      expect(screen.getByText("Players: 2/8 • Ready: 0/2")).toBeInTheDocument();
+      expect(screen.getByText("Players: 2/8 | Ready: 0/2")).toBeInTheDocument();
     });
   });
 }); 

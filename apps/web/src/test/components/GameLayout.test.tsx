@@ -61,7 +61,7 @@ describe("GameLayout", () => {
     it("renders join form when disconnected", () => {
       render(<GameLayout />);
       
-      expect(screen.getByRole("heading", { name: "Join Game" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Join the Fun!" })).toBeInTheDocument();
       expect(screen.getByLabelText("Your Name")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Join Game" })).toBeInTheDocument();
     });
@@ -362,12 +362,12 @@ describe("GameLayout", () => {
       // Re-render to see the change
       rerender(<GameLayout />);
       
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
       expect(screen.getByText("Host")).toBeInTheDocument();
       
       // Should not show join form heading
-      expect(screen.queryByRole("heading", { name: "Join Game" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "Join the Fun!" })).not.toBeInTheDocument();
     });
 
     it("shows game interface when game has started", () => {
@@ -494,9 +494,9 @@ describe("GameLayout", () => {
       rerender(<GameLayout />);
       
       // Should show the lobby with the player data correctly converted
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.getByText("TestPlayer")).toBeInTheDocument();
-      expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 | Ready: 0/1")).toBeInTheDocument();
       expect(screen.getByText("Host")).toBeInTheDocument();
     });
 
@@ -543,10 +543,10 @@ describe("GameLayout", () => {
       eventHandlers.onStateChange(mockGameState);
       rerender(<GameLayout />);
       
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.getByText("DirectPlayer")).toBeInTheDocument();
-      expect(screen.getByText("Players: 1/8 • Ready: 1/1")).toBeInTheDocument();
-      expect(screen.getByText("Score: 5")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 | Ready: 1/1")).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
     });
 
     it("filters out invalid player entries", () => {
@@ -601,9 +601,9 @@ describe("GameLayout", () => {
       rerender(<GameLayout />);
       
       // Should only show the valid player, filtered out the invalid ones
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.getByText("ValidPlayer")).toBeInTheDocument();
-      expect(screen.getByText("Players: 1/8 • Ready: 0/1")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/8 | Ready: 0/1")).toBeInTheDocument();
     });
 
     it("handles empty MapSchema gracefully", () => {
@@ -646,9 +646,9 @@ describe("GameLayout", () => {
       eventHandlers.onStateChange(mockGameState);
       rerender(<GameLayout />);
       
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
-      expect(screen.getByText("Players: 0/8 • Ready: 0/0")).toBeInTheDocument();
-      expect(screen.getByText("💡 Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
+      expect(screen.getByText("Players: 0/8 | Ready: 0/0")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for more players to join. Share the room link to invite friends!")).toBeInTheDocument();
     });
   });
 
@@ -696,10 +696,13 @@ describe("GameLayout", () => {
       rerender(<GameLayout />);
       
       // Check that the game settings are properly displayed (passed to GameLobby)
-      expect(screen.getByText("Target Score: 15 points")).toBeInTheDocument();
-      expect(screen.getByText("Round Time: 45 seconds")).toBeInTheDocument();
-      expect(screen.getByText("Max Players: 6")).toBeInTheDocument();
-      expect(screen.getByText("Players: 1/6 • Ready: 0/1")).toBeInTheDocument();
+      expect(screen.getByText("Target Score:")).toBeInTheDocument();
+      expect(screen.getByText("15")).toBeInTheDocument();
+      expect(screen.getByText("Round Time:")).toBeInTheDocument();
+      expect(screen.getByText("45s")).toBeInTheDocument();
+      expect(screen.getByText("Max Players:")).toBeInTheDocument();
+      expect(screen.getByText("6")).toBeInTheDocument();
+      expect(screen.getByText("Players: 1/6 | Ready: 0/1")).toBeInTheDocument();
     });
 
     it("calls sendPlayerReady when ready button is clicked", async () => {
@@ -744,7 +747,7 @@ describe("GameLayout", () => {
       eventHandlers.onStateChange(mockGameState);
       rerender(<GameLayout />);
       
-      const readyButton = screen.getByRole("button", { name: "Mark as Ready" });
+      const readyButton = screen.getByRole("button", { name: "I'm Ready!" });
       fireEvent.click(readyButton);
       
       expect(mockGameClient.sendPlayerReady).toHaveBeenCalledWith(true);
@@ -812,7 +815,7 @@ describe("GameLayout", () => {
     it("shows join form when disconnected", () => {
       render(<GameLayout />);
       
-      expect(screen.getByRole("heading", { name: "Join Game" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Join the Fun!" })).toBeInTheDocument();
       expect(screen.getByLabelText("Your Name")).toBeInTheDocument();
       expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
       expect(screen.queryByTestId("game-view")).not.toBeInTheDocument();
@@ -917,7 +920,7 @@ describe("GameLayout", () => {
 
       eventHandlers.onStateChange(lobbyState);
       rerender(<GameLayout />);
-      expect(screen.getByText("Game Lobby")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.queryByTestId("game-view")).not.toBeInTheDocument();
       
       // Transition to active game
