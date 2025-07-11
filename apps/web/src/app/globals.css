@@ -1,3 +1,5 @@
+/* Tailwind CSS directives - suppress unknown at-rule warnings */
+/* postcss-import */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

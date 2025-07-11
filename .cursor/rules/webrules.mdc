@@ -1,0 +1,32 @@
+---
+description: "Frontend (Next.js + Tailwind) rules"
+globs: ["apps/web/**"]
+alwaysApply: false
+---
+
+## React Components
+- **Default to React Server Components** (better performance, SEO)
+- **Add `"use client"` only when needed** for event handlers or browser APIs
+- **Group page code under `app/<route>/`** with:
+  - `page.tsx` – top-level component
+  - `components/` – local UI pieces  
+  - `actions.ts` – server actions if needed
+
+## Styling & UI
+- **Use shadcn/ui primitives** (`Button`, `Card`, `Dialog`) never fork library code
+- **Use Tailwind utility classes only** no inline `style={{ … }}` (prevents inconsistency)
+- **Use `clsx` or `class-variance-authority`** for dynamic classes (avoid string concat)
+- **Optimize mobile first** test in 375px viewport (majority of users)
+
+## Forms & Validation
+- **Validate form inputs with Zod** narrow types immediately after `zod.safeParse`
+- **Use React hooks for client state** prefer `useOptimistic`/`useRef` over global state
+
+## Code Organization
+- **Prefer `async/await`** avoid raw `.then()` chains (better error handling)
+- **Keep functions ≤40 lines** extract helpers if larger (improves maintainability)
+- **Import order**: ① Node built-ins ② third-party ③ workspace packages (`@shared`) ④ relative (`./`)
+- **Document conditional rendering** with JSDoc rationale
+- **Document loading/error states** for async operations
+
+_For detailed patterns see `/docs/frontend.md`_

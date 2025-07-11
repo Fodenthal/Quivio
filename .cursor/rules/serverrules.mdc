@@ -1,0 +1,32 @@
+---
+description: "Colyseus server rules"
+globs: ["apps/server/**"]
+alwaysApply: false
+---
+
+# Server Rules (Colyseus Room Logic & Schema)
+
+## Schema & State Management
+- **Every shared state class extends `@colyseus/schema`** never plain objects (enables efficient patches)
+- **Use `MapSchema`/`ArraySchema` for collections** enables minimal network patches
+- **Only mutate state in `setSimulationInterval` ticks or `onMessage` handlers** (prevents race conditions and sync issues)
+
+## Room Architecture  
+- **Keep `Room` class thin** heavy logic lives in helper modules (`services/`, `lib/`) (improves testability)
+- **Broadcast via `this.broadcast(type, data)` or `client.send`** never leak state refs (prevents memory leaks)
+- **Use lowercase snake-case for room identifiers** e.g. `"trivia_room"` (consistency)
+
+## Code Quality
+- **Prefer `async/await`** avoid raw `.then()` chains (better error handling)
+- **Keep functions ≤40 lines** extract helpers if larger (improves maintainability)
+
+## Environment & Presence
+- **Use `RedisPresence` in production** fall back to `LocalPresence` in tests (scalability)
+- **Handle client disconnect gracefully** clean up state and reassign hosts
+
+## Message Handling
+- **Validate all incoming messages** check types and structure before processing
+- **Use `MSG` constants from `@shared`** for message type safety
+- **Handle malformed payloads gracefully** ignore or send error response
+
+_For Colyseus patterns see `/docs/colyseus.md`_

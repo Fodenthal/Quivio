@@ -1,86 +1,15 @@
 ---
-description: 
+description: "Root-level project constraints"
 globs: 
 alwaysApply: true
 ---
-# ────────────────────────────────────────────────────────────────
-# PopReplay .cursorrules ― house style & project context
-# ────────────────────────────────────────────────────────────────
 
-**Key Principle**: Break down tasks into small incremental steps instead of tackling everything at once
+## Project-wide constraints
 
-##################################################################
-# 1. General TypeScript / Node / Next conventions
-##################################################################
+- **Use `pnpm test` after each implementation** (runs full test suite for both apps)
+- **Use named exports** (`export const foo`) not `export default` (prevents tree-shaking issues)
+- **Throw `Error` objects** never strings (enables proper stack traces)
 
-- Use ECMAScript modules (`import … from`) and `type` imports where possible.
-- Prefer `async/await`; never mix with raw `.then()` chains in new code.
-- Enable `strict`, `noImplicitOverride`, `exactOptionalPropertyTypes`.
-- Use **named exports** (`export const foo`) rather than `export default`.
-- One top-level entity per file; filename = entity name in `camelCase` or `PascalCase`.
-- Order imports: ① Node built-ins ② third-party ③ workspace packages (`@shared`, `@server`, etc.) ④ relative (`./`, `../`).
-- Keep functions ≤ 40 lines; split helpers if larger.
-- Throw `Error` objects, never strings.
-- Use `Error` subclasses (`class ValidationError extends Error`) for domain-specific failures.
-- Prefer `interface` for public shapes, `type` for unions / utility types.
-- Always provide an explicit return type on exported functions.
-- Use single quotes, trailing commas, 2-space indent (Prettier default).
-- Document **all non-trivial code paths** with JSDoc. Include:
-  - `@param`, `@returns`, `@throws`
-  - Loading/error states for async ops
-  - Conditional rendering rationale
-
-
-##################################################################
-# 2. Front-end (Next 14 + shadcn/ui + Tailwind CSS)
-##################################################################
-
-- Default to **React Server Components**; add `"use client"` only when an event handler or browser API is required.
-- Use **shadcn/ui** primitives (`Button`, `Card`, `Dialog`); compose further, never fork library code.
-- Styling: Tailwind utility classes; no inline `style={{ … }}`.
-- Group page code under `app/<route>/`, with:  
-  • `page.tsx` – top-level component  
-  • `components/` – local UI pieces  
-  • `actions.ts` – server actions if needed.
-- Use `class-variance-authority` or `clsx` for dynamic class names; avoid string concat.
-- Validate form inputs with **Zod**; narrow form data types immediately after `zod.safeParse`.
-- Keep client state with React hooks; prefer `useOptimistic`/`useRef` over global state libs until required.
-- Optimise for mobile first; test in 375 px viewport.
-
-##################################################################
-# 3. Colyseus-specific rules
-##################################################################
-
-- Every shared state class **extends `@colyseus/schema`**; never plain objects.
-- Collections must use `MapSchema`/`ArraySchema`; use `set`/`delete` so patches stay minimal.
-- **Only mutate state** inside `setSimulationInterval` ticks or `onMessage` handlers.
-- Keep `Room` class thin: heavy logic lives in helper modules (`services/`, `lib/`).
-- Broadcast via `this.broadcast(type, data)` or `client.send`; never leak state refs.
-- Room identifiers: `"trivia_room"` in lowercase snake-case.
-- Use `RedisPresence` in production; fall back to `LocalPresence` in tests.
-
-##################################################################
-# 4. Testing & commit messages
-##################################################################
-
-### Local development flow (solo-dev MVP)
-
-1. **Build small feature** – implement minimal code + types.  
-2. **Add unit tests** – Vitest for front-end, Mocha for back-end.  
-3. **Add integration test** – whenever a client ↔ server boundary changes.  
-4. **Maintain a minimal E2E test** – one happy path via Playwright (`login → join → play`).  
-5. **Run full check locally** – `pnpm run check` (`lint && typecheck && test`) before every push.
-
-### Test locations & conventions
-
-- Unit tests live in `apps/**/test/**/*.test.ts`.
-- Use **Mocha** + `@colyseus/testing` for back-end; always call `await colyseus.cleanup()` in `beforeEach`.
-- Use **Vitest** + RTL + jsdom for front-end component and DOM tests.
-- Assertions: Node `assert.*`; avoid Chai.
-- Name tests in plain English: `"should award points for correct guess"`.
-
-### Commit messages
-
-- Follow **Conventional Commits**:  
-  `feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`, `perf:`.
-
+## TypeScript strictness
+- Enable `strict`, `noImplicitOverride`, `exactOptionalPropertyTypes` (catches runtime errors at compile time)
+- Always provide explicit return types on exported functions (improves API clarity)

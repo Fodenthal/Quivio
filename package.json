@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "pnpm --parallel --filter=server dev & pnpm --filter=web dev",
     "start": "pnpm --parallel --filter=server start & pnpm --filter=web dev",
     "server": "pnpm --filter=server start",
-    "web": "pnpm --filter=web dev"
+    "web": "pnpm --filter=web dev",
+    "test": "CI=1 pnpm -r --if-present run test",
+    "test:parallel": "CI=1 pnpm -r --parallel --if-present run test",
+    "test:web:watch": "pnpm --filter=web run test:watch"
   },
   "keywords": [],
   "author": "",

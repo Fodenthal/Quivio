@@ -213,25 +213,51 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [x] Ensure guess state consistency across all clients
 
 
-### 3D.3 Enhanced Game Flow & Transitions ⚡ HIGH PRIORITY
+### 3D.3 Enhanced Game Flow & Transitions ⚠️ PARTIAL (MVP Sufficient)
 **Smooth, responsive state transitions**
 
-- [ ] Implement smooth round-to-round transitions
-- [ ] Create proper loading states between game phases
-- [ ] Implement optimistic UI updates for reduced perceived latency
-- [ ] Add smooth animations for all state changes
-- [ ] Optimize state update batching to reduce network roundtrips
-- [ ] Add server-side performance monitoring for round transitions
+- [x] Implement basic round-to-round transitions (3s delay + loading message)
+- [ ] Create proper loading states between game phases (POLISH - can defer)
+- [ ] Implement optimistic UI updates for reduced perceived latency (POLISH - can defer)
+- [ ] Add smooth animations for all state changes (POLISH - can defer)
+- [x] Optimize state update batching to reduce network roundtrips (server-side implemented)
+- [x] Add server-side performance monitoring for round transitions
 
 ### 3D.5 Winner Screen & Game Completion 🎉 HIGH PRIORITY
-**Proper celebration and game-end experience**
+**Proper celebration and game-end experience inspired by JKLM design**
 
-- [ ] Create enhanced winner announcement screen
-- [ ] Show final leaderboard with all player scores
-- [ ] Add celebration animations and confetti effects
-- [ ] Implement "Play Again" functionality
-- [ ] Add smooth return to lobby flow
-- [ ] Show game statistics (rounds played, fastest answers, etc.)
+**Step 1: JKLM-Style Winner Screen UI**
+- [ ] Create `WinnerScreen` component with sleek gradient background (matching JKLM aesthetic)
+- [ ] Display winner's avatar with gold medal overlay (reuse existing avatar generation logic)
+- [ ] Show winner's name in large white text
+- [ ] Add "won the game!" message below name (matching JKLM's "won the last round!" format)
+- [ ] Implement full-screen overlay that covers the entire game area
+
+**Step 2: Play Again Button & Functionality**
+- [ ] Add prominent green "Play Again" button (JKLM-inspired design, not "Join Game")
+- [ ] Implement server-side game reset logic that preserves room and players
+- [ ] Reset all player scores to 0 and ready states to false
+- [ ] Clear all game state (rounds, guesses, prompts) while keeping room intact
+- [ ] Return all players to lobby state within the same room
+
+**Step 3: Play Again Flow (MVP Specifications)**
+- [ ] **Host Action**: Only host can trigger "Play Again" (consistent with current host controls)
+- [ ] **State Reset**: Game resets to lobby state with same players and room settings
+- [ ] **Player Readiness**: All players must mark ready again before new game can start
+- [ ] **Room Persistence**: Room ID and settings remain unchanged for seamless continuation
+- [ ] **Score Reset**: All scores reset to 0, leaderboard returns to join-time order
+
+**Step 4: Integration & State Management**
+- [ ] Show winner screen when `gameState.gameEnded && gameState.winnerId` is true
+- [ ] Add winner screen to `GameView` component (replaces normal game UI when game ends)
+- [ ] Implement smooth transition from game end to winner screen
+- [ ] Handle edge cases (winner leaves during winner screen, etc.)
+
+**Step 5: Testing & Polish**
+- [ ] Add unit tests for `WinnerScreen` component rendering
+- [ ] Test Play Again flow with multiple players
+- [ ] Verify proper state transitions (game → winner screen → lobby → new game)
+- [ ] Test host controls and non-host behavior during Play Again flow
 
 ---
 

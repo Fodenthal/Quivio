@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GameState } from "@shared/index";
 import { PlayerList } from "./PlayerList";
+import { WinnerScreen } from "./WinnerScreen";
 
 interface GameViewProps {
   gameState: GameState;
@@ -220,33 +221,40 @@ export function GameView({
       {/* Round Results Section - shown when round has ended */}
       {phase === "round-ended" && gameState.correctAnswer && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <h4 className="text-lg font-medium text-green-900 mb-2">Round Complete!</h4>
             <p className="text-green-800">
               The correct answer was: <span className="font-semibold">{gameState.correctAnswer}</span>
             </p>
+            
+            {/* Simple countdown for next round */}
+            <div className="mt-4 bg-white rounded-lg p-3 border border-green-300">
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-lg">⏳</span>
+                <span className="text-sm font-medium text-green-800">
+                  Next round starting soon...
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Game End Section - shown when game is finished */}
-      {phase === "ended" && gameState.winnerId && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-          <div className="text-center space-y-3">
-            <h3 className="text-xl font-semibold text-purple-900">🎉 Game Complete!</h3>
-            {(() => {
-              const winner = gameState.players.get(gameState.winnerId);
-              return winner ? (
-                <p className="text-purple-800">
-                  <span className="font-semibold">{winner.name}</span> wins with {winner.score} points!
-                </p>
-              ) : (
-                <p className="text-purple-800">Game finished!</p>
-              );
-            })()}
+      {/* Winner Screen - Full-screen celebration overlay when game ends */}
+      {phase === "ended" && gameState.winnerId && (() => {
+        const winner = gameState.players.get(gameState.winnerId);
+        return winner ? (
+          <WinnerScreen winner={winner} />
+        ) : (
+          // Fallback for edge case where winnerId exists but player data is missing
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+            <div className="text-center space-y-3">
+              <h3 className="text-xl font-semibold text-purple-900">🎉 Game Complete!</h3>
+              <p className="text-purple-800">Game finished!</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Current Player Status */}
       {currentPlayer && (

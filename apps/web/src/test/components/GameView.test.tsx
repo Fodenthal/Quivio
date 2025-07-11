@@ -214,7 +214,7 @@ describe("GameView", () => {
   });
 
   describe("Game End Display", () => {
-    it("shows winner when game ends", () => {
+    it("shows winner screen when game ends", () => {
       const gameState = createGameState({ 
         gameEnded: true,
         winnerId: "player1"
@@ -222,11 +222,22 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("🎉 Game Complete!")).toBeInTheDocument();
+      // Check for WinnerScreen content instead of old game end section
+      expect(screen.getByText("won the game!")).toBeInTheDocument();
+      expect(screen.getByText("Final Score")).toBeInTheDocument();
+      expect(screen.getByText("5 points")).toBeInTheDocument();
       
-      // Check the specific game end section for the winner text
-      const gameEndSection = screen.getByText("🎉 Game Complete!").closest("div");
-      expect(gameEndSection).toHaveTextContent("TestPlayer wins with 5 points!");
+      // Check for the trophy emoji in the gold medal
+      expect(screen.getByText("🏆")).toBeInTheDocument();
+      
+      // Check for the specific large winner title (more specific than just "TestPlayer")
+      const winnerTitle = screen.getByRole("heading", { level: 1 });
+      expect(winnerTitle).toHaveTextContent("TestPlayer");
+      expect(winnerTitle).toHaveClass("text-6xl");
+      
+      // Verify the full-screen overlay exists with correct styling
+      const overlay = winnerTitle.closest('div[class*="fixed inset-0"]');
+      expect(overlay).toHaveClass("fixed", "inset-0", "z-50");
     });
 
     it("handles game end without valid winner", () => {
