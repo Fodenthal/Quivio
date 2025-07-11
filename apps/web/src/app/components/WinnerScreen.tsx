@@ -47,10 +47,10 @@ export function WinnerScreen({ winner }: WinnerScreenProps) {
   };
 
   return (
-    // Container overlay that fits within the game view
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 rounded-lg">
+    // Container overlay that covers the entire game container including padding
+    <div className="absolute -inset-6 z-50 flex items-center justify-center bg-white rounded-lg">
       {/* Semi-transparent overlay for depth */}
-      <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg" />
+      <div className="absolute inset-0 bg-gray-100 bg-opacity-50 rounded-lg" />
       
       {/* Main content container - more compact for contained view */}
       <div className="relative z-10 text-center space-y-4 px-6 py-4">
@@ -59,22 +59,22 @@ export function WinnerScreen({ winner }: WinnerScreenProps) {
           {getWinnerAvatar(winner)}
         </div>
         
-        {/* Winner's name in large white text - smaller for contained view */}
+        {/* Winner's name in large dark text - smaller for contained view */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-white drop-shadow-2xl tracking-wide">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-wide">
             {winner.name}
           </h1>
           
           {/* "won the game!" message matching JKLM format */}
-          <h2 className="text-xl font-medium text-purple-100 drop-shadow-lg">
+          <h2 className="text-xl font-medium text-gray-700">
             won the game!
           </h2>
         </div>
         
         {/* Winner's final score - more compact */}
-        <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl px-6 py-4 border border-white border-opacity-30">
-          <div className="text-white text-sm font-medium mb-1">Final Score</div>
-          <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 shadow-sm">
+          <div className="text-gray-600 text-sm font-medium mb-1">Final Score</div>
+          <div className="text-2xl font-bold text-green-600">
             {winner.score} points
           </div>
         </div>
@@ -92,15 +92,15 @@ export function WinnerScreen({ winner }: WinnerScreenProps) {
       {/* Floating particles effect - positioned for contained view */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
         {/* Top-left sparkles */}
-        <div className="absolute top-4 left-4 text-yellow-300 text-lg animate-pulse">✨</div>
-        <div className="absolute top-8 left-12 text-yellow-200 text-base animate-bounce">⭐</div>
+        <div className="absolute top-4 left-4 text-yellow-500 text-lg animate-pulse">✨</div>
+        <div className="absolute top-8 left-12 text-yellow-600 text-base animate-bounce">⭐</div>
         
         {/* Top-right sparkles */}
-        <div className="absolute top-6 right-8 text-yellow-300 text-base animate-pulse animation-delay-150">✨</div>
-        <div className="absolute top-12 right-4 text-yellow-200 text-lg animate-bounce animation-delay-300">⭐</div>
+        <div className="absolute top-6 right-8 text-yellow-500 text-base animate-pulse">✨</div>
+        <div className="absolute top-12 right-4 text-yellow-600 text-lg animate-bounce">⭐</div>
         
         {/* Bottom sparkles */}
-        <div className="absolute bottom-8 left-8 text-yellow-300 text-base animate-pulse animation-delay-450">✨</div>
+        <div className="absolute bottom-8 left-8 text-yellow-500 text-base animate-pulse">✨</div>
       </div>
     </div>
   );

@@ -313,6 +313,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gameEnded = false;
     this.state.winnerId = "";
     
+    // Reset all player scores for new game
+    for (const player of this.state.players.values()) {
+      player.score = 0;
+    }
+    
     // Start first round
     this.startNewRound();
   }
@@ -541,10 +546,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.clearRoundGuesses();
     this.state.clearIncorrectGuesses();
     
-    // Reset all player ready states and scores for next game
+    // Reset all player ready states but preserve scores for winner screen display
     for (const player of this.state.players.values()) {
       player.ready = false;
-      player.score = 0;
+      // Don't reset scores here - they'll be reset when a new game starts
     }
     
     // Reset used prompts for next game

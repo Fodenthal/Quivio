@@ -80,7 +80,9 @@ describe("testing TriviaRoom", () => {
   });
 
   it("should handle guess submission", async () => {
-    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
+      targetScore: 50 // High enough to prevent immediate win
+    });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
     
@@ -286,7 +288,9 @@ describe("testing TriviaRoom", () => {
   });
 
   it("should handle multiple guesses in same round", async () => {
-    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
+      targetScore: 50 // High enough to prevent immediate win
+    });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
     

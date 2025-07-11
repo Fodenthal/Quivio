@@ -236,8 +236,8 @@ describe("GameView", () => {
       expect(winnerTitle).toHaveClass("text-3xl");
       
       // Verify the container overlay exists with correct styling
-      const overlay = winnerTitle.closest('div[class*="absolute inset-0"]');
-      expect(overlay).toHaveClass("absolute", "inset-0", "z-50");
+      const overlay = winnerTitle.closest('div[class*="absolute -inset-6"]');
+      expect(overlay).toHaveClass("absolute", "-inset-6", "z-50");
     });
 
     it("handles game end without valid winner", () => {
