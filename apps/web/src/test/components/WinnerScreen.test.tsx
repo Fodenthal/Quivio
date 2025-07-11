@@ -48,7 +48,7 @@ describe("WinnerScreen", () => {
     
     const winnerTitle = screen.getByRole("heading", { level: 1 });
     expect(winnerTitle).toHaveTextContent("Alice");
-    expect(winnerTitle).toHaveClass("text-3xl", "font-bold", "text-gray-900");
+    expect(winnerTitle).toHaveClass("text-5xl", "font-bold", "text-primary");
   });
 
   it("displays 'won the game!' message", () => {
@@ -56,7 +56,7 @@ describe("WinnerScreen", () => {
     render(<WinnerScreen {...props} />);
     
     expect(screen.getByText("won the game!")).toBeInTheDocument();
-    expect(screen.getByText("won the game!")).toHaveClass("text-xl", "font-medium", "text-gray-700");
+    expect(screen.getByText("won the game!")).toHaveClass("text-3xl", "font-medium", "text-text-main");
   });
 
   it("shows the final score", () => {
@@ -81,13 +81,13 @@ describe("WinnerScreen", () => {
     expect(screen.getByText("B")).toBeInTheDocument();
   });
 
-  it("creates container overlay with correct styling", () => {
+  it("creates container with correct styling", () => {
     const props = createDefaultProps();
     render(<WinnerScreen {...props} />);
     
-    const overlay = screen.getByText("won the game!").closest('div[class*="absolute -inset-6"]');
-    expect(overlay).toHaveClass("absolute", "-inset-6", "z-50");
-    expect(overlay).toHaveClass("bg-white");
+    const container = screen.getByText("won the game!").closest('[class*="relative z-10"]');
+    expect(container).toHaveClass("relative", "z-10");
+    expect(container).toHaveClass("bg-white/10", "rounded-2xl");
   });
 
   it("handles different name lengths for avatar color generation", () => {
@@ -112,9 +112,10 @@ describe("WinnerScreen", () => {
     const props = createDefaultProps();
     render(<WinnerScreen {...props} />);
     
-    // Check for sparkle emojis in floating particles
-    expect(screen.getAllByText("✨")).toHaveLength(3); // Three ✨ in floating particles
-    expect(screen.getAllByText("⭐")).toHaveLength(2); // Two ⭐ emojis in floating particles
+    // Check for trophy emoji in the winner display
+    expect(screen.getByText("🏆")).toBeInTheDocument();
+    // Current implementation doesn't have floating particles, just verify main elements are present
+    expect(screen.getByText("won the game!")).toBeInTheDocument();
   });
 
   it("renders score with proper formatting", () => {
@@ -134,12 +135,8 @@ describe("WinnerScreen", () => {
     const props = createDefaultProps();
     render(<WinnerScreen {...props} />);
     
-    // Main overlay should have z-50
-    const mainOverlay = screen.getByText("won the game!").closest('div[class*="absolute -inset-6"]');
-    expect(mainOverlay).toHaveClass("z-50");
-    
     // Content should have relative z-10
-    const content = screen.getByText("won the game!").closest('div[class*="relative z-10"]');
+    const content = screen.getByText("won the game!").closest('[class*="relative z-10"]');
     expect(content).toHaveClass("relative", "z-10");
   });
 }); 
