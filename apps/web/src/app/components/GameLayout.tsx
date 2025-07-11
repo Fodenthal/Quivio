@@ -61,6 +61,11 @@ export function GameLayout() {
     gameClient.setEventHandlers({
       onConnectionStatusChange: (status) => {
         setConnectionStatus(status);
+        // Clear game state when disconnected to ensure clean return to join form
+        if (status === ConnectionStatus.DISCONNECTED) {
+          setGameState(null);
+          setCurrentPlayerId("");
+        }
       },
       onStateChange: (state) => {
         // Convert the Colyseus room state to our GameState interface

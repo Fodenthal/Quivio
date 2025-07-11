@@ -4,16 +4,21 @@ import { PlayerData, GameState } from "@shared/index";
 
 interface PlayerListProps {
   gameState: GameState;
+  participatingPlayers?: Map<string, boolean>;
+  showParticipationStatus?: boolean;
 }
 
 /**
  * PlayerList component displays all players in JKLM-style boxes ordered by score.
  * Shows real-time incorrect guesses under each player's name for enhanced gameplay experience.
+ * During winner screen, can also show participation status for next game.
  * 
  * @param gameState - The current game state containing all player information
+ * @param participatingPlayers - Map of players who want to play next game (optional)
+ * @param showParticipationStatus - Whether to show participation status indicators (optional)
  * @returns React component displaying the player list with scores and live guess display
  */
-export function PlayerList({ gameState }: PlayerListProps) {
+export function PlayerList({ gameState, participatingPlayers, showParticipationStatus }: PlayerListProps) {
   /**
    * Converts the players Map to a sorted array ordered by score (high to low).
    * This ensures the leaderboard shows highest scoring players at the top.
@@ -136,6 +141,11 @@ export function PlayerList({ gameState }: PlayerListProps) {
                       {hasCorrectGuess && (
                         <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
                           ✓ Correct
+                        </span>
+                      )}
+                      {showParticipationStatus && participatingPlayers?.has(player.id) && (
+                        <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                          ✓ Next Game
                         </span>
                       )}
                     </div>

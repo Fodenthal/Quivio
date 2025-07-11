@@ -250,7 +250,6 @@ export function GameView({
             winner={winner}
             restartCountdown={gameState.restartCountdown}
             participatingPlayers={gameState.participatingPlayers}
-            allPlayers={gameState.players}
             currentPlayerId={currentPlayerId}
             onJoinNextGame={onJoinNextGame || (() => {})}
           />
@@ -358,6 +357,8 @@ export function GameView({
       <div className="w-96 bg-white rounded-lg shadow-md p-6">
         <PlayerList 
           gameState={gameState}
+          participatingPlayers={gameState.participatingPlayers}
+          showParticipationStatus={phase === "ended"}
         />
       </div>
     </div>

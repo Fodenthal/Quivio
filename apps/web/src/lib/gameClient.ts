@@ -220,8 +220,13 @@ export class GameClient {
       console.log(`Left room with code: ${code}`);
       this.room = null;
       
-      // If disconnection was unexpected, try to reconnect
-      if (code > 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+      // Handle different disconnect reasons
+      if (code === 1000) {
+        // Graceful disconnect (user left or server removed them)
+        console.log("Gracefully disconnected from room");
+        this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
+      } else if (code > 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        // Unexpected disconnection, try to reconnect
         this.attemptReconnect();
       } else {
         this.setConnectionStatus(ConnectionStatus.DISCONNECTED);

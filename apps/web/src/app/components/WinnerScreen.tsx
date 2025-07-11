@@ -6,7 +6,6 @@ interface WinnerScreenProps {
   winner: PlayerData;
   restartCountdown: number;
   participatingPlayers: Map<string, boolean>;
-  allPlayers: Map<string, PlayerData>;
   currentPlayerId: string;
   onJoinNextGame: () => void;
 }
@@ -18,7 +17,6 @@ interface WinnerScreenProps {
  * @param winner - The player data object for the game winner
  * @param restartCountdown - Seconds remaining before auto-restart
  * @param participatingPlayers - Map of players who want to play again
- * @param allPlayers - Map of all current players
  * @param currentPlayerId - The current user's player ID
  * @param onJoinNextGame - Callback to join the next game
  * @returns React component displaying the winner celebration screen with restart options
@@ -27,7 +25,6 @@ export function WinnerScreen({
   winner, 
   restartCountdown, 
   participatingPlayers, 
-  allPlayers, 
   currentPlayerId, 
   onJoinNextGame 
 }: WinnerScreenProps) {
@@ -63,30 +60,8 @@ export function WinnerScreen({
     );
   };
 
-  // Helper to generate player avatar (simplified version of PlayerList logic)
-  const getPlayerAvatar = (player: PlayerData) => {
-    const firstLetter = player.name.charAt(0).toUpperCase();
-    const colors = [
-      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
-    ];
-    const colorIndex = player.name.length % colors.length;
-    const bgColor = colors[colorIndex];
-
-    return (
-      <div className={`w-8 h-8 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-sm`}>
-        {firstLetter}
-      </div>
-    );
-  };
-
   // Check if current player has already joined
   const hasJoined = participatingPlayers.has(currentPlayerId);
-
-  // Get participating players data
-  const participatingPlayersData = Array.from(participatingPlayers.keys())
-    .map(playerId => allPlayers.get(playerId))
-    .filter((player): player is PlayerData => player !== undefined);
 
   return (
     // Container overlay that covers the entire game container including padding
@@ -150,23 +125,6 @@ export function WinnerScreen({
               {hasJoined ? 'Waiting for others...' : 'Join Game'}
             </button>
           </div>
-
-          {/* Participating players list */}
-          {participatingPlayersData.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-center text-sm font-medium text-gray-600">
-                {participatingPlayersData.length} player{participatingPlayersData.length !== 1 ? 's' : ''} ready:
-              </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {participatingPlayersData.map((player) => (
-                  <div key={player.id} className="flex items-center space-x-2 bg-white rounded-lg px-3 py-2 shadow-sm border">
-                    {getPlayerAvatar(player)}
-                    <span className="text-sm font-medium text-gray-900">{player.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       

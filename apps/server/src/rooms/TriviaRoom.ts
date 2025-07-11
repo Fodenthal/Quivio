@@ -621,10 +621,23 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private restartGame() {
     console.log(`🔄 Restarting game with ${this.state.getParticipatingPlayerCount()} players`);
     
-    // Reset all players' scores and ready states
+    // Get participating player IDs
+    const participatingPlayerIds = this.state.getParticipatingPlayerIds();
+    
+    // Disconnect non-participating players
     for (const [playerId, player] of this.state.players) {
-      player.score = 0;
-      player.ready = this.state.participatingPlayers.has(playerId);
+      if (!this.state.participatingPlayers.has(playerId)) {
+        console.log(`👋 Disconnecting non-participating player: ${player.name} (${playerId})`);
+        // Find the client and disconnect them
+        const client = this.clients.find(c => c.sessionId === playerId);
+        if (client) {
+          client.leave(1000, "Did not join next game"); // Graceful disconnect with reason
+        }
+      } else {
+        // Reset scores and set as ready for participating players
+        player.score = 0;
+        player.ready = true;
+      }
     }
 
     // Clear restart system
@@ -644,21 +657,27 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private returnToLobby() {
     console.log(`🏠 Returning to lobby - not enough players to restart`);
     
-    // Reset game state to lobby
-    this.state.gameEnded = false;
-    this.state.winnerId = "";
-    
-    // Reset all player scores and ready states
-    for (const player of this.state.players.values()) {
-      player.score = 0;
-      player.ready = false;
+    // Disconnect all players since not enough want to continue
+    // This provides a clean slate for new players to join
+    for (const [playerId, player] of this.state.players) {
+      console.log(`👋 Disconnecting player: ${player.name} (${playerId}) - insufficient players for restart`);
+      const client = this.clients.find(c => c.sessionId === playerId);
+      if (client) {
+        client.leave(1000, "Not enough players for next game"); // Graceful disconnect with reason
+      }
     }
 
     // Clear restart system
     this.state.clearRestartSystem();
     
-    // Update can start status
-    this.checkGameStart();
+    // Reset game state to initial lobby state
+    this.state.gameEnded = false;
+    this.state.winnerId = "";
+    this.state.gameStarted = false;
+    this.state.gamePaused = false;
+    this.state.canStart = false;
+    this.state.currentRound = 0;
+    this.state.hostId = "";
   }
 
   private pauseGame() {
