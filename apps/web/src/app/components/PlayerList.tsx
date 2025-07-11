@@ -48,6 +48,11 @@ export function PlayerList({
               <div>
                 <div className="font-semibold text-text-main">{player.name}</div>
                 <div className="text-sm text-text-secondary">Score: {player.score}</div>
+                {gameState.playerIncorrectGuesses.has(player.id) && (
+                  <div className="text-xs text-red-400">
+                    Incorrect: {gameState.playerIncorrectGuesses.get(player.id)?.guess}
+                  </div>
+                )}
               </div>
             </div>
             {showParticipationStatus && (

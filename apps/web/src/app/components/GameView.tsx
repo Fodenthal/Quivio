@@ -66,6 +66,19 @@ export function GameView({
   const currentPlayer = gameState.players.get(currentPlayerId);
   const phase = getGamePhase();
 
+  if (phase === "ended" && gameState.winnerId) {
+    const winner = gameState.players.get(gameState.winnerId);
+    return winner ? (
+      <WinnerScreen 
+        winner={winner}
+        restartCountdown={gameState.restartCountdown}
+        participatingPlayers={gameState.participatingPlayers}
+        currentPlayerId={currentPlayerId}
+        onJoinNextGame={onJoinNextGame || (() => {})}
+      />
+    ) : null;
+  }
+
   return (
     <div className="flex gap-8">
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6">
@@ -102,19 +115,6 @@ export function GameView({
             </p>
           </div>
         )}
-
-        {phase === "ended" && gameState.winnerId && (() => {
-          const winner = gameState.players.get(gameState.winnerId);
-          return winner ? (
-            <WinnerScreen 
-              winner={winner}
-              restartCountdown={gameState.restartCountdown}
-              participatingPlayers={gameState.participatingPlayers}
-              currentPlayerId={currentPlayerId}
-              onJoinNextGame={onJoinNextGame || (() => {})}
-            />
-          ) : null;
-        })()}
 
         {currentPlayer && (
           <div className="bg-black/20 rounded-lg p-4 flex items-center justify-between">
