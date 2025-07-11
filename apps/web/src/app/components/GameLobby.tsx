@@ -66,57 +66,50 @@ export function GameLobby({
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20">
-      <div className="mb-8 text-center">
-        <h2 className="text-4xl font-bold text-text-main mb-2">
-          Game Lobby
-        </h2>
-        <p className="text-text-secondary">
+    <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-text-main">Players</h3>
+        <div className="text-text-secondary text-sm font-medium">
           Players: {totalPlayers}/{gameState.maxPlayers} | Ready: {readyCount}/{totalPlayers}
-        </p>
+        </div>
       </div>
-
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold text-text-main mb-4">Players</h3>
-        <div className="space-y-3">
-          {playersArray.map((player, index) => (
-            <div
-              key={`${player.id}-${index}`}
-              className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 ${
-                player.id === currentPlayerId
-                  ? "bg-primary/20 border-primary"
-                  : "bg-white/10 border-white/20"
-              }`}
-            >
-              <div className="flex items-center space-x-4">
-                <span className="text-2xl">{getPlayerStatusIcon(player)}</span>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-text-main">
-                      {player.name}
-                    </span>
-                    {player.isHost && (
-                      <span className="px-2 py-1 text-xs font-bold text-background bg-accent rounded-full">
-                        Host
-                      </span>
-                    )}
-                  </div>
-                  <span className={`text-sm font-medium ${
-                    player.ready ? "text-green-400" : "text-text-secondary"
-                  }`}>
-                    {getPlayerStatusText(player)}
+      <div className="space-y-3">
+        {playersArray.map((player, index) => (
+          <div
+            key={`${player.id}-${index}`}
+            className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-300 ${
+              player.id === currentPlayerId
+                ? "bg-primary/20 border-primary"
+                : "bg-white/10 border-white/20"
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">{getPlayerStatusIcon(player)}</span>
+              <div>
+                <div className="flex items-center space-x-1">
+                  <span className="font-semibold text-text-main text-lg">
+                    {player.name}
                   </span>
+                  {player.isHost && (
+                    <span className="px-1.5 py-0.5 text-xs font-bold text-background bg-accent rounded-full">
+                      Host
+                    </span>
+                  )}
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-text-main">
-                  {player.score}
-                </div>
-                <div className="text-sm text-text-secondary">Score</div>
+                <span className={`text-xs font-medium ${
+                  player.ready ? "text-green-400" : "text-text-secondary"
+                }`}>
+                  {getPlayerStatusText(player)}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-text-main">
+                {player.score}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mb-6">
