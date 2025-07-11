@@ -50,7 +50,7 @@ export function WinnerScreen({ winner }: WinnerScreenProps) {
     // Container overlay that covers the entire game container including padding
     <div className="absolute -inset-6 z-50 flex items-center justify-center bg-white rounded-lg">
       {/* Semi-transparent overlay for depth */}
-      <div className="absolute inset-0 bg-gray-100 bg-opacity-50 rounded-lg" />
+      <div className="absolute inset-0 bg-gray-100 bg-opacity-80 rounded-lg border-2 border-gray-200" />
       
       {/* Main content container - more compact for contained view */}
       <div className="relative z-10 text-center space-y-4 px-6 py-4">
