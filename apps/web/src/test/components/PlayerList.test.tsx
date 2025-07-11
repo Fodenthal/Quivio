@@ -30,6 +30,8 @@ describe("PlayerList", () => {
     currentRound: 1,
     hostId: players[0]?.id || "",
     winnerId: "",
+    restartCountdown: 0,
+    participatingPlayers: new Map<string, boolean>(),
     roundStartTime: Date.now(),
     roundTimeRemaining: 25000,
     roundEnded: false,

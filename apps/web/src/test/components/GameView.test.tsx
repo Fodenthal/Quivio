@@ -30,6 +30,8 @@ describe("GameView", () => {
       currentRound: 2,
       hostId: "player1",
       winnerId: "",
+      restartCountdown: 0,
+      participatingPlayers: new Map<string, boolean>(),
       roundStartTime: Date.now() - 5000, // 5 seconds elapsed
       roundTimeRemaining: 25000, // 25 seconds left
       roundEnded: false,

@@ -172,6 +172,13 @@ export class GameClient {
   }
 
   /**
+   * Join the next game (JKLM-style restart system)
+   */
+  joinNextGame(): void {
+    this.sendMessage(MSG.JOIN_NEXT_GAME, {});
+  }
+
+  /**
    * Generic method to send messages to the room
    */
   private sendMessage(type: string, data: unknown): void {

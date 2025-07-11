@@ -38,6 +38,8 @@ describe("GameLobby", () => {
       currentRound: 0,
       hostId: "player1",
       winnerId: "",
+      restartCountdown: 0,
+      participatingPlayers: new Map<string, boolean>(),
       roundStartTime: 0,
       roundTimeRemaining: 0,
       roundEnded: false,

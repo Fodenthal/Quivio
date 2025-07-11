@@ -27,6 +27,8 @@ interface RawRoomState {
   currentRound?: number;
   hostId?: string;
   winnerId?: string;
+  restartCountdown?: number;
+  participatingPlayers?: MapSchemaLike;
   roundStartTime?: number;
   roundTimeRemaining?: number;
   roundEnded?: boolean;
@@ -139,6 +141,16 @@ export function GameLayout() {
             }
           }
 
+          // Convert participatingPlayers MapSchema to Map
+          const participatingPlayersMap = new Map<string, boolean>();
+          if (roomState.participatingPlayers && roomState.participatingPlayers.$items) {
+            for (const [key, value] of roomState.participatingPlayers.$items) {
+              if (typeof value === 'boolean') {
+                participatingPlayersMap.set(key, value);
+              }
+            }
+          }
+
           const convertedState: GameState = {
             targetScore: roomState.targetScore || 10,
             roundTime: roomState.roundTime || 30000,
@@ -151,6 +163,8 @@ export function GameLayout() {
             currentRound: roomState.currentRound || 0,
             hostId: roomState.hostId || "",
             winnerId: roomState.winnerId || "",
+            restartCountdown: roomState.restartCountdown || 0,
+            participatingPlayers: participatingPlayersMap,
             roundStartTime: roomState.roundStartTime || 0,
             roundTimeRemaining: roomState.roundTimeRemaining || 0,
             roundEnded: roomState.roundEnded || false,
@@ -234,6 +248,14 @@ export function GameLayout() {
     } catch (error) {
       console.error("Failed to submit guess:", error);
       throw error; // Re-throw so GameView can handle it
+    }
+  };
+
+  const handleJoinNextGame = () => {
+    try {
+      gameClient.joinNextGame();
+    } catch (error) {
+      console.error("Failed to join next game:", error);
     }
   };
 
@@ -336,6 +358,7 @@ export function GameLayout() {
             gameState={gameState}
             currentPlayerId={currentPlayerId}
             onSubmitGuess={handleSubmitGuess}
+            onJoinNextGame={handleJoinNextGame}
           />
         );
       }

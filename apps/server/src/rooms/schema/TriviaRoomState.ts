@@ -52,6 +52,10 @@ export class TriviaRoomState extends Schema {
   @type("string") hostId: string = "";
   @type("string") winnerId: string = "";
 
+  // Restart system (JKLM-style auto-restart)
+  @type("number") restartCountdown: number = 0;
+  @type({ map: "boolean" }) participatingPlayers = new MapSchema<boolean>();
+
   // Round state
   @type("number") roundStartTime: number = 0;
   @type("number") roundTimeRemaining: number = 0;
@@ -186,5 +190,31 @@ export class TriviaRoomState extends Schema {
       const keys = Array.from(this.chatMessages.keys());
       this.chatMessages.delete(keys[0]);
     }
+  }
+
+  /**
+   * JKLM-style restart system methods
+   */
+  
+  startRestartCountdown() {
+    this.restartCountdown = 15; // 15 seconds like JKLM
+    this.participatingPlayers.clear();
+  }
+
+  addParticipatingPlayer(playerId: string) {
+    this.participatingPlayers.set(playerId, true);
+  }
+
+  getParticipatingPlayerCount(): number {
+    return this.participatingPlayers.size;
+  }
+
+  getParticipatingPlayerIds(): string[] {
+    return Array.from(this.participatingPlayers.keys());
+  }
+
+  clearRestartSystem() {
+    this.restartCountdown = 0;
+    this.participatingPlayers.clear();
   }
 } 

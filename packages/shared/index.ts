@@ -3,7 +3,8 @@ export const MSG = {
   PLAYER_READY: "player_ready",
   SUBMIT_GUESS: "submit_guess",
   START_GAME: "start_game",
-  UPDATE_SETTINGS: "update_settings"
+  UPDATE_SETTINGS: "update_settings",
+  JOIN_NEXT_GAME: "join_next_game"
 } as const;
 
 export interface PlayerData {
@@ -65,6 +66,10 @@ export interface GameState {
   currentRound: number;
   hostId: string;
   winnerId: string;
+
+  // Restart system (JKLM-style auto-restart)
+  restartCountdown: number;
+  participatingPlayers: Map<string, boolean>;
 
   // Round state
   roundStartTime: number;

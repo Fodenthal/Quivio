@@ -39,6 +39,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8;
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
+  private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 10;
   private readonly DEFAULT_ROUND_TIME = 30000; // 30 seconds
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
@@ -199,6 +200,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.gameLoopTimer) {
       clearInterval(this.gameLoopTimer);
     }
+    if (this.restartTimer) {
+      clearInterval(this.restartTimer);
+    }
     if (this.disposeTimer) {
       clearTimeout(this.disposeTimer);
     }
@@ -261,6 +265,15 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.onMessage(MSG.UPDATE_SETTINGS, (client, message: SettingsMessage) => {
       if (client.sessionId === this.state.hostId) {
         this.updateRoomSettings(message);
+      }
+    });
+
+    // Handle join next game (JKLM-style restart system)
+    this.onMessage(MSG.JOIN_NEXT_GAME, (client) => {
+      // Only allow joining if we're in the game ended state with countdown active
+      if (this.state.gameEnded && this.state.restartCountdown > 0) {
+        this.state.addParticipatingPlayer(client.sessionId);
+        console.log(`🎮 Player ${client.sessionId} joined next game (${this.state.getParticipatingPlayerCount()} total)`);
       }
     });
   }
@@ -562,10 +575,90 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.roundTimer = undefined;
     }
     
-    // Update canStart status based on current players
-    this.checkGameStart();
+    // JKLM-style restart system: Start 15-second countdown
+    this.state.startRestartCountdown();
+    this.startRestartCountdown();
     
-    console.log(`🏆 Game ended - Winner: ${winnerId}`);
+    console.log(`🏆 Game ended - Winner: ${winnerId} | Starting 15s restart countdown`);
+  }
+
+  private startRestartCountdown() {
+    // Clear any existing restart timer
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+    }
+
+    // Update countdown every second
+    this.restartTimer = setInterval(() => {
+      if (this.state.restartCountdown > 0) {
+        this.state.restartCountdown--;
+        console.log(`⏰ Restart countdown: ${this.state.restartCountdown}s remaining`);
+      } else {
+        // Countdown finished - check if we can restart
+        this.handleRestartCountdownComplete();
+      }
+    }, 1000);
+  }
+
+  private handleRestartCountdownComplete() {
+    if (this.restartTimer) {
+      clearInterval(this.restartTimer);
+      this.restartTimer = undefined;
+    }
+
+    const participatingCount = this.state.getParticipatingPlayerCount();
+    console.log(`⏰ Restart countdown complete - ${participatingCount} players want to play again`);
+
+    if (participatingCount >= 2) {
+      // Enough players to start a new game
+      this.restartGame();
+    } else {
+      // Not enough players - return to lobby
+      this.returnToLobby();
+    }
+  }
+
+  private restartGame() {
+    console.log(`🔄 Restarting game with ${this.state.getParticipatingPlayerCount()} players`);
+    
+    // Reset all players' scores and ready states
+    for (const [playerId, player] of this.state.players) {
+      player.score = 0;
+      player.ready = this.state.participatingPlayers.has(playerId);
+    }
+
+    // Clear restart system
+    this.state.clearRestartSystem();
+    
+    // Reset game state
+    this.state.gameEnded = false;
+    this.state.winnerId = "";
+    this.state.canStart = true;
+
+    // Auto-start the game since all participating players are ready
+    setTimeout(() => {
+      this.startGame();
+    }, 1000); // Brief delay for UI transition
+  }
+
+  private returnToLobby() {
+    console.log(`🏠 Returning to lobby - not enough players to restart`);
+    
+    // Reset game state to lobby
+    this.state.gameEnded = false;
+    this.state.winnerId = "";
+    
+    // Reset all player scores and ready states
+    for (const player of this.state.players.values()) {
+      player.score = 0;
+      player.ready = false;
+    }
+
+    // Clear restart system
+    this.state.clearRestartSystem();
+    
+    // Update can start status
+    this.checkGameStart();
   }
 
   private pauseGame() {

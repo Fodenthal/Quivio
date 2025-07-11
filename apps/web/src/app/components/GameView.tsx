@@ -9,6 +9,7 @@ interface GameViewProps {
   gameState: GameState;
   currentPlayerId: string;
   onSubmitGuess?: (guess: string) => void;
+  onJoinNextGame?: () => void;
 }
 
 /**
@@ -23,7 +24,8 @@ interface GameViewProps {
 export function GameView({ 
   gameState, 
   currentPlayerId,
-  onSubmitGuess
+  onSubmitGuess,
+  onJoinNextGame
 }: GameViewProps) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -244,7 +246,14 @@ export function GameView({
       {phase === "ended" && gameState.winnerId && (() => {
         const winner = gameState.players.get(gameState.winnerId);
         return winner ? (
-          <WinnerScreen winner={winner} />
+          <WinnerScreen 
+            winner={winner}
+            restartCountdown={gameState.restartCountdown}
+            participatingPlayers={gameState.participatingPlayers}
+            allPlayers={gameState.players}
+            currentPlayerId={currentPlayerId}
+            onJoinNextGame={onJoinNextGame || (() => {})}
+          />
         ) : (
           // Fallback for edge case where winnerId exists but player data is missing
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">

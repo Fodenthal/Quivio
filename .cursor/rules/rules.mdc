@@ -6,7 +6,7 @@ alwaysApply: true
 
 ## Project-wide constraints
 
-- **Use `pnpm test` after each implementation** (runs full test suite for both apps)
+- **Use `pnpm test` after each implementation** (no need for pnpm run build)
 - **Use named exports** (`export const foo`) not `export default` (prevents tree-shaking issues)
 - **Throw `Error` objects** never strings (enables proper stack traces)
 
