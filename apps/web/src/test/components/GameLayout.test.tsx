@@ -50,7 +50,7 @@ describe("GameLayout", () => {
   describe("Initial Render", () => {
     it("renders the header with game title", () => {
       render(<GameLayout />);
-      expect(screen.getByText("PopReplay")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "PopReplay", level: 1 })).toBeInTheDocument();
     });
 
     it("shows disconnected status initially", () => {
@@ -61,9 +61,11 @@ describe("GameLayout", () => {
     it("renders join form when disconnected", () => {
       render(<GameLayout />);
       
-      expect(screen.getByRole("heading", { name: "Join the Fun!" })).toBeInTheDocument();
-      expect(screen.getByLabelText("Your Name")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Join Game" })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Your Name")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Game PIN")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Enter" })).toBeInTheDocument();
+      // Ensure the old heading is not present
+      expect(screen.queryByRole("heading", { name: "Join the Fun!" })).not.toBeInTheDocument();
     });
 
     it("sets up GameClient event handlers on mount", () => {
@@ -113,32 +115,47 @@ describe("GameLayout", () => {
   });
 
   describe("Join Form Functionality", () => {
-    it("enables join button when name is entered", () => {
+    it("enables join button when name and game pin are entered", () => {
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
       // Initially disabled
       expect(joinButton).toBeDisabled();
       
-      // Enable after entering name
+      // Enable after entering both
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       expect(joinButton).not.toBeDisabled();
     });
 
-    it("disables join button for empty/whitespace names", () => {
+    it("disables join button for empty/whitespace name or game pin", () => {
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
-      // Test with whitespace
+      // Test with empty name
+      fireEvent.change(nameInput, { target: { value: "" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
+      expect(joinButton).toBeDisabled();
+
+      // Test with whitespace name
       fireEvent.change(nameInput, { target: { value: "   " } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       expect(joinButton).toBeDisabled();
       
-      // Test with empty string
-      fireEvent.change(nameInput, { target: { value: "" } });
+      // Test with empty game pin
+      fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "" } });
+      expect(joinButton).toBeDisabled();
+
+      // Test with whitespace game pin
+      fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "   " } });
       expect(joinButton).toBeDisabled();
     });
 
@@ -147,45 +164,72 @@ describe("GameLayout", () => {
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       fireEvent.click(joinButton);
       
       expect(mockGameClient.joinRoom).toHaveBeenCalledWith({
         playerName: "TestPlayer",
+        gamePin: "12345",
       });
     });
 
-    it("trims whitespace from player name", async () => {
+    it("trims whitespace from player name and game pin", async () => {
       mockGameClient.joinRoom.mockResolvedValueOnce({});
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
       fireEvent.change(nameInput, { target: { value: "  TestPlayer  " } });
+      fireEvent.change(gamePinInput, { target: { value: "  12345  " } });
       fireEvent.click(joinButton);
       
       expect(mockGameClient.joinRoom).toHaveBeenCalledWith({
         playerName: "TestPlayer",
+        gamePin: "12345",
       });
     });
 
-    it("handles Enter key submission", async () => {
+    it("handles Enter key submission from name input", async () => {
       mockGameClient.joinRoom.mockResolvedValueOnce({});
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
       
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       fireEvent.keyDown(nameInput, { key: "Enter" });
       
       expect(mockGameClient.joinRoom).toHaveBeenCalledWith({
         playerName: "TestPlayer",
+        gamePin: "12345",
+      });
+    });
+
+    it("handles Enter key submission from game pin input", async () => {
+      mockGameClient.joinRoom.mockResolvedValueOnce({});
+      
+      render(<GameLayout />);
+      
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      
+      fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
+      fireEvent.keyDown(gamePinInput, { key: "Enter" });
+      
+      expect(mockGameClient.joinRoom).toHaveBeenCalledWith({
+        playerName: "TestPlayer",
+        gamePin: "12345",
       });
     });
 
@@ -199,10 +243,12 @@ describe("GameLayout", () => {
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
       
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
-      fireEvent.click(screen.getByRole("button", { name: "Join Game" }));
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
+      fireEvent.click(screen.getByRole("button", { name: "Enter" }));
       
       // Try Enter while joining
       fireEvent.keyDown(nameInput, { key: "Enter" });
@@ -226,10 +272,12 @@ describe("GameLayout", () => {
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       fireEvent.click(joinButton);
       
       // Should show loading state
@@ -239,7 +287,7 @@ describe("GameLayout", () => {
       // Resolve the promise
       resolveJoin!({});
       await waitFor(() => {
-        expect(screen.getByText("Join Game")).toBeInTheDocument();
+        expect(screen.getByText("Enter")).toBeInTheDocument();
       });
     });
   });
@@ -253,10 +301,12 @@ describe("GameLayout", () => {
       
       render(<GameLayout />);
       
-      const nameInput = screen.getByLabelText("Your Name");
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      const joinButton = screen.getByRole("button", { name: "Enter" });
       
       fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
+      fireEvent.change(gamePinInput, { target: { value: "12345" } });
       fireEvent.click(joinButton);
       
       await waitFor(() => {
@@ -265,32 +315,45 @@ describe("GameLayout", () => {
       });
       
       // Should reset loading state  
-      expect(screen.getByRole("button", { name: "Join Game" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Enter" })).toBeInTheDocument();
       expect(joinButton).not.toBeDisabled();
       
       consoleError.mockRestore();
       alertSpy.mockRestore();
     });
 
-    it("shows alert for empty name submission", () => {
+    it("shows alert for empty name submission", async () => {
       const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
       
       render(<GameLayout />);
       
-      const joinButton = screen.getByRole("button", { name: "Join Game" });
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
       
-      // Try to join with empty name (should not be possible due to disabled state, but test the function)
-      const nameInput = screen.getByLabelText("Your Name");
       fireEvent.change(nameInput, { target: { value: "" } });
-      
-      // Force click by enabling button temporarily
-      fireEvent.change(nameInput, { target: { value: "test" } });
-      fireEvent.change(nameInput, { target: { value: "" } });
-      
-      // Manually trigger the handler to test the empty name check
-      fireEvent.click(joinButton);
+      fireEvent.change(gamePinInput, { target: { value: "12345" } }); 
+      fireEvent.keyDown(nameInput, { key: "Enter" }); // Simulate Enter key press
       
       expect(mockGameClient.joinRoom).not.toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith("Please enter your name");
+      
+      alertSpy.mockRestore();
+    });
+
+    it("shows alert for empty game pin submission", async () => {
+      const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+      
+      render(<GameLayout />);
+      
+      const nameInput = screen.getByPlaceholderText("Your Name");
+      const gamePinInput = screen.getByPlaceholderText("Game PIN");
+      
+      fireEvent.change(nameInput, { target: { value: "TestPlayer" } }); 
+      fireEvent.change(gamePinInput, { target: { value: "" } });
+      fireEvent.keyDown(gamePinInput, { key: "Enter" }); // Simulate Enter key press
+      
+      expect(mockGameClient.joinRoom).not.toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith("Please enter a game pin");
       
       alertSpy.mockRestore();
     });
@@ -815,8 +878,9 @@ describe("GameLayout", () => {
     it("shows join form when disconnected", () => {
       render(<GameLayout />);
       
-      expect(screen.getByRole("heading", { name: "Join the Fun!" })).toBeInTheDocument();
-      expect(screen.getByLabelText("Your Name")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Your Name")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Game PIN")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Enter" })).toBeInTheDocument();
       expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
       expect(screen.queryByTestId("game-view")).not.toBeInTheDocument();
     });

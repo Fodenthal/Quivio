@@ -52,6 +52,7 @@ export function GameLayout() {
     ConnectionStatus.DISCONNECTED
   );
   const [playerName, setPlayerName] = useState("");
+  const [gamePin, setGamePin] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string>("");
@@ -215,11 +216,16 @@ export function GameLayout() {
       alert("Please enter your name");
       return;
     }
+    if (!gamePin.trim()) {
+      alert("Please enter a game pin");
+      return;
+    }
 
     setIsJoining(true);
     try {
       await gameClient.joinRoom({
         playerName: playerName.trim(),
+        gamePin: gamePin.trim(),
       });
     } catch (error) {
       console.error("Failed to join room:", error);
@@ -310,36 +316,48 @@ export function GameLayout() {
     if (connectionStatus === ConnectionStatus.DISCONNECTED) {
       // Show join form when disconnected
       return (
-        <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20">
-          <h2 className="text-3xl font-bold text-text-main mb-6 text-center">
-            Join the Fun!
-          </h2>
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="playerName" className="block text-sm font-medium text-text-secondary mb-2">
-                Your Name
-              </label>
-              <input
-                id="playerName"
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !isJoining) {
-                    handleJoinRoom();
-                  }
-                }}
-              />
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
+          <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 w-full max-w-md text-center space-y-6">
+            
+            <div className="space-y-4">
+              <div>
+                <input
+                  id="playerName"
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Your Name"
+                  className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isJoining) {
+                      handleJoinRoom();
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <input
+                  id="gamePin"
+                  type="text"
+                  value={gamePin}
+                  onChange={(e) => setGamePin(e.target.value)}
+                  placeholder="Game PIN"
+                  className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isJoining) {
+                      handleJoinRoom();
+                    }
+                  }}
+                />
+              </div>
+              <button
+                onClick={handleJoinRoom}
+                disabled={isJoining || !playerName.trim() || !gamePin.trim()}
+                className="w-full px-4 py-3 bg-primary text-white font-bold text-xl rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              >
+                {isJoining ? "Joining..." : "Enter"}
+              </button>
             </div>
-            <button
-              onClick={handleJoinRoom}
-              disabled={isJoining || !playerName.trim()}
-              className="w-full px-4 py-3 bg-primary text-white font-bold rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isJoining ? "Joining..." : "Join Game"}
-            </button>
           </div>
         </div>
       );
