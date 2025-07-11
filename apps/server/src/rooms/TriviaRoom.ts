@@ -643,15 +643,13 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Clear restart system
     this.state.clearRestartSystem();
     
-    // Reset game state
-    this.state.gameEnded = false;
+    // Don't reset gameEnded yet - keep it true to avoid showing lobby
+    // We'll reset it atomically when we start the new game
     this.state.winnerId = "";
     this.state.canStart = true;
 
-    // Auto-start the game since all participating players are ready
-    setTimeout(() => {
-      this.startGame();
-    }, 1000); // Brief delay for UI transition
+    // Start the new game immediately - no delay needed since players already confirmed
+    this.startGame();
   }
 
   private returnToLobby() {
