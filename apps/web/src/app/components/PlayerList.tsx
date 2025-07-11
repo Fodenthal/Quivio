@@ -47,23 +47,25 @@ export function PlayerList({
               {getPlayerAvatar(player)}
               <div>
                 <div className="font-semibold text-text-main">{player.name}</div>
-                <div className="text-sm text-text-secondary">Score: {player.score}</div>
                 {gameState.playerIncorrectGuesses.has(player.id) && (
-                  <div className="text-xs text-red-400">
-                    Incorrect: {gameState.playerIncorrectGuesses.get(player.id)?.guess}
+                  <div className="text-sm text-text-secondary">
+                    {gameState.playerIncorrectGuesses.get(player.id)?.guess}
                   </div>
                 )}
               </div>
             </div>
-            {showParticipationStatus && (
-              <div className="text-sm font-medium">
-                {participatingPlayers.has(player.id) ? (
-                  <span className="text-green-400">Joined!</span>
-                ) : (
-                  <span className="text-text-secondary">...</span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center space-x-4">
+              <div className="text-xl font-bold text-text-main">{player.score}</div>
+              {showParticipationStatus && (
+                <div className="text-sm font-medium">
+                  {participatingPlayers.has(player.id) ? (
+                    <span className="text-green-400">Joined!</span>
+                  ) : (
+                    <span className="text-text-secondary">...</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

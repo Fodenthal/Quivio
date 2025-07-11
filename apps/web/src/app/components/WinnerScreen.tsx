@@ -42,7 +42,7 @@ export function WinnerScreen({
   const hasJoined = participatingPlayers.has(currentPlayerId);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xl">
+    <div className="flex flex-col items-center justify-center w-full h-full p-8 space-y-8">
       <div className="relative z-10 w-full max-w-md space-y-8 px-6 py-8 bg-white/10 rounded-2xl shadow-glass border border-white/20 text-center">
         
         <div className="space-y-4">
