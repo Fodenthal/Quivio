@@ -47,11 +47,11 @@ export function PlayerList({
               {getPlayerAvatar(player)}
               <div>
                 <div className="font-semibold text-text-main">{player.name}</div>
-                {gameState.playerIncorrectGuesses.has(player.id) && (
-                  <div className="text-sm text-text-secondary">
-                    {gameState.playerIncorrectGuesses.get(player.id)?.guess}
-                  </div>
-                )}
+                <div className="text-sm text-text-secondary h-5">
+                  {gameState.playerIncorrectGuesses.has(player.id) && (
+                    gameState.playerIncorrectGuesses.get(player.id)?.guess
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
