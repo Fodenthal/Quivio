@@ -23,7 +23,7 @@ describe("WinnerScreen", () => {
     
     const winnerTitle = screen.getByRole("heading", { level: 1 });
     expect(winnerTitle).toHaveTextContent("Alice");
-    expect(winnerTitle).toHaveClass("text-6xl", "font-bold", "text-white");
+    expect(winnerTitle).toHaveClass("text-3xl", "font-bold", "text-white");
   });
 
   it("displays 'won the game!' message", () => {
@@ -31,7 +31,7 @@ describe("WinnerScreen", () => {
     render(<WinnerScreen winner={winner} />);
     
     expect(screen.getByText("won the game!")).toBeInTheDocument();
-    expect(screen.getByText("won the game!")).toHaveClass("text-3xl", "font-medium", "text-purple-100");
+    expect(screen.getByText("won the game!")).toHaveClass("text-xl", "font-medium", "text-purple-100");
   });
 
   it("shows the final score", () => {
@@ -56,12 +56,12 @@ describe("WinnerScreen", () => {
     expect(screen.getByText("B")).toBeInTheDocument();
   });
 
-  it("creates full-screen overlay with correct styling", () => {
+  it("creates container overlay with correct styling", () => {
     const winner = createPlayer();
     render(<WinnerScreen winner={winner} />);
     
-    const overlay = screen.getByText("won the game!").closest('div[class*="fixed inset-0"]');
-    expect(overlay).toHaveClass("fixed", "inset-0", "z-50");
+    const overlay = screen.getByText("won the game!").closest('div[class*="absolute inset-0"]');
+    expect(overlay).toHaveClass("absolute", "inset-0", "z-50");
     expect(overlay).toHaveClass("bg-gradient-to-br", "from-purple-900", "via-purple-800", "to-indigo-900");
   });
 
@@ -112,7 +112,7 @@ describe("WinnerScreen", () => {
     render(<WinnerScreen winner={winner} />);
     
     // Main overlay should have z-50
-    const mainOverlay = screen.getByText("won the game!").closest('div[class*="fixed inset-0"]');
+    const mainOverlay = screen.getByText("won the game!").closest('div[class*="absolute inset-0"]');
     expect(mainOverlay).toHaveClass("z-50");
     
     // Content should have relative z-10

@@ -930,6 +930,61 @@ describe("GameLayout", () => {
       expect(screen.getByText("Game View - Round 1")).toBeInTheDocument();
     });
 
+    it("shows game view when game has ended (for winner screen)", () => {
+      const { rerender } = render(<GameLayout />);
+      
+      // Mock the room to return session ID
+      mockGameClient.getRoom.mockReturnValue({ sessionId: "player1" });
+      
+      const eventHandlers = mockGameClient.setEventHandlers.mock.calls[0][0];
+      eventHandlers.onConnectionStatusChange(ConnectionStatus.CONNECTED);
+      
+      const mockGameEndedState = {
+        gameStarted: false, // Game sets this to false when ending
+        gameEnded: true,    // But gameEnded is true
+        winnerId: "player1", // And there's a winner
+        currentRound: 0,
+        players: {
+          player1: {
+            id: "player1",
+            name: "TestPlayer",
+            score: 5,
+            ready: false,
+            isHost: true,
+            joinedAt: Date.now()
+          }
+        },
+        targetScore: 10,
+        roundTime: 30000,
+        maxPlayers: 8,
+        isPrivate: false,
+        gamePaused: false,
+        canStart: false,
+        hostId: "player1",
+        roundStartTime: 0,
+        roundTimeRemaining: 0,
+        roundEnded: false,
+        correctAnswer: "",
+        currentPrompt: { 
+          id: "", 
+          text: "", 
+          category: "", 
+          difficulty: "easy", 
+          answer: "" 
+        },
+        roundGuesses: {},
+        chatMessages: {}
+      };
+
+      eventHandlers.onStateChange(mockGameEndedState);
+      rerender(<GameLayout />);
+      
+      // Should show GameView (not GameLobby) so winner screen can be displayed
+      expect(screen.queryByText("Game Lobby")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-view")).toBeInTheDocument();
+      expect(screen.getByText("Game Started: false")).toBeInTheDocument(); // Confirms gameStarted is false but still shows GameView
+    });
+
     it("shows leave game button when connected and handles click", async () => {
       const { rerender } = render(<GameLayout />);
       

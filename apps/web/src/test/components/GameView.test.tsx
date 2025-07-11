@@ -233,11 +233,11 @@ describe("GameView", () => {
       // Check for the specific large winner title (more specific than just "TestPlayer")
       const winnerTitle = screen.getByRole("heading", { level: 1 });
       expect(winnerTitle).toHaveTextContent("TestPlayer");
-      expect(winnerTitle).toHaveClass("text-6xl");
+      expect(winnerTitle).toHaveClass("text-3xl");
       
-      // Verify the full-screen overlay exists with correct styling
-      const overlay = winnerTitle.closest('div[class*="fixed inset-0"]');
-      expect(overlay).toHaveClass("fixed", "inset-0", "z-50");
+      // Verify the container overlay exists with correct styling
+      const overlay = winnerTitle.closest('div[class*="absolute inset-0"]');
+      expect(overlay).toHaveClass("absolute", "inset-0", "z-50");
     });
 
     it("handles game end without valid winner", () => {

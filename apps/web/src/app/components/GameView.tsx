@@ -156,7 +156,7 @@ export function GameView({
   return (
     <div className="flex gap-6">
       {/* Main Game Content */}
-      <div className="flex-1 bg-white rounded-lg shadow-md p-6 space-y-6">
+      <div className="relative flex-1 bg-white rounded-lg shadow-md p-6 space-y-6">
       {/* Game Header with Round Info */}
       <div className="border-b border-gray-200 pb-4">
         <div className="flex items-center justify-between mb-2">

@@ -319,8 +319,8 @@ export function GameLayout() {
     }
 
     if (connectionStatus === ConnectionStatus.CONNECTED && gameState) {
-      if (!gameState.gameStarted) {
-        // Show lobby when connected but game hasn't started
+      if (!gameState.gameStarted && !gameState.gameEnded) {
+        // Show lobby when connected but game hasn't started and hasn't ended
         return (
           <GameLobby
             gameState={gameState}
@@ -330,7 +330,7 @@ export function GameLayout() {
           />
         );
       } else {
-        // Show game interface when game has started
+        // Show game interface when game has started OR when game has ended (for winner screen)
         return (
           <GameView
             gameState={gameState}
