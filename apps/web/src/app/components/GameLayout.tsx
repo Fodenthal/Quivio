@@ -317,11 +317,11 @@ export function GameLayout() {
     if (connectionStatus === ConnectionStatus.DISCONNECTED) {
       // Show join form when disconnected
       return (
-        <div className="flex items-start justify-center min-h-[calc(100vh-80px)] p-4 pt-12">
+        <div className="flex items-start justify-center min-h-[calc(100vh-80px)] p-4 pt-6">
           <div className="flex gap-6 w-full max-w-4xl">
             {/* Join Form - 3/3 size */}
             <div className="flex-[3] flex justify-center">
-              <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 w-full max-w-md text-center space-y-6">
+              <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 w-full max-w-md text-center">
                 <div className="space-y-4">
                   <div>
                     <input
@@ -365,7 +365,7 @@ export function GameLayout() {
             </div>
             
             {/* GamePins Component - 2/3 size */}
-            <div className="flex-[2] h-[600px]">
+            <div className="flex-[2] h-[500px]">
               <GamePins />
             </div>
           </div>

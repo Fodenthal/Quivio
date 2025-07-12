@@ -45,8 +45,8 @@ export function GamePins() {
         Game Rooms
       </h2>
       
-      <div className="h-[calc(100%-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-        <div className="space-y-2 p-2">
+      <div className="h-[calc(100%-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-2">
+        <div className="space-y-2 p-2 pr-4">
           {gamePins.map((gamePin) => (
             <div
               key={gamePin.id}
