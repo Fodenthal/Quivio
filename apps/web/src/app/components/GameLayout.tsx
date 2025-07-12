@@ -5,6 +5,7 @@ import { GameClient, ConnectionStatus } from "@/lib/gameClient";
 import { GameLobby } from "./GameLobby";
 import { GameView } from "./GameView";
 import { GamePins } from "./GamePins";
+import { TrendingTopics } from "./TrendingTopics";
 import { GameState, PlayerData } from "@shared/index";
 
 // Type for Colyseus MapSchema internal structure
@@ -318,8 +319,13 @@ export function GameLayout() {
       // Show join form when disconnected
       return (
         <div className="flex items-start justify-center min-h-[calc(100vh-80px)] p-4 pt-6">
-          <div className="flex items-start gap-6 w-full max-w-4xl">
-            {/* Join Form - 3/3 size */}
+          <div className="flex items-start gap-6 w-full max-w-7xl">
+            {/* TrendingTopics Component - left side */}
+            <div className="flex-[2] h-[500px]">
+              <TrendingTopics />
+            </div>
+            
+            {/* Join Form - center */}
             <div className="flex-[3]">
               <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 w-full max-w-md text-center mx-auto">
                 <div className="space-y-4">
@@ -364,7 +370,7 @@ export function GameLayout() {
               </div>
             </div>
             
-            {/* GamePins Component - 2/3 size */}
+            {/* GamePins Component - right side */}
             <div className="flex-[2] h-[500px]">
               <GamePins />
             </div>
