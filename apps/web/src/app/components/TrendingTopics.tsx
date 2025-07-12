@@ -19,7 +19,7 @@ export const TrendingTopics = () => {
     const sampleTopics = [
       { topic: "Ancient civilizations and their mysterious disappearances", category: "History", popularity: 1247 },
       { topic: "The science behind climate change and global warming", category: "Science", popularity: 892 },
-      { topic: "Famous movie quotes and their cultural impact", category: "Entertainment", popularity: 1156 },
+      { topic: "Lebron james dih", category: "Entertainment", popularity: 1156 },
       { topic: "Space exploration and the search for extraterrestrial life", category: "Science", popularity: 734 },
       { topic: "World cuisines and their traditional cooking methods", category: "Food", popularity: 623 },
       { topic: "Renaissance art and its revolutionary techniques", category: "Art", popularity: 445 },
