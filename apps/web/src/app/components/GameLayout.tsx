@@ -321,7 +321,7 @@ export function GameLayout() {
           <div className="flex items-start gap-6 w-full max-w-4xl">
             {/* Join Form - 3/3 size */}
             <div className="flex-[3]">
-              <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 w-full max-w-md text-center">
+              <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 w-full max-w-md text-center mx-auto">
                 <div className="space-y-4">
                   <div>
                     <input
