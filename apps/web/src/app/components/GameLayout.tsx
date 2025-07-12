@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { GameClient, ConnectionStatus } from "@/lib/gameClient";
 import { GameLobby } from "./GameLobby";
 import { GameView } from "./GameView";
+import { GamePins } from "./GamePins";
 import { GameState, PlayerData } from "@shared/index";
 
 // Type for Colyseus MapSchema internal structure
@@ -316,47 +317,56 @@ export function GameLayout() {
     if (connectionStatus === ConnectionStatus.DISCONNECTED) {
       // Show join form when disconnected
       return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
-          <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 w-full max-w-md text-center space-y-6">
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
+          <div className="flex gap-6 w-full max-w-4xl">
+            {/* GamePins Component - 2/3 size */}
+            <div className="flex-[2] h-[600px]">
+              <GamePins />
+            </div>
             
-            <div className="space-y-4">
-              <div>
-                <input
-                  id="playerName"
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Your Name"
-                  className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isJoining) {
-                      handleJoinRoom();
-                    }
-                  }}
-                />
+            {/* Join Form - 3/3 size */}
+            <div className="flex-[3] flex items-center justify-center">
+              <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 w-full max-w-md text-center space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <input
+                      id="playerName"
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Your Name"
+                      className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !isJoining) {
+                          handleJoinRoom();
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      id="gamePin"
+                      type="text"
+                      value={gamePin}
+                      onChange={(e) => setGamePin(e.target.value)}
+                      placeholder="Game PIN"
+                      className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !isJoining) {
+                          handleJoinRoom();
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={handleJoinRoom}
+                    disabled={isJoining || !playerName.trim() || !gamePin.trim()}
+                    className="w-full px-4 py-3 bg-primary text-white font-bold text-xl rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                  >
+                    {isJoining ? "Joining..." : "Enter"}
+                  </button>
+                </div>
               </div>
-              <div>
-                <input
-                  id="gamePin"
-                  type="text"
-                  value={gamePin}
-                  onChange={(e) => setGamePin(e.target.value)}
-                  placeholder="Game PIN"
-                  className="w-full px-4 py-3 text-center text-xl bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-all duration-300"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isJoining) {
-                      handleJoinRoom();
-                    }
-                  }}
-                />
-              </div>
-              <button
-                onClick={handleJoinRoom}
-                disabled={isJoining || !playerName.trim() || !gamePin.trim()}
-                className="w-full px-4 py-3 bg-primary text-white font-bold text-xl rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-              >
-                {isJoining ? "Joining..." : "Enter"}
-              </button>
             </div>
           </div>
         </div>

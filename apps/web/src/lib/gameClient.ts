@@ -29,6 +29,7 @@ export interface GameClientEvents {
  */
 export interface JoinRoomOptions {
   playerName: string;
+  gamePin: string;
   roomId?: string; // Optional room ID to join specific room
   roomOptions?: {
     targetScore?: number;
