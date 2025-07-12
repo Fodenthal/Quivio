@@ -111,17 +111,17 @@ export const TrendingTopics = () => {
         Trending Topics
       </h2>
       
-      <div className="h-[calc(100%-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-2">
-        <div className="space-y-3 p-2 pr-4">
+      <div className="h-[calc(100%-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1">
+        <div className="space-y-3 px-1 py-2">
           {topics.map((topic, index) => {
             const { color, arrow, changeColor } = getTrendDisplay(topic.trending);
             
             return (
               <div
                 key={topic.id}
-                className="flex items-start gap-4 py-3 px-2 hover:bg-white/5 transition-all duration-200 cursor-pointer border-b border-white/10 last:border-b-0"
+                className="flex items-start gap-2 py-3 hover:bg-white/5 transition-all duration-200 cursor-pointer border-b border-white/10 last:border-b-0"
               >
-                <div className="flex-shrink-0 w-8 text-right">
+                <div className="flex-shrink-0 w-6 text-right">
                   <span className="text-text-secondary text-sm font-mono font-medium">
                     {index + 1}.
                   </span>
@@ -136,7 +136,7 @@ export const TrendingTopics = () => {
                   </p>
                 </div>
                 
-                <div className="flex flex-col items-end text-right flex-shrink-0 min-w-0">
+                <div className="flex flex-col items-end text-right flex-shrink-0">
                   <div className="flex items-center gap-1 mb-1">
                     <span className={`text-sm font-bold ${color}`}>
                       {arrow}
