@@ -42,7 +42,7 @@ export function GamePins() {
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full">
       <h2 className="text-2xl font-bold text-text-main mb-4 text-center">
-        Available Rooms
+        Game Rooms
       </h2>
       
       <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
