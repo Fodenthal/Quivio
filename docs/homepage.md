@@ -29,13 +29,6 @@ Two-panel layout with generous margins, similar to JKLM's approach:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Stats Bar (Middle)
-Clean, centered statistics display:
-```
-Play with 373 players in 55 public rooms and 108 private rooms
-                              [Refresh]
-```
-
 ### Bottom Section (Lower Half)
 Your innovation - side-by-side components:
 ```
@@ -81,7 +74,6 @@ app/
 │   │   ├── HeroSection.tsx
 │   │   ├── CreateRoomPanel.tsx
 │   │   ├── JoinRoomPanel.tsx
-│   │   ├── StatsBar.tsx
 │   │   └── BottomSection.tsx
 │   ├── GameLayout.tsx (game-only logic)
 │   └── [existing components...]
@@ -108,10 +100,6 @@ app/
 - Game PIN input
 - Join button
 - Maybe recent news or stats
-
-#### `StatsBar.tsx`
-- Player/room statistics
-- Refresh functionality
 
 #### `BottomSection.tsx`
 - Container for ActiveRooms and TrendingTopics
