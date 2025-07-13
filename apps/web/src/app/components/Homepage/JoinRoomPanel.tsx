@@ -33,10 +33,10 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 lg:p-8 border border-white/20 hover:border-white/30 transition-all duration-300">
       <div className="text-center mb-6">
         <h2 className="text-2xl lg:text-3xl font-bold text-text-main mb-2">
-          JOIN A PRIVATE ROOM
+          Join a private room
         </h2>
         <p className="text-text-secondary text-lg">
-          Enter a room code to join friends
+          Enter a room code to join a room
         </p>
       </div>
       
@@ -87,7 +87,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
           ) : (
             <span className="flex items-center justify-center gap-2">
               <span>🚪</span>
-              <span>JOIN ROOM</span>
+              <span>Join Room</span>
             </span>
           )}
         </button>
@@ -96,7 +96,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
       {/* Helper text */}
       <div className="mt-4 text-center">
         <p className="text-xs text-text-secondary">
-          Room codes are case-sensitive • Get the code from your host
+          Room codes are case-sensitive.
         </p>
       </div>
     </div>

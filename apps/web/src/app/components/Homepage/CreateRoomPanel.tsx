@@ -31,10 +31,10 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 lg:p-8 border border-white/20 hover:border-white/30 transition-all duration-300">
       <div className="text-center mb-6">
         <h2 className="text-2xl lg:text-3xl font-bold text-text-main mb-2">
-          START A NEW ROOM
+          Start a new room
         </h2>
         <p className="text-text-secondary text-lg">
-          Create your own trivia room and invite friends
+          Create a trivia room for you and your friends
         </p>
       </div>
       
@@ -104,7 +104,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
           ) : (
             <span className="flex items-center justify-center gap-2">
               <span>✨</span>
-              <span>CREATE ROOM</span>
+              <span>Create Room</span>
             </span>
           )}
         </button>
@@ -113,7 +113,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
       {/* Subtle premium hint */}
       <div className="mt-4 text-center">
         <p className="text-xs text-text-secondary">
-          Premium features coming soon • Unlimited rooms • Custom themes
+          Premium features coming soon
         </p>
       </div>
     </div>

@@ -99,9 +99,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
         <div className="mt-16 flex flex-col lg:flex-row gap-8">
           {/* Active Rooms - Left */}
           <div className="flex-1">
-            <h3 className="text-2xl font-bold text-text-main mb-6 text-center">
-              ACTIVE ROOMS
-            </h3>
             <div className="h-[400px] lg:h-[500px]">
               <GamePins />
             </div>
@@ -109,9 +106,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           
           {/* Trending Topics - Right */}
           <div className="flex-1">
-            <h3 className="text-2xl font-bold text-text-main mb-6 text-center">
-              TRENDING TOPICS
-            </h3>
             <div className="h-[400px] lg:h-[500px]">
               <TrendingTopics />
             </div>
