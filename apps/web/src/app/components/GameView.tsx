@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { GameState } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
@@ -14,7 +14,7 @@ interface GameViewProps {
   onSendChatMessage?: (content: string) => void;
 }
 
-export function GameView({ 
+export const GameView = memo(function GameView({ 
   gameState, 
   currentPlayerId,
   onSubmitGuess,
@@ -24,22 +24,22 @@ export function GameView({
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const getGamePhase = (): string => {
+  const getGamePhase = useMemo((): string => {
     if (gameState.gameEnded) return "ended";
     if (gameState.gamePaused) return "paused";
     if (gameState.roundEnded) return "round-ended";
     if (gameState.roundStartTime > 0) return "playing";
     return "waiting";
-  };
+  }, [gameState.gameEnded, gameState.gamePaused, gameState.roundEnded, gameState.roundStartTime]);
 
-  const formatTime = (timeMs: number): string => {
+  const formatTime = useCallback((timeMs: number): string => {
     const seconds = Math.max(0, Math.ceil(timeMs / 1000));
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
-  const handleGuessSubmit = async (e: React.FormEvent) => {
+  const handleGuessSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentGuess.trim() || isSubmitting || !onSubmitGuess) {
@@ -56,18 +56,41 @@ export function GameView({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [currentGuess, isSubmitting, onSubmitGuess]);
 
-  const hasPlayerGuessed = (): boolean => {
+  const hasPlayerGuessed = useMemo((): boolean => {
     return gameState.roundGuesses.has(currentPlayerId);
-  };
+  }, [gameState.roundGuesses, currentPlayerId]);
 
-  const getPlayerGuess = () => {
+  const getPlayerGuess = useMemo(() => {
     return gameState.roundGuesses.get(currentPlayerId);
-  };
+  }, [gameState.roundGuesses, currentPlayerId]);
 
-  const currentPlayer = gameState.players.get(currentPlayerId);
-  const phase = getGamePhase();
+  const currentPlayer = useMemo(() => {
+    return gameState.players.get(currentPlayerId);
+  }, [gameState.players, currentPlayerId]);
+
+  const phase = getGamePhase;
+
+  // Memoize chat messages to prevent unnecessary filtering on every render
+  const chatMessages = useMemo(() => {
+    return Array.from(gameState.chatMessages.values()).filter(
+      (message) => message && typeof message === 'object' && message.id && message.playerName
+    );
+  }, [gameState.chatMessages]);
+
+  // Memoize the onSendMessage callback to prevent Chat from re-rendering
+  const handleSendMessage = useCallback((content: string) => {
+    if (onSendChatMessage) {
+      onSendChatMessage(content);
+    }
+  }, [onSendChatMessage]);
+
+  // Memoize timer display to prevent unnecessary re-renders for small time changes
+  const timerDisplay = useMemo(() => ({
+    time: formatTime(gameState.roundTimeRemaining),
+    isUrgent: gameState.roundTimeRemaining < 10000
+  }), [gameState.roundTimeRemaining, formatTime]);
 
   if (phase === "ended" && gameState.winnerId) {
     const winner = gameState.players.get(gameState.winnerId);
@@ -93,9 +116,9 @@ export function GameView({
           <div className="flex items-center space-x-2">
             <span className="text-lg font-medium text-text-secondary">Time:</span>
             <span className={`text-2xl font-bold ${
-              gameState.roundTimeRemaining < 10000 ? 'text-red-500' : 'text-text-main'
+              timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
             }`}>
-              {formatTime(gameState.roundTimeRemaining)}
+              {timerDisplay.time}
             </span>
           </div>
         </div>
@@ -135,10 +158,10 @@ export function GameView({
 
         {(phase === "playing" || phase === "paused") && (
           <div className="bg-black/20 rounded-lg p-6">
-            {hasPlayerGuessed() ? (
+            {hasPlayerGuessed ? (
               <div className="text-center space-y-3">
                 {(() => {
-                  const playerGuess = getPlayerGuess();
+                  const playerGuess = getPlayerGuess;
                   return playerGuess ? (
                     <>
                       <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
@@ -192,18 +215,35 @@ export function GameView({
       {/* Chat Panel */}
       <div className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
         <Chat
-          messages={Array.from(gameState.chatMessages.values()).filter(
-            (message) => message && typeof message === 'object' && message.id && message.playerName
-          )}
+          messages={chatMessages}
           currentPlayerId={currentPlayerId}
-          onSendMessage={(content) => {
-            if (onSendChatMessage) {
-              onSendChatMessage(content);
-            }
-          }}
+          onSendMessage={handleSendMessage}
           disabled={false}
         />
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  // Only re-render if critical game state properties have changed
+  return (
+    prevProps.currentPlayerId === nextProps.currentPlayerId &&
+    prevProps.gameState.currentRound === nextProps.gameState.currentRound &&
+    prevProps.gameState.gameEnded === nextProps.gameState.gameEnded &&
+    prevProps.gameState.gamePaused === nextProps.gameState.gamePaused &&
+    prevProps.gameState.roundEnded === nextProps.gameState.roundEnded &&
+    prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
+    Math.floor(prevProps.gameState.roundTimeRemaining / 1000) === Math.floor(nextProps.gameState.roundTimeRemaining / 1000) && // Only re-render on second changes, not millisecond changes
+    prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
+    prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
+    prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
+    prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
+    prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
+    prevProps.gameState.players.get(prevProps.currentPlayerId)?.score === nextProps.gameState.players.get(nextProps.currentPlayerId)?.score &&
+    prevProps.gameState.roundGuesses.get(prevProps.currentPlayerId) === nextProps.gameState.roundGuesses.get(nextProps.currentPlayerId) &&
+    prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
+    prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
+    prevProps.onJoinNextGame === nextProps.onJoinNextGame &&
+    prevProps.onSendChatMessage === nextProps.onSendChatMessage
+  );
+});

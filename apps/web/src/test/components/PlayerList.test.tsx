@@ -186,7 +186,7 @@ describe("PlayerList", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
     
     // Check Bob has incorrect guess displayed
-    expect(screen.getByText(/bob's wrong ans.../)).toBeInTheDocument();
+    expect(screen.getByText(/bob's wrong an.../)).toBeInTheDocument();
     
     // Charlie should have no guess display
     expect(screen.getByText("Charlie")).toBeInTheDocument();

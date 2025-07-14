@@ -1,6 +1,7 @@
 "use client";
 
 import { GameState, PlayerData } from "@shared/index";
+import { memo, useMemo } from "react";
 
 interface PlayerListProps {
   gameState: GameState;
@@ -8,54 +9,62 @@ interface PlayerListProps {
   showParticipationStatus: boolean;
 }
 
-export function PlayerList({ 
+const PlayerListComponent = memo(function PlayerListInner({ 
   gameState, 
   participatingPlayers,
   showParticipationStatus
 }: PlayerListProps) {
 
-  const playersArray = Array.from(gameState.players.values())
-    .filter(player => player && player.id)
-    .sort((a, b) => b.score - a.score);
+  const playersArray = useMemo(() => {
+    return Array.from(gameState.players.values())
+      .filter(player => player && player.id)
+      .sort((a, b) => b.score - a.score);
+  }, [gameState.players]);
 
-  const getPlayerAvatar = (player: PlayerData) => {
-    const firstLetter = player.name.charAt(0).toUpperCase();
-    const colors = [
-      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
-    ];
-    const colorIndex = player.name.length % colors.length;
-    const bgColor = colors[colorIndex];
+  const getPlayerAvatar = useMemo(() => {
+    return (player: PlayerData) => {
+      const firstLetter = player.name.charAt(0).toUpperCase();
+      const colors = [
+        "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
+        "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+      ];
+      const colorIndex = player.name.length % colors.length;
+      const bgColor = colors[colorIndex];
 
-    return (
-      <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
-        {firstLetter}
-      </div>
-    );
-  };
+      return (
+        <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+          {firstLetter}
+        </div>
+      );
+    };
+  }, []);
 
   /**
    * Check if a player has submitted a correct answer this round
    */
-  const hasPlayerAnsweredCorrectly = (playerId: string): boolean => {
-    const playerGuess = gameState.roundGuesses.get(playerId);
-    return playerGuess?.isCorrect === true;
-  };
+  const hasPlayerAnsweredCorrectly = useMemo(() => {
+    return (playerId: string): boolean => {
+      const playerGuess = gameState.roundGuesses.get(playerId);
+      return playerGuess?.isCorrect === true;
+    };
+  }, [gameState.roundGuesses]);
 
   /**
    * Get the truncated incorrect guess for display
    */
-  const getTruncatedIncorrectGuess = (playerId: string): string => {
-    const incorrectGuess = gameState.playerIncorrectGuesses.get(playerId);
-    if (!incorrectGuess?.guess) return "";
-    
-    // Truncate long guesses to prevent layout overflow
-    const maxLength = 14;
-    if (incorrectGuess.guess.length > maxLength) {
-      return incorrectGuess.guess.substring(0, maxLength) + "...";
-    }
-    return incorrectGuess.guess;
-  };
+  const getTruncatedIncorrectGuess = useMemo(() => {
+    return (playerId: string): string => {
+      const incorrectGuess = gameState.playerIncorrectGuesses.get(playerId);
+      if (!incorrectGuess?.guess) return "";
+      
+      // Truncate long guesses to prevent layout overflow
+      const maxLength = 14;
+      if (incorrectGuess.guess.length > maxLength) {
+        return incorrectGuess.guess.substring(0, maxLength) + "...";
+      }
+      return incorrectGuess.guess;
+    };
+  }, [gameState.playerIncorrectGuesses]);
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
@@ -103,4 +112,22 @@ export function PlayerList({
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.showParticipationStatus === nextProps.showParticipationStatus &&
+    prevProps.gameState.players.size === nextProps.gameState.players.size &&
+    prevProps.gameState.roundGuesses.size === nextProps.gameState.roundGuesses.size &&
+    prevProps.gameState.playerIncorrectGuesses.size === nextProps.gameState.playerIncorrectGuesses.size &&
+    prevProps.participatingPlayers.size === nextProps.participatingPlayers.size &&
+    // Check if player scores have changed
+    Array.from(prevProps.gameState.players.values()).every((prevPlayer) => {
+      const nextPlayer = nextProps.gameState.players.get(prevPlayer.id);
+      return nextPlayer && prevPlayer.score === nextPlayer.score;
+    })
+  );
+});
+
+PlayerListComponent.displayName = 'PlayerList';
+
+export { PlayerListComponent as PlayerList };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatMessage as ChatMessageType } from "@shared/index";
 import { ChatMessage } from "./ChatMessage";
 
@@ -21,17 +21,13 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   // Check if user is near bottom to decide whether to auto-scroll
   const isNearBottom = () => {
@@ -41,12 +37,18 @@ export function ChatWindow({
     return scrollTop + clientHeight >= scrollHeight - 50; // 50px threshold
   };
 
-  // Only auto-scroll if user is near the bottom
+  // Only auto-scroll when there are actually NEW messages and user is near bottom
   useEffect(() => {
-    if (isNearBottom()) {
+    const validMessages = messages.filter((message) => message && message.id && message.playerName);
+    const currentMessageCount = validMessages.length;
+    
+    // Only auto-scroll if we have new messages and user is near bottom
+    if (currentMessageCount > previousMessageCount && isNearBottom()) {
       scrollToBottom();
     }
-  }, [messages]);
+    
+    setPreviousMessageCount(currentMessageCount);
+  }, [messages, previousMessageCount]);
 
   if (messages.length === 0) {
     return (
