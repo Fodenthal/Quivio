@@ -50,7 +50,7 @@ export function PlayerList({
     if (!incorrectGuess?.guess) return "";
     
     // Truncate long guesses to prevent layout overflow
-    const maxLength = 20;
+    const maxLength = 15;
     if (incorrectGuess.guess.length > maxLength) {
       return incorrectGuess.guess.substring(0, maxLength) + "...";
     }
@@ -68,7 +68,7 @@ export function PlayerList({
           return (
             <div
               key={`${player.id}-${index}`}
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+              className={`flex items-center justify-between p-3 rounded-lg transition-colors duration-75 ${
                 hasCorrectAnswer 
                   ? "bg-pink-500/20 border border-pink-500/30 shadow-lg" 
                   : "bg-black/20"
