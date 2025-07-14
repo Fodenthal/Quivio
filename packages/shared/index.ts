@@ -38,9 +38,12 @@ export interface PlayerIncorrectGuess {
 }
 
 export interface ChatMessage {
+  id: string;
   playerId: string;
-  text: string;
+  playerName: string;
+  content: string;
   timestamp: number;
+  type: "player" | "system";
 }
 
 export interface RoomSettings {

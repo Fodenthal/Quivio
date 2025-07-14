@@ -249,8 +249,50 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 ## Phase 3E: Advanced Real-time Features
 **Priority: HIGH** | **Goal: Complete JKLM-style interactivity**
 
-### 3E.1 Enhanced Chat & Social Features
-- [ ] Create in-game chat component (do we make this from scratch/use colyseus/bootstrap from something already out there)
+### 3E.1 Enhanced Chat & Social Features 🎯 HIGH PRIORITY
+**Real-time chat system with modern UI inspired by JKLM/Discord chat design**
+
+**Step 1: Layout Restructuring for Three-Column Design ⚡ IMMEDIATE**
+- [ ] **Redesign GameView layout** - Convert from 2-column to 3-column layout (game content | player list | chat)
+- [ ] **Optimize PlayerList width** - Compress player list from 384px (w-96) to ~280px (w-72) for space efficiency
+- [ ] **Add responsive breakpoints** - Ensure chat collapses/hides on mobile, shows drawer/overlay on tablet
+- [ ] **Update GameLobby layout** - Add chat to lobby interface for pre-game social interaction
+- [ ] **Maintain layout consistency** - Ensure smooth transitions between lobby and game views
+
+**Step 2: Chat Component Foundation 🔧 CRITICAL**
+- [ ] **Create ChatMessage interface** - Define message structure (id, playerId, playerName, content, timestamp, type)
+- [ ] **Build ChatWindow component** - Scrollable message container with smooth auto-scroll to bottom
+- [ ] **Add ChatInput component** - Text input with send button, enter key support, and character limits
+- [ ] **Create ChatMessage component** - Individual message display with player avatars and timestamps
+- [ ] **Implement message types** - Support system messages (player join/leave, game events) vs player messages
+
+**Step 3: Real-time Message Integration 📡 CORE**
+- [ ] **Extend gameClient messaging** - Add `sendChatMessage(content)` method to GameClient class
+- [ ] **Add chat state management** - Include chat messages in GameState and handle real-time updates
+- [ ] **Implement message broadcasting** - Leverage existing server-side chat infrastructure from Phase 1.7
+- [ ] **Add message persistence** - Store recent chat history (last 50 messages) in room state
+- [ ] **Handle message ordering** - Ensure consistent message ordering across all clients
+
+**Step 4: Chat UI/UX Polish 🎨 ENHANCEMENT**
+- [ ] **JKLM-style visual design** - Dark theme with subtle borders, modern typography
+- [ ] **Player avatar integration** - Show player avatars next to messages (reuse existing avatar system)
+- [ ] **Message grouping** - Group consecutive messages from same player with timestamp consolidation
+- [ ] **Scroll behavior optimization** - Auto-scroll to bottom for new messages, preserve scroll position when reading history
+- [ ] **Message animations** - Smooth fade-in animations for new messages
+
+**Step 5: Advanced Chat Features 🚀 POLISH**
+- [ ] **System message integration** - Show game events (correct answers, round changes, player joins) as chat messages
+- [ ] **Message rate limiting UI** - Show cooldown indicators and prevent spam
+- [ ] **Chat commands** - Add basic commands like `/ready` or `/help` for power users
+- [ ] **Message search/filter** - Allow filtering by player or message type (optional, nice-to-have)
+- [ ] **Chat notifications** - Subtle indicators for new messages when chat is scrolled up
+
+**Step 6: Performance & Edge Cases 🔧 STABILITY**
+- [ ] **Message cleanup** - Automatically remove old messages to prevent memory bloat
+- [ ] **Disconnection handling** - Graceful handling of message sending failures
+- [ ] **Profanity filtering** - Basic client-side filtering for inappropriate content
+- [ ] **Accessibility support** - Screen reader support and keyboard navigation
+- [ ] **Mobile optimization** - Responsive design with touch-friendly interactions
 
 ### 3E.2 Performance Optimizations
 - [ ] Implement client-side prediction for inputs

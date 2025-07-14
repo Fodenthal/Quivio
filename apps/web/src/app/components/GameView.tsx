@@ -4,6 +4,7 @@ import { useState } from "react";
 import { GameState } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
+import { Chat } from "./Chat";
 
 interface GameViewProps {
   gameState: GameState;
@@ -80,7 +81,8 @@ export function GameView({
   }
 
   return (
-    <div className="flex gap-8">
+    <div className="flex gap-6">
+      {/* Main game content - flex-1 */}
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-white/20">
           <h2 className="text-3xl font-bold text-text-main">
@@ -176,11 +178,27 @@ export function GameView({
         )}
       </div>
 
-      <div className="w-96">
+      {/* PlayerList - optimized width */}
+      <div className="w-72">
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
           showParticipationStatus={phase === "ended"}
+        />
+      </div>
+
+      {/* Chat Panel */}
+      <div className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
+        <Chat
+          messages={Array.from(gameState.chatMessages.values()).filter(
+            (message) => message && typeof message === 'object' && message.id && message.playerName
+          )}
+          currentPlayerId={currentPlayerId}
+          onSendMessage={(content) => {
+            // TODO: Implement chat message sending
+            console.log("Send message:", content);
+          }}
+          disabled={false}
         />
       </div>
     </div>
