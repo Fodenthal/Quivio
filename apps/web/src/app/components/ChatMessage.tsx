@@ -58,7 +58,7 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
 
   return (
     <div className={`flex items-start space-x-3 py-2 px-3 rounded-lg transition-colors ${
-      isCurrentPlayer ? "bg-primary/10" : "hover:bg-white/5"
+      isCurrentPlayer ? "" : "hover:bg-white/5"
     }`}>
       {getPlayerAvatar(message.playerName)}
       <div className="flex-1 min-w-0">

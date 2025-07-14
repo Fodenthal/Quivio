@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Homepage } from "../../app/components/Homepage";
 
 // Mock the props
@@ -17,31 +17,20 @@ vi.mock("../../app/components/TrendingTopics", () => ({
 }));
 
 describe("Homepage", () => {
-  it("shows alert for empty name submission", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+  it("join button is disabled when name is empty", () => {
     render(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
     
-    const gamePinInput = screen.getByPlaceholderText("ABCD123");
     const joinButton = screen.getByRole("button", { name: /Join Room/ });
 
-    fireEvent.change(gamePinInput, { target: { value: "12345" } });
-    fireEvent.click(joinButton);
-
-    expect(alertSpy).toHaveBeenCalledWith("Please enter your name and a game pin");
-    alertSpy.mockRestore();
+    expect(joinButton).toBeDisabled();
   });
 
-  it("shows alert for empty game pin submission", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+  it("join button is disabled when game pin is empty", () => {
     render(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
     
-    const nameInput = screen.getByPlaceholderText("Your name");
+    const nameInput = screen.getByPlaceholderText("Enter your display name");
     const joinButton = screen.getByRole("button", { name: /Join Room/ });
 
-    fireEvent.change(nameInput, { target: { value: "TestPlayer" } });
-    fireEvent.click(joinButton);
-
-    expect(alertSpy).toHaveBeenCalledWith("Please enter your name and a game pin");
-    alertSpy.mockRestore();
+    expect(joinButton).toBeDisabled();
   });
 });

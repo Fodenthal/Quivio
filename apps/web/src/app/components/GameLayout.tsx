@@ -58,6 +58,42 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
 
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string>("");
+  const [playerName, setPlayerName] = useState("");
+  const [gamePin, setGamePin] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoinGame = async () => {
+    const trimmedName = playerName.trim();
+    const trimmedPin = gamePin.trim();
+
+    if (!trimmedName) {
+      alert("Please enter your name");
+      return;
+    }
+    if (!trimmedPin) {
+      alert("Please enter a game pin");
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      await gameClient.joinRoom({
+        playerName: trimmedName,
+        gamePin: trimmedPin,
+      });
+    } catch (error) {
+      console.error("Failed to join room:", error);
+      alert("Failed to join room. Please try again.");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !isJoining) {
+      handleJoinGame();
+    }
+  };
 
   useEffect(() => {
     // Set up event handlers for connection status changes
@@ -308,6 +344,41 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
 
   // Determine which view to show
   const renderMainContent = () => {
+    if (connectionStatus === ConnectionStatus.DISCONNECTED) {
+      return (
+        <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 max-w-md mx-auto">
+          <h2 className="text-3xl font-bold text-text-main mb-6 text-center">Join Game</h2>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={isJoining}
+            />
+            <input
+              type="text"
+              placeholder="Game PIN"
+              value={gamePin}
+              onChange={(e) => setGamePin(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={isJoining}
+            />
+            <button
+              onClick={handleJoinGame}
+              className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+              disabled={!playerName.trim() || !gamePin.trim() || isJoining}
+            >
+              {isJoining ? "Joining..." : "Enter"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     if (connectionStatus === ConnectionStatus.CONNECTED && gameState) {
       if (!gameState.gameStarted && !gameState.gameEnded) {
         // Show lobby when connected but game hasn't started and hasn't ended
