@@ -28,7 +28,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 lg:p-8 border border-white/20 hover:border-white/30 transition-all duration-300">
+    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 lg:p-8 border border-white/20 hover:border-white/30 transition-all duration-300 h-full min-h-[500px] flex flex-col">
       <div className="text-center mb-6">
         <h2 className="text-2xl lg:text-3xl font-bold text-text-main mb-2">
           Start a new room
@@ -38,7 +38,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
         </p>
       </div>
       
-      <div className="space-y-6">
+      <div className="flex-grow flex flex-col justify-center space-y-6">
         {/* Topic Input */}
         <div className="space-y-2">
           <label htmlFor="room-topic" className="block text-sm font-medium text-text-main">
@@ -111,7 +111,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
       </div>
       
       {/* Subtle premium hint */}
-      <div className="mt-4 text-center">
+      <div className="mt-auto pt-4 text-center">
         <p className="text-xs text-text-secondary">
           Premium features coming soon
         </p>

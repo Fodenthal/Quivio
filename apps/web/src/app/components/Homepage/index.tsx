@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { TrendingTopics } from "../TrendingTopics";
 import { GamePins } from "../GamePins";
-import { HeroSection } from "./HeroSection";
 import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 
@@ -79,24 +78,28 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           {/* Left Column - Interactive Elements (70-75% width) */}
           <div className="flex-1 lg:flex-[3] space-y-8">
             {/* Hero Section - Two Panel Layout */}
-            <HeroSection>
-              <CreateRoomPanel
-                roomTopic={roomTopic}
-                onRoomTopicChange={setRoomTopic}
-                isPrivate={isPrivate}
-                onPrivateToggle={setIsPrivate}
-                onCreateRoom={handleCreateRoom}
-                isCreating={isCreating}
-              />
-              <JoinRoomPanel
-                playerName={playerName}
-                onPlayerNameChange={setPlayerName}
-                gamePin={gamePin}
-                onGamePinChange={setGamePin}
-                onJoinRoom={handleJoinRoom}
-                isJoining={isJoining}
-              />
-            </HeroSection>
+            <div className="flex flex-col lg:flex-row items-start gap-8 w-full">
+              <div className="flex-1 w-full">
+                <CreateRoomPanel
+                  roomTopic={roomTopic}
+                  onRoomTopicChange={setRoomTopic}
+                  isPrivate={isPrivate}
+                  onPrivateToggle={setIsPrivate}
+                  onCreateRoom={handleCreateRoom}
+                  isCreating={isCreating}
+                />
+              </div>
+              <div className="flex-1 w-full">
+                <JoinRoomPanel
+                  playerName={playerName}
+                  onPlayerNameChange={setPlayerName}
+                  gamePin={gamePin}
+                  onGamePinChange={setGamePin}
+                  onJoinRoom={handleJoinRoom}
+                  isJoining={isJoining}
+                />
+              </div>
+            </div>
 
             {/* Game Pins - Below Hero Section */}
             <div className="h-[400px] lg:h-[500px]">
@@ -106,7 +109,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           
           {/* Right Column - Trending Topics (25-30% width) */}
           <div className="lg:flex-1 lg:max-w-sm">
-            <div className="h-[400px] lg:h-[800px]">
+            <div className="h-[400px] lg:h-[1032px]">
               <TrendingTopics />
             </div>
           </div>
