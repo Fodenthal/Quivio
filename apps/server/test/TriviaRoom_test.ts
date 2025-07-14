@@ -172,8 +172,10 @@ describe("testing TriviaRoom", () => {
     assert.strictEqual(room.state.chatMessages.size, 1);
     
     const message = Array.from(room.state.chatMessages.values())[0];
-    assert.strictEqual(message.text, "Hello everyone!");
+    assert.strictEqual(message.content, "Hello everyone!");
     assert.strictEqual(message.playerId, client1.sessionId);
+    assert.strictEqual(message.playerName, "Player1");
+    assert.strictEqual(message.type, "player");
   });
 
   // FIXED TESTS
@@ -571,8 +573,8 @@ describe("testing TriviaRoom", () => {
     
     // Message should be sanitized
     const message = Array.from(room.state.chatMessages.values())[0];
-    assert.strictEqual(message.text, "Hello!", "HTML should be removed");
-    assert.notStrictEqual(message.text, "<script>alert('xss')</script>Hello!", "Original message should not match");
+    assert.strictEqual(message.content, "Hello!", "HTML should be removed");
+    assert.notStrictEqual(message.content, "<script>alert('xss')</script>Hello!", "Original message should not match");
   });
 
   it("should allow multiple rounds with fixed scoring system", async () => {

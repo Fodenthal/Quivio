@@ -249,6 +249,15 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
     }
   };
 
+  const handleSendChatMessage = async (content: string) => {
+    try {
+      gameClient.sendChatMessage(content);
+    } catch (error) {
+      console.error("Failed to send chat message:", error);
+      throw error; // Re-throw so Chat component can handle it
+    }
+  };
+
   const handleLeaveGame = async () => {
     try {
       await gameClient.leaveRoom();
@@ -310,6 +319,7 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
             currentPlayerId={currentPlayerId}
             onSubmitGuess={handleSubmitGuess}
             onJoinNextGame={handleJoinNextGame}
+            onSendChatMessage={handleSendChatMessage}
           />
         );
       }

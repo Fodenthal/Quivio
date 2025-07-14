@@ -281,10 +281,8 @@ Real-time multiplayer trivia game inspired by JKLM's PopSauce with AI-powered pr
 - [ ] **Message animations** - Smooth fade-in animations for new messages
 
 **Step 5: Advanced Chat Features 🚀 POLISH**
-- [ ] **System message integration** - Show game events (correct answers, round changes, player joins) as chat messages
-- [ ] **Message rate limiting UI** - Show cooldown indicators and prevent spam
-- [ ] **Chat commands** - Add basic commands like `/ready` or `/help` for power users
-- [ ] **Message search/filter** - Allow filtering by player or message type (optional, nice-to-have)
+- [ ] **System message integration** - Show game events player joins as chat messages
+- [ ] **Message rate limiting UI** - Prevent spam
 - [ ] **Chat notifications** - Subtle indicators for new messages when chat is scrolled up
 
 **Step 6: Performance & Edge Cases 🔧 STABILITY**

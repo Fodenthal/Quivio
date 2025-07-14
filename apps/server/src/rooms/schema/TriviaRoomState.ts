@@ -24,9 +24,12 @@ export class PlayerIncorrectGuessState extends Schema {
 }
 
 export class ChatMessageState extends Schema {
+  @type("string") id: string = "";
   @type("string") playerId: string = "";
-  @type("string") text: string = "";
+  @type("string") playerName: string = "";
+  @type("string") content: string = "";
   @type("number") timestamp: number = 0;
+  @type("string") type: string = "player";
 }
 
 export class PromptState extends Schema {
@@ -178,12 +181,35 @@ export class TriviaRoomState extends Schema {
     this.playerIncorrectGuesses.clear();
   }
 
-  addChatMessage(playerId: string, text: string) {
+  addChatMessage(playerId: string, content: string, type: "player" | "system" = "player") {
+    const player = this.players.get(playerId);
+    const playerName = player ? player.name : "Unknown";
+    
     const message = new ChatMessageState();
+    message.id = `${Date.now()}_${playerId}_${Math.random().toString(36).substr(2, 9)}`;
     message.playerId = playerId;
-    message.text = text;
+    message.playerName = playerName;
+    message.content = content;
     message.timestamp = Date.now();
-    this.chatMessages.set(`${Date.now()}_${playerId}`, message);
+    message.type = type;
+    this.chatMessages.set(message.id, message);
+    
+    // Keep only last 50 messages
+    if (this.chatMessages.size > 50) {
+      const keys = Array.from(this.chatMessages.keys());
+      this.chatMessages.delete(keys[0]);
+    }
+  }
+
+  addSystemMessage(content: string) {
+    const message = new ChatMessageState();
+    message.id = `${Date.now()}_system_${Math.random().toString(36).substr(2, 9)}`;
+    message.playerId = "system";
+    message.playerName = "System";
+    message.content = content;
+    message.timestamp = Date.now();
+    message.type = "system";
+    this.chatMessages.set(message.id, message);
     
     // Keep only last 50 messages
     if (this.chatMessages.size > 50) {

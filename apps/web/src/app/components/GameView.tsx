@@ -11,13 +11,15 @@ interface GameViewProps {
   currentPlayerId: string;
   onSubmitGuess?: (guess: string) => void;
   onJoinNextGame?: () => void;
+  onSendChatMessage?: (content: string) => void;
 }
 
 export function GameView({ 
   gameState, 
   currentPlayerId,
   onSubmitGuess,
-  onJoinNextGame
+  onJoinNextGame,
+  onSendChatMessage
 }: GameViewProps) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -195,8 +197,9 @@ export function GameView({
           )}
           currentPlayerId={currentPlayerId}
           onSendMessage={(content) => {
-            // TODO: Implement chat message sending
-            console.log("Send message:", content);
+            if (onSendChatMessage) {
+              onSendChatMessage(content);
+            }
           }}
           disabled={false}
         />
