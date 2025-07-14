@@ -50,7 +50,7 @@ export function PlayerList({
     if (!incorrectGuess?.guess) return "";
     
     // Truncate long guesses to prevent layout overflow
-    const maxLength = 15;
+    const maxLength = 14;
     if (incorrectGuess.guess.length > maxLength) {
       return incorrectGuess.guess.substring(0, maxLength) + "...";
     }
