@@ -34,40 +34,72 @@ export function PlayerList({
     );
   };
 
+  /**
+   * Check if a player has submitted a correct answer this round
+   */
+  const hasPlayerAnsweredCorrectly = (playerId: string): boolean => {
+    const playerGuess = gameState.roundGuesses.get(playerId);
+    return playerGuess?.isCorrect === true;
+  };
+
+  /**
+   * Get the truncated incorrect guess for display
+   */
+  const getTruncatedIncorrectGuess = (playerId: string): string => {
+    const incorrectGuess = gameState.playerIncorrectGuesses.get(playerId);
+    if (!incorrectGuess?.guess) return "";
+    
+    // Truncate long guesses to prevent layout overflow
+    const maxLength = 20;
+    if (incorrectGuess.guess.length > maxLength) {
+      return incorrectGuess.guess.substring(0, maxLength) + "...";
+    }
+    return incorrectGuess.guess;
+  };
+
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
       <h3 className="text-2xl font-bold text-text-main mb-4">Players</h3>
       <div className="space-y-4">
-        {playersArray.map((player, index) => (
-          <div
-            key={`${player.id}-${index}`}
-            className="flex items-center justify-between p-3 bg-black/20 rounded-lg"
-          >
-            <div className="flex items-center space-x-4">
-              {getPlayerAvatar(player)}
-              <div>
-                <div className="font-semibold text-text-main">{player.name}</div>
-                <div className="text-sm text-text-secondary h-5">
-                  {gameState.playerIncorrectGuesses.has(player.id) && (
-                    gameState.playerIncorrectGuesses.get(player.id)?.guess
-                  )}
+        {playersArray.map((player, index) => {
+          const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
+          const incorrectGuess = getTruncatedIncorrectGuess(player.id);
+          
+          return (
+            <div
+              key={`${player.id}-${index}`}
+              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                hasCorrectAnswer 
+                  ? "bg-pink-500/20 border border-pink-500/30 shadow-lg" 
+                  : "bg-black/20"
+              }`}
+            >
+              <div className="flex items-center space-x-4">
+                {getPlayerAvatar(player)}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-text-main">{player.name}</div>
+                  <div className="text-sm text-text-secondary h-5 overflow-hidden">
+                    {incorrectGuess && (
+                      <span className="block truncate">{incorrectGuess}</span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center space-x-4 flex-shrink-0">
+                <div className="text-xl font-bold text-text-main">{player.score}</div>
+                {showParticipationStatus && (
+                  <div className="text-sm font-medium">
+                    {participatingPlayers.has(player.id) ? (
+                      <span className="text-green-400">Joined!</span>
+                    ) : (
+                      <span className="text-text-secondary">...</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-xl font-bold text-text-main">{player.score}</div>
-              {showParticipationStatus && (
-                <div className="text-sm font-medium">
-                  {participatingPlayers.has(player.id) ? (
-                    <span className="text-green-400">Joined!</span>
-                  ) : (
-                    <span className="text-text-secondary">...</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
