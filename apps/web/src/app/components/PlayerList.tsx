@@ -21,23 +21,21 @@ const PlayerListComponent = memo(function PlayerListInner({
       .sort((a, b) => b.score - a.score);
   }, [gameState.players]);
 
-  const getPlayerAvatar = useMemo(() => {
-    return (player: PlayerData) => {
-      const firstLetter = player.name.charAt(0).toUpperCase();
-      const colors = [
-        "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-        "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
-      ];
-      const colorIndex = player.name.length % colors.length;
-      const bgColor = colors[colorIndex];
+  const getPlayerAvatar = (player: PlayerData) => {
+    const firstLetter = player.name.charAt(0).toUpperCase();
+    const colors = [
+      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
+      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+    ];
+    const colorIndex = player.name.length % colors.length;
+    const bgColor = colors[colorIndex];
 
-      return (
-        <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
-          {firstLetter}
-        </div>
-      );
-    };
-  }, []);
+    return (
+      <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+        {firstLetter}
+      </div>
+    );
+  };
 
   /**
    * Check if a player has submitted a correct answer this round
@@ -128,6 +126,7 @@ const PlayerListComponent = memo(function PlayerListInner({
   );
 });
 
+// Set display name for React DevTools
 PlayerListComponent.displayName = 'PlayerList';
 
 export { PlayerListComponent as PlayerList };
