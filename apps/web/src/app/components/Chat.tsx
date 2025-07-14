@@ -14,6 +14,7 @@ interface ChatProps {
 /**
  * Complete chat interface combining message display and input
  * Includes header, scrollable messages, and input controls
+ * Fixed height ensures consistent sizing regardless of content
  */
 export function Chat({ 
   messages, 
@@ -21,18 +22,21 @@ export function Chat({
   onSendMessage, 
   disabled = false 
 }: ChatProps) {
+  // Filter valid messages for accurate counting
+  const validMessages = messages.filter((message) => message && message.id && message.playerName && message.content);
+  
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-[600px] flex flex-col">
       {/* Chat Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/20">
+      <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-white/20">
         <h3 className="text-xl font-bold text-text-main">Chat</h3>
         <div className="text-sm text-text-secondary">
-          {messages.length > 0 ? `${messages.length} messages` : "No messages"}
+          {validMessages.length > 0 ? `${validMessages.length} messages` : "No messages"}
         </div>
       </div>
 
-      {/* Chat Messages - flex-1 takes remaining space */}
-      <div className="flex-1 py-4">
+      {/* Chat Messages - flex-1 takes remaining space with fixed height */}
+      <div className="flex-1 py-4 min-h-0">
         <ChatWindow 
           messages={messages}
           currentPlayerId={currentPlayerId}
@@ -41,7 +45,7 @@ export function Chat({
       </div>
 
       {/* Chat Input - fixed at bottom */}
-      <div className="pt-4 border-t border-white/20">
+      <div className="flex-shrink-0 pt-4 border-t border-white/20">
         <ChatInput
           onSendMessage={onSendMessage}
           disabled={disabled}

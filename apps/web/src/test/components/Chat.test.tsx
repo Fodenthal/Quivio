@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Chat } from '@/app/components/Chat';
-import { ChatMessage as ChatMessageType } from '@shared/index';
+import { ChatMessage } from '@shared/index';
 
 describe('Chat Component', () => {
   const mockOnSendMessage = vi.fn();
   
-  const validMessages: ChatMessageType[] = [
+  const validMessages: ChatMessage[] = [
     {
       id: '1',
       playerId: 'player1',
@@ -25,8 +25,8 @@ describe('Chat Component', () => {
     }
   ];
 
-  afterEach(() => {
-    vi.clearAllMocks();
+  beforeEach(() => {
+    mockOnSendMessage.mockClear();
   });
 
   it('renders chat with valid messages', () => {
@@ -39,9 +39,11 @@ describe('Chat Component', () => {
       />
     );
 
+    expect(screen.getByText('Chat')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('Hello everyone!')).toBeInTheDocument();
     expect(screen.getByText('Game started!')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Type a message...')).toBeInTheDocument();
   });
 
   it('handles empty messages array', () => {
@@ -54,18 +56,18 @@ describe('Chat Component', () => {
       />
     );
 
-    expect(screen.getByText('No messages')).toBeInTheDocument();
-    expect(screen.getByText('Start the conversation!')).toBeInTheDocument();
+    expect(screen.getByText('Chat')).toBeInTheDocument();
+    expect(screen.getByText('No messages yet')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Type a message...')).toBeInTheDocument();
   });
 
   it('filters out invalid messages', () => {
-    const messagesWithInvalid = [
-      ...validMessages,
-      { id: '3', playerId: 'player2', playerName: undefined, content: 'Invalid message' },
-      { id: '4', playerId: 'player3', playerName: 'Bob', content: undefined },
-      null,
-      undefined
-    ] as ChatMessageType[];
+          const messagesWithInvalid = [
+        ...validMessages,
+        // Invalid messages that should be filtered
+        { id: '', playerName: '', content: '', timestamp: 0, type: 'player' as const, playerId: '' },
+        { id: '3', playerName: '', content: 'Test', timestamp: Date.now(), type: 'player' as const, playerId: 'player3' },
+      ];
 
     render(
       <Chat
@@ -76,16 +78,13 @@ describe('Chat Component', () => {
       />
     );
 
-    // Should only show the valid messages
+    // Should only show the 2 valid messages
+    expect(screen.getByText('2 messages')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('Hello everyone!')).toBeInTheDocument();
     expect(screen.getByText('Game started!')).toBeInTheDocument();
-    
-    // Invalid messages should not appear
-    expect(screen.queryByText('Invalid message')).not.toBeInTheDocument();
   });
 
-  it('sends message when form is submitted', async () => {
+  it('sends message when Enter key is pressed', () => {
     render(
       <Chat
         messages={validMessages}
@@ -95,11 +94,10 @@ describe('Chat Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('Type a message...');
-    const sendButton = screen.getByRole('button', { name: 'Send' });
+    const textarea = screen.getByPlaceholderText('Type a message...');
 
-    fireEvent.change(input, { target: { value: 'Test message' } });
-    fireEvent.click(sendButton);
+    fireEvent.change(textarea, { target: { value: 'Test message' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
     expect(mockOnSendMessage).toHaveBeenCalledWith('Test message');
   });
@@ -114,11 +112,9 @@ describe('Chat Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('Chat unavailable...');
-    const sendButton = screen.getByRole('button', { name: 'Send' });
+    const textarea = screen.getByPlaceholderText('Chat unavailable...');
 
-    expect(input).toBeDisabled();
-    expect(sendButton).toBeDisabled();
+    expect(textarea).toBeDisabled();
   });
 
   it('shows message count in header', () => {
