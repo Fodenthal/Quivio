@@ -144,8 +144,16 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
 
           const chatMessages = new Map();
           if (roomState.chatMessages) {
-            for (const [messageId, message] of Object.entries(roomState.chatMessages)) {
-              chatMessages.set(messageId, message);
+            // Handle MapSchema properly - iterate over $items
+            if (roomState.chatMessages.$items && roomState.chatMessages.$items instanceof Map) {
+              for (const [messageId, message] of roomState.chatMessages.$items) {
+                chatMessages.set(messageId, message);
+              }
+            } else {
+              // Fallback for regular objects
+              for (const [messageId, message] of Object.entries(roomState.chatMessages)) {
+                chatMessages.set(messageId, message);
+              }
             }
           }
 
