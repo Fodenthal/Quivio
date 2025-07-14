@@ -75,38 +75,38 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section - Two Panel Layout */}
-        <HeroSection>
-          <CreateRoomPanel
-            roomTopic={roomTopic}
-            onRoomTopicChange={setRoomTopic}
-            isPrivate={isPrivate}
-            onPrivateToggle={setIsPrivate}
-            onCreateRoom={handleCreateRoom}
-            isCreating={isCreating}
-          />
-          <JoinRoomPanel
-            playerName={playerName}
-            onPlayerNameChange={setPlayerName}
-            gamePin={gamePin}
-            onGamePinChange={setGamePin}
-            onJoinRoom={handleJoinRoom}
-            isJoining={isJoining}
-          />
-        </HeroSection>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Interactive Elements (70-75% width) */}
+          <div className="flex-1 lg:flex-[3] space-y-8">
+            {/* Hero Section - Two Panel Layout */}
+            <HeroSection>
+              <CreateRoomPanel
+                roomTopic={roomTopic}
+                onRoomTopicChange={setRoomTopic}
+                isPrivate={isPrivate}
+                onPrivateToggle={setIsPrivate}
+                onCreateRoom={handleCreateRoom}
+                isCreating={isCreating}
+              />
+              <JoinRoomPanel
+                playerName={playerName}
+                onPlayerNameChange={setPlayerName}
+                gamePin={gamePin}
+                onGamePinChange={setGamePin}
+                onJoinRoom={handleJoinRoom}
+                isJoining={isJoining}
+              />
+            </HeroSection>
 
-        {/* Bottom Section - Active Rooms and Trending Topics */}
-        <div className="mt-16 flex flex-col lg:flex-row gap-8">
-          {/* Active Rooms - Left */}
-          <div className="flex-1">
+            {/* Game Pins - Below Hero Section */}
             <div className="h-[400px] lg:h-[500px]">
               <GamePins />
             </div>
           </div>
           
-          {/* Trending Topics - Right */}
-          <div className="flex-1">
-            <div className="h-[400px] lg:h-[500px]">
+          {/* Right Column - Trending Topics (25-30% width) */}
+          <div className="lg:flex-1 lg:max-w-sm">
+            <div className="h-[400px] lg:h-[800px]">
               <TrendingTopics />
             </div>
           </div>
