@@ -6,6 +6,8 @@ interface GamePin {
   id: string;
   pin: string;
   status: "available" | "full";
+  currentPrompt?: string;
+  difficulty?: number; // 1-10 scale
 }
 
 export function GamePins() {
@@ -21,16 +23,38 @@ export function GamePins() {
     return result;
   };
 
+  // Sample prompts with 1-10 difficulty ratings
+  const samplePrompts = [
+    { text: "Ancient Egyptian Mythology", difficulty: 6 },
+    { text: "The Beatles White Album", difficulty: 5 },
+    { text: "Quant Interview Probability Questions", difficulty: 9 },
+    { text: "Modern Art History: 1900-1950", difficulty: 7 },
+    { text: "Chinese Dynasties: Ming to Qing", difficulty: 8 },
+    { text: "Classic Rock Guitar Solos", difficulty: 4 },
+    { text: "World War II Pacific Theater", difficulty: 7 },
+    { text: "French Impressionist Painters", difficulty: 6 },
+    { text: "Quantum Physics Basics", difficulty: 8 },
+    { text: "Greek Philosophy: Plato & Aristotle", difficulty: 7 },
+    { text: "Jazz Music Theory", difficulty: 6 },
+    { text: "Ancient Roman Architecture", difficulty: 5 },
+    { text: "Modern Cryptography", difficulty: 9 },
+    { text: "Renaissance Art & Culture", difficulty: 6 },
+    { text: "Classic Literature Themes", difficulty: 5 },
+  ];
+
   // Initialize game pins on mount
   useEffect(() => {
     const pins: GamePin[] = [];
     
     // Create 48 pins: 8 available (green) and 40 full (red)
     for (let i = 0; i < 48; i++) {
+      const prompt = samplePrompts[i % samplePrompts.length];
       pins.push({
         id: `pin-${i}`,
         pin: generateGamePin(),
-        status: i < 8 ? "available" : "full"
+        status: i < 8 ? "available" : "full",
+        currentPrompt: prompt.text,
+        difficulty: prompt.difficulty
       });
     }
     
@@ -65,6 +89,20 @@ export function GamePins() {
                 <span className="text-text-main font-mono text-lg font-semibold">
                   {gamePin.pin}
                 </span>
+              </div>
+
+              {/* Prompt and difficulty in the middle */}
+              <div className="flex-1 mx-4 min-w-0">
+                {gamePin.currentPrompt && (
+                  <div className="text-center">
+                    <p className="text-text-main text-sm truncate italic">
+                      &ldquo;{gamePin.currentPrompt}&rdquo;
+                    </p>
+                    <span className="text-xs text-text-secondary">
+                      Difficulty: {gamePin.difficulty}/10
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="text-right">
