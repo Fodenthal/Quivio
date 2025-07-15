@@ -28,7 +28,6 @@ describe("Homepage", () => {
   it("join button is disabled when game pin is empty", () => {
     render(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
     
-    const nameInput = screen.getByPlaceholderText("Enter your display name");
     const joinButton = screen.getByRole("button", { name: /Join Room/ });
 
     expect(joinButton).toBeDisabled();

@@ -62,7 +62,7 @@ export function ChatWindow({
     }
     
     setPreviousMessageCount(currentMessageCount);
-  }, [messages]); // Remove previousMessageCount from dependencies to avoid extra re-runs
+  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initial scroll to bottom when component mounts
   useEffect(() => {
