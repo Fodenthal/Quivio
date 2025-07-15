@@ -10,6 +10,25 @@ interface GamePin {
   difficulty?: number; // 1-10 scale
 }
 
+// Sample prompts with 1-10 difficulty ratings
+const samplePrompts = [
+  { text: "Ancient Egyptian Mythology", difficulty: 6 },
+  { text: "The Beatles White Album", difficulty: 5 },
+  { text: "Quant Interview Probability Questions", difficulty: 9 },
+  { text: "Modern Art History: 1900-1950", difficulty: 7 },
+  { text: "Chinese Dynasties: Ming to Qing", difficulty: 8 },
+  { text: "Classic Rock Guitar Solos", difficulty: 4 },
+  { text: "World War II Pacific Theater", difficulty: 7 },
+  { text: "French Impressionist Painters", difficulty: 6 },
+  { text: "Quantum Physics Basics", difficulty: 8 },
+  { text: "Greek Philosophy: Plato & Aristotle", difficulty: 7 },
+  { text: "MrBeast childhood", difficulty: 6 },
+  { text: "History's most evil people", difficulty: 5 },
+  { text: "Modern Cryptography", difficulty: 9 },
+  { text: "Renaissance Art & Culture", difficulty: 6 },
+  { text: "Classic Literature Themes", difficulty: 5 },
+];
+
 export function GamePins() {
   const [gamePins, setGamePins] = useState<GamePin[]>([]);
 
@@ -22,25 +41,6 @@ export function GamePins() {
     }
     return result;
   };
-
-  // Sample prompts with 1-10 difficulty ratings
-  const samplePrompts = [
-    { text: "Ancient Egyptian Mythology", difficulty: 6 },
-    { text: "The Beatles White Album", difficulty: 5 },
-    { text: "Quant Interview Probability Questions", difficulty: 9 },
-    { text: "Modern Art History: 1900-1950", difficulty: 7 },
-    { text: "Chinese Dynasties: Ming to Qing", difficulty: 8 },
-    { text: "Classic Rock Guitar Solos", difficulty: 4 },
-    { text: "World War II Pacific Theater", difficulty: 7 },
-    { text: "French Impressionist Painters", difficulty: 6 },
-    { text: "Quantum Physics Basics", difficulty: 8 },
-    { text: "Greek Philosophy: Plato & Aristotle", difficulty: 7 },
-    { text: "MrBeast childhood", difficulty: 6 },
-    { text: "History's most evil people", difficulty: 5 },
-    { text: "Modern Cryptography", difficulty: 9 },
-    { text: "Renaissance Art & Culture", difficulty: 6 },
-    { text: "Classic Literature Themes", difficulty: 5 },
-  ];
 
   // Initialize game pins on mount
   useEffect(() => {

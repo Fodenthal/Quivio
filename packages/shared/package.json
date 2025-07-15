@@ -1,7 +1,15 @@
 {
   "name": "@shared",
   "version": "1.0.0",
-  "main": "index.ts",
-  "types": "index.ts",
-  "private": true
+  "main": "index.js",
+  "types": "index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf *.js *.d.ts"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.4"
+  }
 } 

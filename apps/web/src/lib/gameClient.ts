@@ -53,9 +53,7 @@ export class GameClient {
 
   constructor(serverUrl?: string) {
     // Default to localhost in development, can be overridden
-    const url = serverUrl || (process.env.NODE_ENV === "production" ? 
-      "wss://your-production-url.com" : 
-      "ws://localhost:2567");
+    const url = serverUrl || (process.env.NEXT_PUBLIC_BACKEND_URL || "ws://localhost:2567");
     
     this.client = new Client(url);
   }

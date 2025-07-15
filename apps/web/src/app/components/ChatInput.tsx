@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, KeyboardEvent, useRef, useEffect } from "react";
+import { useState, KeyboardEvent, useRef} from "react";
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;

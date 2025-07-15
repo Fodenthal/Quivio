@@ -46,7 +46,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
           Start a new room
         </h2>
         <p className="text-text-secondary text-lg">
-          Create a trivia room for you and your friends
+          Create a room for you and your friends
         </p>
       </div>
       
@@ -54,7 +54,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
         {/* Topic Input */}
         <div className="space-y-2">
           <label htmlFor="room-topic" className="block text-sm font-medium text-text-main">
-            Quiz Topic
+            Room Topic
           </label>
           <input
             id="room-topic"
@@ -156,7 +156,6 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <span>✨</span>
               <span>Create Room</span>
             </span>
           )}
