@@ -4,7 +4,9 @@ export const MSG = {
   SUBMIT_GUESS: "submit_guess",
   START_GAME: "start_game",
   UPDATE_SETTINGS: "update_settings",
-  JOIN_NEXT_GAME: "join_next_game"
+  JOIN_NEXT_GAME: "join_next_game",
+  SET_TOPIC: "set_topic",
+  SET_DIFFICULTY: "set_difficulty"
 } as const;
 
 export interface PlayerData {
@@ -22,6 +24,10 @@ export interface Prompt {
   category: string;
   difficulty: "easy" | "medium" | "hard";
   answer: string;
+  // New fields for AI-generated questions
+  topic?: string;
+  difficultyLevel?: number; // 1-10 scale
+  acceptableAnswers?: string[];
 }
 
 export interface Guess {
@@ -44,6 +50,14 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   type: "player" | "system";
+}
+
+export interface TopicMessage {
+  topic: string;
+}
+
+export interface DifficultyMessage {
+  difficulty: number; // 1-10 scale
 }
 
 export interface RoomSettings {
@@ -79,6 +93,10 @@ export interface GameState {
   roundTimeRemaining: number;
   roundEnded: boolean;
   correctAnswer: string;
+
+  // AI Question Generation Settings
+  currentTopic: string;
+  currentDifficulty: number; // 1-10 scale
 
   // Players
   players: Map<string, PlayerData>;

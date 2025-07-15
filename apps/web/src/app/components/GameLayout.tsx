@@ -33,6 +33,8 @@ interface RawRoomState {
   roundTimeRemaining?: number;
   roundEnded?: boolean;
   correctAnswer?: string;
+  currentTopic?: string;
+  currentDifficulty?: number;
   players?: MapSchemaLike | Record<string, PlayerData>;
   currentPrompt?: {
     id?: string;
@@ -40,6 +42,9 @@ interface RawRoomState {
     category?: string;
     difficulty?: string;
     answer?: string;
+    topic?: string;
+    difficultyLevel?: number;
+    acceptableAnswers?: string[];
   };
   roundGuesses?: MapSchemaLike | Record<string, unknown>;
   playerIncorrectGuesses?: MapSchemaLike | Record<string, unknown>;
@@ -221,13 +226,22 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
             roundTimeRemaining: roomState.roundTimeRemaining || 0,
             roundEnded: roomState.roundEnded || false,
             correctAnswer: roomState.correctAnswer || "",
+            
+            // AI Question Generation Settings
+            currentTopic: roomState.currentTopic || "General Knowledge",
+            currentDifficulty: roomState.currentDifficulty || 5,
+            
             players: playersMap,
             currentPrompt: {
               id: roomState.currentPrompt?.id || "",
               text: roomState.currentPrompt?.text || "",
               category: roomState.currentPrompt?.category || "",
               difficulty: (roomState.currentPrompt?.difficulty as "easy" | "medium" | "hard") || "easy",
-              answer: roomState.currentPrompt?.answer || ""
+              answer: roomState.currentPrompt?.answer || "",
+              // Include AI-specific fields
+              topic: roomState.currentPrompt?.topic || "",
+              difficultyLevel: roomState.currentPrompt?.difficultyLevel || 5,
+              acceptableAnswers: roomState.currentPrompt?.acceptableAnswers || []
             },
             roundGuesses,
             playerIncorrectGuesses,
@@ -290,6 +304,22 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
       gameClient.joinNextGame();
     } catch (error) {
       console.error("Failed to join next game:", error);
+    }
+  };
+
+  const handleSetTopic = (topic: string) => {
+    try {
+      gameClient.setTopic(topic);
+    } catch (error) {
+      console.error("Failed to set topic:", error);
+    }
+  };
+
+  const handleSetDifficulty = (difficulty: number) => {
+    try {
+      gameClient.setDifficulty(difficulty);
+    } catch (error) {
+      console.error("Failed to set difficulty:", error);
     }
   };
 
@@ -388,6 +418,8 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
             currentPlayerId={currentPlayerId}
             onPlayerReady={handlePlayerReady}
             onStartGame={handleStartGame}
+            onSetTopic={handleSetTopic}
+            onSetDifficulty={handleSetDifficulty}
           />
         );
       } else {

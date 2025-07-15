@@ -8,15 +8,21 @@ interface GameLobbyProps {
   currentPlayerId: string;
   onPlayerReady: (ready: boolean) => void;
   onStartGame?: () => void;
+  onSetTopic?: (topic: string) => void;
+  onSetDifficulty?: (difficulty: number) => void;
 }
 
 export function GameLobby({ 
   gameState, 
   currentPlayerId, 
   onPlayerReady, 
-  onStartGame 
+  onStartGame,
+  onSetTopic,
+  onSetDifficulty
 }: GameLobbyProps) {
   const [isTogglingReady, setIsTogglingReady] = useState(false);
+  const [topicInput, setTopicInput] = useState(gameState.currentTopic || "");
+  const [difficultyInput, setDifficultyInput] = useState(gameState.currentDifficulty || 5);
 
   const currentPlayer = gameState.players.get(currentPlayerId);
   const isHost = currentPlayer?.isHost || false;
@@ -49,6 +55,27 @@ export function GameLobby({
     if (onStartGame && canStartGame) {
       onStartGame();
     }
+  };
+
+  const handleTopicChange = () => {
+    if (onSetTopic && topicInput.trim() && topicInput.trim() !== gameState.currentTopic) {
+      onSetTopic(topicInput.trim());
+    }
+  };
+
+  const handleDifficultyChange = (newDifficulty: number) => {
+    setDifficultyInput(newDifficulty);
+    if (onSetDifficulty && newDifficulty !== gameState.currentDifficulty) {
+      onSetDifficulty(newDifficulty);
+    }
+  };
+
+  const getDifficultyLabel = (diff: number): string => {
+    if (diff <= 2) return "Very Easy";
+    if (diff <= 4) return "Easy";
+    if (diff <= 6) return "Medium";
+    if (diff <= 8) return "Hard";
+    return "Expert";
   };
 
   const getPlayerStatusIcon = (player: PlayerData) => {
@@ -147,6 +174,65 @@ export function GameLobby({
               {canStartGame ? "Start Game" : `Need ${Math.max(2 - readyCount, 0)} more ready players`}
             </button>
             
+            {/* AI Question Settings */}
+            <div className="bg-white/10 rounded-lg p-4 border border-white/20 space-y-4">
+              <h4 className="text-md font-semibold text-text-main mb-2">AI Question Settings</h4>
+              
+              {/* Topic Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-main">Current Topic</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleTopicChange()}
+                    placeholder="e.g., Space Exploration, Ancient History..."
+                    className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={handleTopicChange}
+                    disabled={!topicInput.trim() || topicInput.trim() === gameState.currentTopic}
+                    className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Set
+                  </button>
+                </div>
+                <div className="text-xs text-text-secondary">
+                  Active: <span className="font-bold text-text-main">{gameState.currentTopic}</span>
+                </div>
+              </div>
+
+              {/* Difficulty Slider */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-main">Difficulty Level</label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-secondary">Generic</span>
+                    <span className="text-sm font-bold text-primary">{getDifficultyLabel(difficultyInput)}</span>
+                    <span className="text-xs text-text-secondary">Unique</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={difficultyInput}
+                    onChange={(e) => handleDifficultyChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-text-secondary">
+                    <span>1</span>
+                    <span>5</span>
+                    <span>10</span>
+                  </div>
+                </div>
+                <div className="text-xs text-text-secondary">
+                  Active: <span className="font-bold text-text-main">{getDifficultyLabel(gameState.currentDifficulty)}</span> ({gameState.currentDifficulty}/10)
+                </div>
+              </div>
+            </div>
+
+            {/* Game Settings */}
             <div className="bg-white/10 rounded-lg p-4 border border-white/20">
               <h4 className="text-md font-semibold text-text-main mb-2">Game Settings</h4>
               <div className="text-sm text-text-secondary space-y-1">

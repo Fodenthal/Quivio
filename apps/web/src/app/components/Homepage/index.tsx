@@ -8,7 +8,7 @@ import { JoinRoomPanel } from "./JoinRoomPanel";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
-  onCreateRoom: (topic: string, isPrivate: boolean) => void;
+  onCreateRoom: (topic: string, difficulty: number, isPrivate: boolean) => void;
 }
 
 /**
@@ -19,6 +19,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const [playerName, setPlayerName] = useState("");
   const [gamePin, setGamePin] = useState("");
   const [roomTopic, setRoomTopic] = useState("");
+  const [difficulty, setDifficulty] = useState(5); // Default to medium
   const [isPrivate, setIsPrivate] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -52,7 +53,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
 
     setIsCreating(true);
     try {
-      await onCreateRoom(roomTopic.trim(), isPrivate);
+      await onCreateRoom(roomTopic.trim(), difficulty, isPrivate);
     } catch (error) {
       console.error("Failed to create room:", error);
       alert("Failed to create room. Please try again.");
@@ -83,6 +84,8 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                 <CreateRoomPanel
                   roomTopic={roomTopic}
                   onRoomTopicChange={setRoomTopic}
+                  difficulty={difficulty}
+                  onDifficultyChange={setDifficulty}
                   isPrivate={isPrivate}
                   onPrivateToggle={setIsPrivate}
                   onCreateRoom={handleCreateRoom}

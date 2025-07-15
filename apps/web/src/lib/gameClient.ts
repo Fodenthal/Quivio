@@ -82,6 +82,43 @@ export class GameClient {
   }
 
   /**
+   * Create a new room with AI settings
+   */
+  async createRoom(options: {
+    playerName: string;
+    topic: string;
+    difficulty: number;
+    isPrivate?: boolean;
+    maxPlayers?: number;
+  }): Promise<Room> {
+    this.setConnectionStatus(ConnectionStatus.CONNECTING);
+    
+    try {
+      const roomOptions = {
+        playerName: options.playerName,
+        maxPlayers: options.maxPlayers || 8,
+        isPrivate: options.isPrivate || false,
+        topic: options.topic,
+        difficulty: options.difficulty
+      };
+
+      // Create a new room
+      this.room = await this.client.create("trivia_room", roomOptions);
+
+      this.setupRoomHandlers();
+      this.setConnectionStatus(ConnectionStatus.CONNECTED);
+      this.reconnectAttempts = 0; // Reset on successful connection
+
+      return this.room;
+    } catch (error) {
+      this.setConnectionStatus(ConnectionStatus.ERROR);
+      const gameError = new Error(`Failed to create room: ${error instanceof Error ? error.message : String(error)}`);
+      this.events.onError?.(gameError);
+      throw gameError;
+    }
+  }
+
+  /**
    * Join or create a trivia room
    */
   async joinRoom(options: JoinRoomOptions): Promise<Room> {
@@ -177,6 +214,26 @@ export class GameClient {
    */
   joinNextGame(): void {
     this.sendMessage(MSG.JOIN_NEXT_GAME, {});
+  }
+
+  /**
+   * Set the topic for AI question generation (host only)
+   */
+  setTopic(topic: string): void {
+    if (!topic.trim()) {
+      throw new Error("Topic cannot be empty");
+    }
+    this.sendMessage(MSG.SET_TOPIC, { topic: topic.trim() });
+  }
+
+  /**
+   * Set the difficulty for AI question generation (host only)
+   */
+  setDifficulty(difficulty: number): void {
+    if (difficulty < 1 || difficulty > 10) {
+      throw new Error("Difficulty must be between 1 and 10");
+    }
+    this.sendMessage(MSG.SET_DIFFICULTY, { difficulty });
   }
 
   /**

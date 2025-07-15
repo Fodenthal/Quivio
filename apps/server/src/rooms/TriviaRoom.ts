@@ -1,12 +1,15 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG } from "@shared/index";
+import { MSG, TopicMessage, DifficultyMessage } from "@shared/index";
+import { GeminiService } from "../services/GeminiService";
 
 export interface RoomOptions {
   targetScore?: number;
   roundTime?: number;
   maxPlayers?: number;
   isPrivate?: boolean;
+  topic?: string;
+  difficulty?: number;
 }
 
 interface PlayerReadyMessage {
@@ -107,9 +110,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private usedPrompts: Set<string> = new Set();
   private currentRoundAnswer: string = "";
+  private currentAcceptableAnswers: string[] = [];
+  private geminiService: GeminiService;
+  private recentQuestions: string[] = []; // Track recent questions to avoid duplicates
 
   onCreate(options: RoomOptions = {}) {
     console.log("Creating TriviaRoom:", this.roomId);
+    
+    // Initialize Gemini service
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY environment variable is not set!");
+      throw new Error("Gemini API key is required");
+    }
+    this.geminiService = new GeminiService(apiKey);
     
     // Initialize room state
     this.state = new TriviaRoomState();
@@ -117,6 +131,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundTime = options.roundTime || this.DEFAULT_ROUND_TIME;
     this.state.isPrivate = options.isPrivate || false;
     this.state.maxPlayers = options.maxPlayers || this.maxClients;
+    this.state.currentTopic = options.topic || "General Knowledge"; // Use provided topic or default
+    this.state.currentDifficulty = options.difficulty || 5; // Use provided difficulty or default
     
     // Set up message handlers
     this.setupMessageHandlers();
@@ -268,6 +284,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       }
     });
 
+    // Handle topic setting (host only)
+    this.onMessage(MSG.SET_TOPIC, (client, message: TopicMessage) => {
+      if (client.sessionId === this.state.hostId && typeof message?.topic === "string") {
+        this.setTopic(message.topic);
+      }
+    });
+
+    // Handle difficulty setting (host only)
+    this.onMessage(MSG.SET_DIFFICULTY, (client, message: DifficultyMessage) => {
+      if (client.sessionId === this.state.hostId && typeof message?.difficulty === "number") {
+        this.setDifficulty(message.difficulty);
+      }
+    });
+
     // Handle join next game (JKLM-style restart system)
     this.onMessage(MSG.JOIN_NEXT_GAME, (client) => {
       // Only allow joining if we're in the game ended state with countdown active
@@ -332,10 +362,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
     
     // Start first round
-    this.startNewRound();
+    this.startNewRound().catch(error => {
+      console.error("Failed to start new round:", error);
+    });
   }
 
-  private startNewRound() {
+  private async startNewRound(): Promise<void> {
     this.state.currentRound++;
     this.state.roundStartTime = Date.now();
     this.state.roundTimeRemaining = this.state.roundTime;
@@ -352,36 +384,77 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.clearRoundGuesses();
     this.state.clearIncorrectGuesses();
     
-    // Load new prompt
-    this.loadNewPrompt();
+    // Load new prompt (now async)
+    await this.loadNewPrompt();
     
     console.log(`📝 Round ${this.state.currentRound}: ${this.state.currentPrompt.text}`);
   }
 
-  private loadNewPrompt() {
-    // Get available prompts (not used yet)
+  private async loadNewPrompt(): Promise<void> {
+    try {
+      // Use Gemini API to generate a new question
+      const questionRequest = {
+        topic: this.state.currentTopic || "General Knowledge",
+        difficulty: this.state.currentDifficulty || 5,
+        previousQuestions: this.recentQuestions
+      };
+
+      console.log(`🤖 Generating question for "${questionRequest.topic}" (difficulty: ${questionRequest.difficulty}/10)`);
+      
+      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
+      
+      // Update state with the generated question
+      this.state.currentPrompt.id = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      this.state.currentPrompt.text = generatedQuestion.question;
+      this.state.currentPrompt.category = generatedQuestion.category;
+      this.state.currentPrompt.difficulty = this.mapDifficultyToString(generatedQuestion.difficulty);
+      this.state.currentPrompt.topic = questionRequest.topic;
+      this.state.currentPrompt.difficultyLevel = generatedQuestion.difficulty;
+      this.state.currentPrompt.acceptableAnswers = generatedQuestion.acceptableAnswers;
+      
+      // Store the correct answer and acceptable answers for this round
+      this.currentRoundAnswer = generatedQuestion.correctAnswer;
+      this.currentAcceptableAnswers = generatedQuestion.acceptableAnswers;
+      
+      // Track recent questions to avoid duplicates
+      this.recentQuestions.push(generatedQuestion.question);
+      if (this.recentQuestions.length > 10) {
+        this.recentQuestions.shift(); // Keep only the last 10 questions
+      }
+      
+      console.log(`📝 Generated: "${generatedQuestion.question}" (Answer: ${generatedQuestion.correctAnswer})`);
+      
+    } catch (error) {
+      console.error("Failed to generate question with Gemini API:", error);
+      
+      // Fallback to static prompts if AI generation fails
+      console.log("🔄 Falling back to static prompts...");
+      this.loadStaticPrompt();
+    }
+  }
+
+  private loadStaticPrompt(): void {
+    // Fallback method using static prompts
     const availablePrompts = TriviaRoom.PROMPTS.filter(prompt => !this.usedPrompts.has(prompt.id));
     
-    // If all prompts have been used, reset the used prompts set
     if (availablePrompts.length === 0) {
       this.usedPrompts.clear();
       availablePrompts.push(...TriviaRoom.PROMPTS);
     }
     
-    // Randomly select a prompt
     const selectedPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
-    
-    // Mark prompt as used
     this.usedPrompts.add(selectedPrompt.id);
     
-    // Update state with the selected prompt
     this.state.currentPrompt.id = selectedPrompt.id;
     this.state.currentPrompt.text = selectedPrompt.text;
     this.state.currentPrompt.category = selectedPrompt.category;
     this.state.currentPrompt.difficulty = selectedPrompt.difficulty;
+    this.state.currentPrompt.topic = "Mixed Topics";
+    this.state.currentPrompt.difficultyLevel = this.mapStringToNumber(selectedPrompt.difficulty);
+    this.state.currentPrompt.acceptableAnswers = [selectedPrompt.answer];
     
-    // Store the correct answer for this round
     this.currentRoundAnswer = selectedPrompt.answer;
+    this.currentAcceptableAnswers = [selectedPrompt.answer];
   }
 
   private handleGuess(playerId: string, guess: string) {
@@ -405,12 +478,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       return; // Player already guessed this round
     }
 
-    // Normalize guess for comparison
-    const normalizedGuess = this.normalizeAnswer(guess);
-    const correctAnswer = this.normalizeAnswer(this.currentRoundAnswer);
-    
-    // Check if guess is correct
-    const isCorrect = normalizedGuess === correctAnswer;
+    // Check if guess is correct using enhanced answer matching
+    const isCorrect = GeminiService.isAnswerAcceptable(guess, this.currentAcceptableAnswers);
     
     if (isCorrect) {
       // Remove any previous incorrect guess since they got it right
@@ -525,9 +594,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.endGame(winner);
     } else {
       // Start next round after delay
-      setTimeout(() => {
+      setTimeout(async () => {
         if (this.state.gameStarted && !this.state.gameEnded) {
-          this.startNewRound();
+          await this.startNewRound();
         }
       }, 3000); // 3 second delay between rounds
     }
@@ -756,5 +825,49 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       gameLoopInterval: this.GAME_LOOP_INTERVAL,
       timerUpdateThreshold: this.TIMER_UPDATE_THRESHOLD
     };
+  }
+
+  /**
+   * Set the topic for AI question generation (host only)
+   */
+  private setTopic(topic: string): void {
+    if (topic && topic.trim().length > 0) {
+      this.state.currentTopic = topic.trim();
+      console.log(`🎯 Topic set to: "${this.state.currentTopic}"`);
+      
+      // Clear recent questions when topic changes to allow fresh questions
+      this.recentQuestions = [];
+    }
+  }
+
+  /**
+   * Set the difficulty level for AI question generation (host only)
+   */
+  private setDifficulty(difficulty: number): void {
+    if (difficulty >= 1 && difficulty <= 10) {
+      this.state.currentDifficulty = difficulty;
+      console.log(`📊 Difficulty set to: ${this.state.currentDifficulty}/10`);
+    }
+  }
+
+  /**
+   * Map numeric difficulty (1-10) to string representation
+   */
+  private mapDifficultyToString(difficulty: number): string {
+    if (difficulty <= 2) return "easy";
+    if (difficulty <= 6) return "medium";
+    return "hard";
+  }
+
+  /**
+   * Map string difficulty to numeric representation
+   */
+  private mapStringToNumber(difficulty: string): number {
+    switch (difficulty.toLowerCase()) {
+      case "easy": return 3;
+      case "medium": return 5;
+      case "hard": return 8;
+      default: return 5;
+    }
   }
 }

@@ -37,6 +37,9 @@ export class PromptState extends Schema {
   @type("string") text: string = "";
   @type("string") category: string = "";
   @type("string") difficulty: string = "";
+  @type("string") topic: string = "";
+  @type("number") difficultyLevel: number = 5; // 1-10 scale
+  @type(["string"]) acceptableAnswers: string[] = [];
 }
 
 export class TriviaRoomState extends Schema {
@@ -64,6 +67,10 @@ export class TriviaRoomState extends Schema {
   @type("number") roundTimeRemaining: number = 0;
   @type("boolean") roundEnded: boolean = false;
   @type("string") correctAnswer: string = "";
+
+  // AI Question Generation Settings
+  @type("string") currentTopic: string = "";
+  @type("number") currentDifficulty: number = 5; // 1-10 scale
 
   // Players
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();

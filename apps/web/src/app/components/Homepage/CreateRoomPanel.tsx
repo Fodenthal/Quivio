@@ -3,6 +3,8 @@ import React from "react";
 export interface CreateRoomPanelProps {
   roomTopic: string;
   onRoomTopicChange: (topic: string) => void;
+  difficulty: number; // 1-10 scale
+  onDifficultyChange: (difficulty: number) => void;
   isPrivate: boolean;
   onPrivateToggle: (isPrivate: boolean) => void;
   onCreateRoom: () => void;
@@ -16,6 +18,8 @@ export interface CreateRoomPanelProps {
 export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   roomTopic,
   onRoomTopicChange,
+  difficulty,
+  onDifficultyChange,
   isPrivate,
   onPrivateToggle,
   onCreateRoom,
@@ -25,6 +29,14 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
     if (e.key === "Enter" && !isCreating && roomTopic.trim()) {
       onCreateRoom();
     }
+  };
+
+  const getDifficultyLabel = (diff: number): string => {
+    if (diff <= 2) return "Very Easy";
+    if (diff <= 4) return "Easy";
+    if (diff <= 6) return "Medium";
+    if (diff <= 8) return "Hard";
+    return "Expert";
   };
 
   return (
@@ -53,6 +65,47 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             placeholder="Movies, Sports, History, Science..."
             className="w-full px-4 py-3 lg:py-4 text-center text-base lg:text-lg bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 focus:border-primary/50 transition-all duration-300"
           />
+        </div>
+
+        {/* Difficulty Slider */}
+        <div className="space-y-3">
+          <label htmlFor="difficulty-slider" className="block text-sm font-medium text-text-main">
+            Difficulty Level
+          </label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-secondary">Generic</span>
+              <span className="text-lg font-bold text-primary">{getDifficultyLabel(difficulty)}</span>
+              <span className="text-sm text-text-secondary">Unique</span>
+            </div>
+            <div className="relative">
+              <input
+                id="difficulty-slider"
+                type="range"
+                min="1"
+                max="10"
+                value={difficulty}
+                onChange={(e) => onDifficultyChange(parseInt(e.target.value))}
+                className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                disabled={isCreating}
+                style={{
+                  background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${(difficulty - 1) * 11.11}%, rgba(255,255,255,0.2) ${(difficulty - 1) * 11.11}%, rgba(255,255,255,0.2) 100%)`
+                }}
+              />
+              <div className="flex justify-between text-xs text-text-secondary mt-1">
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+                <span>8</span>
+                <span>9</span>
+                <span>10</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Public/Private Toggle */}

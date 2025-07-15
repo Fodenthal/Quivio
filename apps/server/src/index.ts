@@ -14,8 +14,8 @@ import "dotenv/config";
 
 import { listen } from "@colyseus/tools";
 
-// Import Colyseus config
+// Import app configuration
 import app from "./app.config";
 
-// Create and listen on 2567 (or PORT environment variable.)
+// Start listening
 listen(app);

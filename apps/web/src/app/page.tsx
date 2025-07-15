@@ -43,16 +43,18 @@ export default function Home() {
     }
   };
 
-  const handleCreateRoom = async (topic: string, isPrivate: boolean) => {
+  const handleCreateRoom = async (topic: string, difficulty: number, isPrivate: boolean) => {
     try {
-      // TODO: Implement room creation logic
-      // For now, we'll just log the room creation attempt
-      console.log("Creating room with topic:", topic, "private:", isPrivate);
+      // Create a room with the host as the first player
+      const playerName = `Host_${Math.random().toString(36).substring(2, 8)}`;
       
-      // Placeholder - in the future this will create a room and then join it
-      // await gameClient.createRoom({ topic, isPrivate });
-      
-      throw new Error("Room creation not implemented yet");
+      await gameClient.createRoom({
+        playerName,
+        topic,
+        difficulty,
+        isPrivate,
+        maxPlayers: 8
+      });
     } catch (error) {
       console.error("Failed to create room:", error);
       throw error; // Re-throw so Homepage can handle it
