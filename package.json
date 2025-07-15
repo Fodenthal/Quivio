@@ -8,6 +8,8 @@
     "start": "pnpm --parallel --filter=server start & pnpm --filter=web dev",
     "server": "pnpm --filter=server start",
     "web": "pnpm --filter=web dev",
+    "build": "pnpm --filter=@shared run build && pnpm --filter=my-app run build",
+    "build:server": "pnpm --filter=my-app run build",
     "test": "CI=1 pnpm -r --if-present run test",
     "test:parallel": "CI=1 pnpm -r --parallel --if-present run test",
     "test:web:watch": "pnpm --filter=web run test:watch"

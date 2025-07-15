@@ -36,7 +36,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
           Join a private room
         </h2>
         <p className="text-text-secondary text-lg">
-          Enter a room code to join a room
+          Enter a room code to join
         </p>
       </div>
       
@@ -86,7 +86,6 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <span>🚪</span>
               <span>Join Room</span>
             </span>
           )}

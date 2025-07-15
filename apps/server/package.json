@@ -12,7 +12,8 @@
     "dev": "NODE_ENV=development tsx watch --clear-screen=false src/index.ts",
     "loadtest": "tsx loadtest/example.ts --room my_room --numClients 2",
     "loadtest:trivia": "tsx loadtest/trivia_test.ts",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && npm run build:shared && tsc",
+    "build:shared": "cd ../../packages/shared && npm run build",
     "clean": "rimraf build",
     "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000",
     "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000",
@@ -38,6 +39,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@shared": "workspace:*",
     "@colyseus/core": "^0.16.18",
     "@colyseus/monitor": "^0.16.7",
     "@colyseus/playground": "^0.16.4",
