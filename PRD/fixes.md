@@ -18,7 +18,7 @@ This document lists the required changes for the `GameView.tsx` component to imp
   - This involves two distinct state changes for a player who has just answered correctly.
   - **3.1. During the Round (Immediate Feedback):**
     - **Goal:** Give the user instant confirmation of their correct answer and prevent further guesses.
-    - **Action:** When a player submits a correct guess, the guess input form should be replaced with a clear confirmation message, such as "You got it!". This state should persist until the round timer ends.
+    - **Action:** When a player submits a correct guess, the guess input form should be replaced with a clear confirmation message, such as "You got it!" that is the same size as the guess input form so the window does not change size. This state should persist until the round timer ends.
   - **3.2. After the Round (Answer Reveal):**
     - **Goal:** Use the main prompt area to clearly display the correct answer to all players after the round has concluded.
     - **Action:** Once the round ends, the prompt display window should be updated to show the following format:

@@ -113,8 +113,9 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      // Round ended state - prompt area still shows the question
-      expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
+      // Round ended state - prompt area shows answer reveal
+      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("Paris")).toBeInTheDocument();
     });
 
     it("shows disabled input when game is paused", () => {
@@ -205,8 +206,9 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      // Round ended state - only the question prompt remains visible
-      expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
+      // Round ended state - shows answer reveal in prompt area
+      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("Paris")).toBeInTheDocument();
     });
 
     it("does not show results when round is active", () => {
@@ -318,7 +320,7 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("✅ Correct!")).toBeInTheDocument();
+      expect(screen.getByText("You got it!")).toBeInTheDocument();
       expect(screen.getByText("Your guess:")).toBeInTheDocument();
       expect(screen.getByText("Paris")).toBeInTheDocument();
       expect(screen.queryByText("Submit Guess")).not.toBeInTheDocument();

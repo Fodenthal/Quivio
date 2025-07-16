@@ -192,14 +192,29 @@ export const GameView = memo(function GameView({
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
           <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
-            <div className="mb-6">
-              <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
-                {gameState.currentPrompt.category || "General"}
-              </span>
-            </div>
-            <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
-              {gameState.currentPrompt.text}
-            </h3>
+            {gameState.roundEnded && gameState.correctAnswer ? (
+              // Answer reveal after round ends
+              <div className="space-y-4">
+                <h4 className="text-lg text-text-secondary font-medium">
+                  The answer was:
+                </h4>
+                <h2 className="text-4xl font-bold text-text-main leading-relaxed">
+                  {gameState.correctAnswer}
+                </h2>
+              </div>
+            ) : (
+              // Normal question display during round
+              <>
+                <div className="mb-6">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
+                    {gameState.currentPrompt.category || "General"}
+                  </span>
+                </div>
+                <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                  {gameState.currentPrompt.text}
+                </h3>
+              </>
+            )}
           </div>
         )}
 
@@ -216,7 +231,7 @@ export const GameView = memo(function GameView({
                           ? "bg-green-500/20 text-green-300 border border-green-500/30"
                           : "bg-red-500/20 text-red-300 border border-red-500/30"
                       }`}>
-                        {playerGuess.isCorrect ? "✅ Correct!" : "❌ Incorrect"}
+                        {playerGuess.isCorrect ? "You got it!" : "❌ Incorrect"}
                       </div>
                       <p className="text-text-secondary">
                         Your guess: <span className="font-medium text-text-main">{playerGuess.guess}</span>
