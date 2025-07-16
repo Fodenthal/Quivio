@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
@@ -23,6 +23,10 @@ export const GameView = memo(function GameView({
 }: GameViewProps) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatHasFocus, setChatHasFocus] = useState(false);
+  
+  const guessInputRef = useRef<HTMLInputElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameEnded) return "ended";
@@ -51,12 +55,25 @@ export const GameView = memo(function GameView({
     try {
       await onSubmitGuess(currentGuess.trim());
       setCurrentGuess("");
+      // Keep focus on input after submitting
+      setTimeout(() => {
+        if (guessInputRef.current && !chatHasFocus) {
+          guessInputRef.current.focus();
+        }
+      }, 100);
     } catch (error) {
       console.error("Failed to submit guess:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentGuess, isSubmitting, onSubmitGuess]);
+  }, [currentGuess, isSubmitting, onSubmitGuess, chatHasFocus]);
+
+  const handleGuessKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleGuessSubmit(e);
+    }
+  }, [handleGuessSubmit]);
 
   const hasPlayerGuessed = useMemo((): boolean => {
     return gameState.roundGuesses.has(currentPlayerId);
@@ -71,6 +88,50 @@ export const GameView = memo(function GameView({
   }, [gameState.players, currentPlayerId]);
 
   const phase = getGamePhase;
+
+  // Auto-focus management
+  useEffect(() => {
+    // Focus guess input when round starts or when coming back from chat
+    if (phase === "playing" && !hasPlayerGuessed && !chatHasFocus) {
+      const timer = setTimeout(() => {
+        if (guessInputRef.current) {
+          guessInputRef.current.focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, hasPlayerGuessed, chatHasFocus, gameState.currentRound]);
+
+  // Handle chat container clicks to manage focus
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    const handleChatClick = () => {
+      setChatHasFocus(true);
+    };
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (chatContainer && !chatContainer.contains(e.target as Node)) {
+        setChatHasFocus(false);
+      }
+    };
+
+    chatContainer.addEventListener('click', handleChatClick);
+    document.addEventListener('click', handleDocumentClick);
+
+    return () => {
+      chatContainer.removeEventListener('click', handleChatClick);
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
+
+  // Reset chat focus when new round starts
+  useEffect(() => {
+    if (phase === "playing" && !hasPlayerGuessed) {
+      setChatHasFocus(false);
+    }
+  }, [gameState.currentRound, phase, hasPlayerGuessed]);
 
   // Memoize chat messages to prevent unnecessary filtering on every render
   const chatMessages = useMemo(() => {
@@ -124,9 +185,11 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-6 text-center">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium mb-4">
-              {gameState.currentPrompt.category || "General"}
+          <div className="bg-black/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col justify-center">
+            <div className="mb-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
+                {gameState.currentPrompt.category || "General"}
+              </span>
             </div>
             <h3 className="text-2xl font-semibold text-text-main">
               {gameState.currentPrompt.text}
@@ -179,24 +242,19 @@ export const GameView = memo(function GameView({
                 })()}
               </div>
             ) : (
-              <form onSubmit={handleGuessSubmit} className="space-y-4">
+              <form onSubmit={handleGuessSubmit}>
                 <input
+                  ref={guessInputRef}
                   type="text"
                   value={currentGuess}
                   onChange={(e) => setCurrentGuess(e.target.value)}
-                  placeholder="Enter your answer..."
+                  onKeyDown={handleGuessKeyDown}
+                  placeholder="Enter your answer and press Enter..."
                   disabled={isSubmitting || phase === "paused"}
-                  className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
                   autoComplete="off"
                   maxLength={100}
                 />
-                <button
-                  type="submit"
-                  disabled={!currentGuess.trim() || isSubmitting || phase === "paused"}
-                  className="w-full px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Guess"}
-                </button>
               </form>
             )}
           </div>
@@ -213,12 +271,16 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Chat Panel */}
-      <div className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
+      <div 
+        ref={chatContainerRef}
+        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20"
+      >
         <Chat
           messages={chatMessages}
           currentPlayerId={currentPlayerId}
           onSendMessage={handleSendMessage}
           disabled={false}
+          shouldAutoFocus={chatHasFocus}
         />
       </div>
     </div>

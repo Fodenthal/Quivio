@@ -36,6 +36,8 @@ describe("GameView", () => {
       roundTimeRemaining: 25000, // 25 seconds left
       roundEnded: false,
       correctAnswer: "",
+      currentTopic: "General Knowledge",
+      currentDifficulty: 5,
       players: playersMap,
       currentPrompt: { 
         id: "prompt1", 
@@ -100,7 +102,7 @@ describe("GameView", () => {
       
       // Current implementation shows round number and game interface
       expect(screen.getByText(/Round 2/)).toBeInTheDocument();
-      expect(screen.getByText("Submit Guess")).toBeInTheDocument();
+      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
     });
 
     it("shows 'Round Ended' when round is complete", () => {
@@ -124,8 +126,7 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Current implementation just disables inputs when paused
-      expect(screen.getByPlaceholderText("Enter your answer...")).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Submit Guess" })).toBeDisabled();
+      expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeDisabled();
     });
 
     it("shows winner screen when game has ended", () => {
@@ -294,9 +295,8 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Submit Guess")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("Enter your answer...")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Submit Guess" })).toBeInTheDocument();
+      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeInTheDocument();
     });
 
     it("does not show guess input when round is ended", () => {
@@ -304,7 +304,7 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.queryByText("Submit Guess")).not.toBeInTheDocument();
+      expect(screen.queryByText("Press Enter to submit your answer")).not.toBeInTheDocument();
     });
 
     it("shows guess feedback when player has guessed correctly", () => {
@@ -364,9 +364,8 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Should still show the guess input form but disabled
-      expect(screen.getByText("Submit Guess")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("Enter your answer...")).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Submit Guess" })).toBeDisabled();
+      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeDisabled();
     });
   });
 
