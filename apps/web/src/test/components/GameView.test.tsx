@@ -113,8 +113,8 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      // Current implementation shows round results when round ends
-      expect(screen.getByText("Round Complete!")).toBeInTheDocument();
+      // Round ended state - prompt area still shows the question
+      expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
     });
 
     it("shows disabled input when game is paused", () => {
@@ -205,9 +205,8 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Round Complete!")).toBeInTheDocument();
-      expect(screen.getByText(/The correct answer was:/)).toBeInTheDocument();
-      expect(screen.getByText("Paris")).toBeInTheDocument();
+      // Round ended state - only the question prompt remains visible
+      expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
     });
 
     it("does not show results when round is active", () => {
@@ -265,13 +264,8 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Your Score")).toBeInTheDocument();
-      expect(screen.getByText("Target")).toBeInTheDocument();
-      
-      // Get the specific player status container
-      const playerStatusContainer = screen.getByText("Your Score").closest('[class*="bg-black/20"]');
-      expect(playerStatusContainer).toHaveTextContent("5"); // current score
-      expect(playerStatusContainer).toHaveTextContent("10"); // target score
+      // Score and target removed - only the question prompt is displayed
+      expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
     });
 
     it("handles missing current player gracefully", () => {

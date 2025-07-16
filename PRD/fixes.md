@@ -10,7 +10,9 @@ This document lists the required changes for the `GameView.tsx` component to imp
 
 - [ ] **2. Enlarge Prompt Display Area:**
   - **Goal:** Maximize the space available for displaying the trivia question.
-  - **Action:** Remove the interstitial component/view that currently displays the "Target Score" and the previous round's "Correct Answer" between rounds.
+  - **Action 1:** Remove the interstitial component/view that currently displays the "Target Score" and the previous round's "Correct Answer" between rounds.
+  - **Action 2:** Expand the prompt display size to be fixed at around the height of the bottom of the
+  chat component's grey window (the one that displays the messages)
 
 - [ ] **3. Implement New Correct Guess Flow:**
   - This involves two distinct state changes for a player who has just answered correctly.

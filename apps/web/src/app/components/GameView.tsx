@@ -83,9 +83,15 @@ export const GameView = memo(function GameView({
     return gameState.roundGuesses.get(currentPlayerId);
   }, [gameState.roundGuesses, currentPlayerId]);
 
-  const currentPlayer = useMemo(() => {
-    return gameState.players.get(currentPlayerId);
-  }, [gameState.players, currentPlayerId]);
+  const promptFontSize = useMemo(() => {
+    const textLength = gameState.currentPrompt?.text?.length || 0;
+    if (textLength > 150) {
+      return "text-2xl";
+    }
+    return "text-3xl";
+  }, [gameState.currentPrompt?.text]);
+
+
 
   const phase = getGamePhase;
 
@@ -185,37 +191,15 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-6 text-center min-h-[200px] flex flex-col justify-center">
-            <div className="mb-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
+          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+            <div className="mb-6">
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
                 {gameState.currentPrompt.category || "General"}
               </span>
             </div>
-            <h3 className="text-2xl font-semibold text-text-main leading-relaxed">
+            <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
               {gameState.currentPrompt.text}
             </h3>
-          </div>
-        )}
-
-        {phase === "round-ended" && gameState.correctAnswer && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 text-center">
-            <h4 className="text-xl font-medium text-green-300 mb-2">Round Complete!</h4>
-            <p className="text-text-secondary">
-              The correct answer was: <span className="font-bold text-text-main">{gameState.correctAnswer}</span>
-            </p>
-          </div>
-        )}
-
-        {currentPlayer && (
-          <div className="bg-black/20 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <span className="text-sm font-medium text-text-secondary">Your Score</span>
-              <div className="text-2xl font-bold text-text-main">{currentPlayer.score}</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-medium text-text-secondary">Target</span>
-              <div className="text-lg font-semibold text-text-main">{gameState.targetScore}</div>
-            </div>
           </div>
         )}
 
@@ -301,7 +285,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
     prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
     prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
-    prevProps.gameState.players.get(prevProps.currentPlayerId)?.score === nextProps.gameState.players.get(nextProps.currentPlayerId)?.score &&
+
     prevProps.gameState.roundGuesses.get(prevProps.currentPlayerId) === nextProps.gameState.roundGuesses.get(nextProps.currentPlayerId) &&
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
