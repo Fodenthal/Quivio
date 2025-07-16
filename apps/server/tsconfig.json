@@ -19,8 +19,6 @@
     "types": ["mocha", "node"]
   },
   "include": [
-    "src",
-    "test",
-    "loadtest"
+    "src"
   ]
 }
