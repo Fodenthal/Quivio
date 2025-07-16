@@ -221,25 +221,26 @@ export const GameView = memo(function GameView({
         )}
 
         {(phase === "playing" || phase === "paused") && (
-          <div className="bg-black/20 rounded-lg p-6">
+          <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
             {hasPlayerGuessed ? (
-              <div className="text-center space-y-3">
+              <div className="text-center">
                 {(() => {
                   const playerGuess = getPlayerGuess;
-                  return playerGuess ? (
-                    <>
-                      <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                        playerGuess.isCorrect 
-                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                          : "bg-red-500/20 text-red-300 border border-red-500/30"
-                      }`}>
-                        {playerGuess.isCorrect ? "You got it!" : "❌ Incorrect"}
-                      </div>
-                      <p className="text-text-secondary">
-                        Your guess: <span className="font-medium text-text-main">{playerGuess.guess}</span>
+                  if (!playerGuess) return null;
+
+                  if (playerGuess.isCorrect) {
+                    return (
+                      <p className="text-xl font-medium text-green-300">
+                        {playerGuess.guess} is correct!
                       </p>
-                    </>
-                  ) : null;
+                    );
+                  } else {
+                    return (
+                      <p className="text-xl font-medium text-red-300">
+                        Incorrect. Keep trying!
+                      </p>
+                    );
+                  }
                 })()}
               </div>
             ) : (
