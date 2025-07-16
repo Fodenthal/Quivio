@@ -231,7 +231,7 @@ export const GameView = memo(function GameView({
                   if (playerGuess.isCorrect) {
                     return (
                       <p className="text-xl font-medium text-green-300">
-                        {playerGuess.guess} is correct!
+                        &quot;{playerGuess.guess}&quot; is correct!
                       </p>
                     );
                   } else {
