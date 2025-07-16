@@ -191,7 +191,7 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col">
             {gameState.roundEnded && gameState.correctAnswer ? (
               // Answer reveal after round ends
               <div className="space-y-4">
@@ -210,9 +210,11 @@ export const GameView = memo(function GameView({
                     {gameState.currentPrompt.category || "General"}
                   </span>
                 </div>
-                <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
-                  {gameState.currentPrompt.text}
-                </h3>
+                <div className="flex-grow flex flex-col justify-center">
+                  <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                    {gameState.currentPrompt.text}
+                  </h3>
+                </div>
               </>
             )}
           </div>
