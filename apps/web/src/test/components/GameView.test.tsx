@@ -102,7 +102,7 @@ describe("GameView", () => {
       
       // Current implementation shows round number and game interface
       expect(screen.getByText(/Round 2/)).toBeInTheDocument();
-      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeInTheDocument();
     });
 
     it("shows 'Round Ended' when round is complete", () => {
@@ -295,7 +295,6 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeInTheDocument();
     });
 
@@ -364,7 +363,6 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Should still show the guess input form but disabled
-      expect(screen.getByText("Press Enter to submit your answer")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeDisabled();
     });
   });

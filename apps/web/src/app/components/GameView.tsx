@@ -185,13 +185,13 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col justify-center">
+          <div className="bg-black/20 rounded-lg p-6 text-center min-h-[200px] flex flex-col justify-center">
             <div className="mb-4">
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
                 {gameState.currentPrompt.category || "General"}
               </span>
             </div>
-            <h3 className="text-2xl font-semibold text-text-main">
+            <h3 className="text-2xl font-semibold text-text-main leading-relaxed">
               {gameState.currentPrompt.text}
             </h3>
           </div>

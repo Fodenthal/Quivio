@@ -391,6 +391,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private async loadNewPrompt(): Promise<void> {
+    if (this.state.currentTopic === "__DEV__") {
+      console.log("⚙️ Development mode active. Loading static prompt.");
+      this.loadStaticPrompt();
+      return;
+    }
+
     try {
       // Use Gemini API to generate a new question
       const questionRequest = {

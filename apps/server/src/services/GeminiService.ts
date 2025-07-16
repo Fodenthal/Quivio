@@ -62,8 +62,9 @@ export class GeminiService {
 Requirements:
 1. Create a clear, factual question that has a definitive answer
 2. The question should NOT be open-ended or subjective
-3. Provide the main correct answer
-4. List ALL possible acceptable variations of the answer, including:
+3. The question must be under 65 tokens
+4. Provide the main correct answer
+5. List ALL possible acceptable variations of the answer, including:
    - Abbreviations (e.g., "USA" for "United States of America")
    - Shortened forms (e.g., "Einstein" for "Albert Einstein")
    - Common misspellings that are close enough
