@@ -24,31 +24,14 @@ alwaysApply: false
 - **Test error cases and edge conditions** not just happy path
 - **Mock external dependencies** network calls, timers, file system
 
-## Commands
-- **Run full test suite** with `pnpm test` from root (validates entire system)
-- **Run specific app tests** with `pnpm test` in `apps/web` or `apps/server`
-# Testing Rules
-
-## Test Organization
-- **Place unit tests in `apps/**/test/**/*.test.ts`** (consistent structure)
-- **Name tests in plain English** e.g. `"should award points for correct guess"` (readable test reports)
-- **One test file per source file** match naming: `GameView.tsx` → `GameView.test.tsx`
-
-## Testing Tools by Domain
-- **Use Vitest + RTL + jsdom for frontend** component and DOM tests
-- **Use Mocha + `@colyseus/testing` for backend** room and schema tests  
-- **Use Node `assert.*` for assertions** avoid Chai (consistency, built-in)
-
-## Test Lifecycle & Cleanup
-- **Always call `await colyseus.cleanup()` in `beforeEach`** for server tests (prevents test pollution)
-- **Use `afterEach` for cleanup** dispose components, clear mocks
-- **Run tests non-interactively** use `vitest run`, set `CI=1` (reliable CI/CD)
-
-## Test Quality
-- **Avoid `console.log` debugging** use proper assertions and test output
-- **Test error cases and edge conditions** not just happy path
-- **Mock external dependencies** network calls, timers, file system
+## When to Add Server Tests
+- **Add a test for any new feature or game mechanic** (e.g., power-ups, new scoring rules).
+- **Add a test for any new `onMessage` handler** to verify the server's response to client actions.
+- **Write a failing test to reproduce a bug** before fixing it, ensuring it never returns.
+- **Update tests when changing existing logic** to reflect the new behavior.
+- **Add a test for new Room State properties** to ensure they are initialized and updated correctly.
 
 ## Commands
 - **Run full test suite** with `pnpm test` from root (validates entire system)
 - **Run specific app tests** with `pnpm test` in `apps/web` or `apps/server`
+
