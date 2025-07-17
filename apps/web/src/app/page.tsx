@@ -10,7 +10,6 @@ export default function Home() {
     connectionStatus, 
     gameState,
     currentPlayerId,
-    gameClient, // Keep for now, for GameLayout
     joinRoom, 
     createRoom,
     leaveRoom,
