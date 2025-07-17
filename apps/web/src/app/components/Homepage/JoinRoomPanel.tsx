@@ -53,6 +53,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
             onChange={(e) => onPlayerNameChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter your display name"
+            maxLength={16}
             className="w-full px-4 py-3 lg:py-4 text-center text-base lg:text-lg bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 focus:border-green-500/50 transition-all duration-300"
           />
         </div>

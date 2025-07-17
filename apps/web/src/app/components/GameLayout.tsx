@@ -385,6 +385,7 @@ export function GameLayout({ gameClient: propGameClient }: GameLayoutProps) {
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               onKeyDown={handleKeyDown}
+              maxLength={20}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={isJoining}
             />

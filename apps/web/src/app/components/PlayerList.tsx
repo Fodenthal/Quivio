@@ -86,7 +86,7 @@ const PlayerListComponent = memo(function PlayerListInner({
               key={`${player.id}-${index}`}
               className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-75 ${
                 hasCorrectAnswer 
-                  ? "bg-pink-500/20 border border-pink-500/30 shadow-lg" 
+                  ? "bg-pink-500/20 shadow-lg" 
                   : "bg-black/20"
               }`}
             >
