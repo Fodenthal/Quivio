@@ -1,27 +1,60 @@
 "use client";
 
-import { useState, KeyboardEvent, useRef} from "react";
+import { useState, KeyboardEvent, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
   disabled?: boolean;
   placeholder?: string;
   maxLength?: number;
+  shouldAutoFocus?: boolean;
+}
+
+export interface ChatInputRef {
+  focus: () => void;
+  blur: () => void;
 }
 
 /**
  * Chat input component with multi-line support and keyboard submission
  * Includes character limits, auto-resize, and disabled state handling
+ * Supports auto-focus when chat area is clicked
  */
-export function ChatInput({ 
+export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatInput({ 
   onSendMessage, 
   disabled = false, 
   placeholder = "Type a message...",
-  maxLength = 200 
-}: ChatInputProps) {
+  maxLength = 200,
+  shouldAutoFocus = false
+}, ref) {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    },
+    blur: () => {
+      if (textareaRef.current) {
+        textareaRef.current.blur();
+      }
+    }
+  }));
+
+  // Auto-focus when shouldAutoFocus changes to true
+  useEffect(() => {
+    if (shouldAutoFocus && textareaRef.current) {
+      const timer = setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldAutoFocus]);
 
   const handleSubmit = async () => {
     const trimmedMessage = message.trim();
@@ -33,6 +66,12 @@ export function ChatInput({
     try {
       await onSendMessage(trimmedMessage);
       setMessage("");
+      // Keep focus on textarea after sending message
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 50);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -47,10 +86,16 @@ export function ChatInput({
     }
   };
 
+  const handleContainerClick = () => {
+    if (textareaRef.current && !disabled) {
+      textareaRef.current.focus();
+    }
+  };
+
   const remainingChars = maxLength - message.length;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={handleContainerClick}>
       <textarea
         ref={textareaRef}
         value={message}
@@ -60,7 +105,7 @@ export function ChatInput({
         disabled={disabled || isSubmitting}
         maxLength={maxLength}
         rows={2}
-        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 resize-none overflow-y-auto"
+        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 resize-none overflow-y-auto"
       />
       
       {message.length > maxLength * 0.8 && (
@@ -74,4 +119,4 @@ export function ChatInput({
       )}
     </div>
   );
-} 
+}); 

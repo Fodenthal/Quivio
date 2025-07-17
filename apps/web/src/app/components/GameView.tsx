@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
@@ -23,6 +23,10 @@ export const GameView = memo(function GameView({
 }: GameViewProps) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatHasFocus, setChatHasFocus] = useState(false);
+  
+  const guessInputRef = useRef<HTMLInputElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameEnded) return "ended";
@@ -51,12 +55,25 @@ export const GameView = memo(function GameView({
     try {
       await onSubmitGuess(currentGuess.trim());
       setCurrentGuess("");
+      // Keep focus on input after submitting
+      setTimeout(() => {
+        if (guessInputRef.current && !chatHasFocus) {
+          guessInputRef.current.focus();
+        }
+      }, 100);
     } catch (error) {
       console.error("Failed to submit guess:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentGuess, isSubmitting, onSubmitGuess]);
+  }, [currentGuess, isSubmitting, onSubmitGuess, chatHasFocus]);
+
+  const handleGuessKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleGuessSubmit(e);
+    }
+  }, [handleGuessSubmit]);
 
   const hasPlayerGuessed = useMemo((): boolean => {
     return gameState.roundGuesses.has(currentPlayerId);
@@ -66,11 +83,78 @@ export const GameView = memo(function GameView({
     return gameState.roundGuesses.get(currentPlayerId);
   }, [gameState.roundGuesses, currentPlayerId]);
 
-  const currentPlayer = useMemo(() => {
-    return gameState.players.get(currentPlayerId);
-  }, [gameState.players, currentPlayerId]);
+  const promptFontSize = useMemo(() => {
+    const textLength = gameState.currentPrompt?.text?.length || 0;
+    if (textLength > 150) {
+      return "text-2xl";
+    }
+    return "text-3xl";
+  }, [gameState.currentPrompt?.text]);
+
+
 
   const phase = getGamePhase;
+
+  // Random encouraging messages for round-ended feedback
+  const encouragingMessages = useMemo(() => [
+    "Better luck next time!",
+    "Keep it up, you're getting there!",
+    "Every guess gets you closer!",
+    "Don't give up, you've got this!",
+    "Learning with every round!",
+    "Stay focused, victory awaits!"
+  ], []);
+
+  // Select a random encouraging message based on current round
+  const selectedEncouragingMessage = useMemo(() => {
+    if (phase !== "round-ended") return "";
+    const index = gameState.currentRound % encouragingMessages.length;
+    return encouragingMessages[index];
+  }, [gameState.currentRound, encouragingMessages, phase]);
+
+  // Auto-focus management
+  useEffect(() => {
+    // Focus guess input when round starts or when coming back from chat
+    if (phase === "playing" && !hasPlayerGuessed && !chatHasFocus) {
+      const timer = setTimeout(() => {
+        if (guessInputRef.current) {
+          guessInputRef.current.focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, hasPlayerGuessed, chatHasFocus, gameState.currentRound]);
+
+  // Handle chat container clicks to manage focus
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    const handleChatClick = () => {
+      setChatHasFocus(true);
+    };
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (chatContainer && !chatContainer.contains(e.target as Node)) {
+        setChatHasFocus(false);
+      }
+    };
+
+    chatContainer.addEventListener('click', handleChatClick);
+    document.addEventListener('click', handleDocumentClick);
+
+    return () => {
+      chatContainer.removeEventListener('click', handleChatClick);
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
+
+  // Reset chat focus when new round starts
+  useEffect(() => {
+    if (phase === "playing" && !hasPlayerGuessed) {
+      setChatHasFocus(false);
+    }
+  }, [gameState.currentRound, phase, hasPlayerGuessed]);
 
   // Memoize chat messages to prevent unnecessary filtering on every render
   const chatMessages = useMemo(() => {
@@ -124,79 +208,91 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-6 text-center">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium mb-4">
-              {gameState.currentPrompt.category || "General"}
-            </div>
-            <h3 className="text-2xl font-semibold text-text-main">
-              {gameState.currentPrompt.text}
-            </h3>
+          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col">
+            {gameState.roundEnded && gameState.correctAnswer ? (
+              // Answer reveal after round ends
+              <div className="space-y-4">
+                <h4 className="text-lg text-text-secondary font-medium">
+                  The answer was:
+                </h4>
+                <h2 className="text-4xl font-bold text-text-main leading-relaxed">
+                  {gameState.correctAnswer}
+                </h2>
+              </div>
+            ) : (
+              // Normal question display during round
+              <>
+                <div className="mb-6">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
+                    {gameState.currentPrompt.category || "General"}
+                  </span>
+                </div>
+                <div className="flex-grow flex flex-col justify-center">
+                  <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                    {gameState.currentPrompt.text}
+                  </h3>
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {phase === "round-ended" && gameState.correctAnswer && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 text-center">
-            <h4 className="text-xl font-medium text-green-300 mb-2">Round Complete!</h4>
-            <p className="text-text-secondary">
-              The correct answer was: <span className="font-bold text-text-main">{gameState.correctAnswer}</span>
-            </p>
-          </div>
-        )}
-
-        {currentPlayer && (
-          <div className="bg-black/20 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <span className="text-sm font-medium text-text-secondary">Your Score</span>
-              <div className="text-2xl font-bold text-text-main">{currentPlayer.score}</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-medium text-text-secondary">Target</span>
-              <div className="text-lg font-semibold text-text-main">{gameState.targetScore}</div>
-            </div>
-          </div>
-        )}
-
-        {(phase === "playing" || phase === "paused") && (
-          <div className="bg-black/20 rounded-lg p-6">
-            {hasPlayerGuessed ? (
-              <div className="text-center space-y-3">
+        {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
+          <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
+            {phase === "round-ended" ? (
+              <div className="text-center">
                 {(() => {
                   const playerGuess = getPlayerGuess;
-                  return playerGuess ? (
-                    <>
-                      <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                        playerGuess.isCorrect 
-                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                          : "bg-red-500/20 text-red-300 border border-red-500/30"
-                      }`}>
-                        {playerGuess.isCorrect ? "✅ Correct!" : "❌ Incorrect"}
-                      </div>
-                      <p className="text-text-secondary">
-                        Your guess: <span className="font-medium text-text-main">{playerGuess.guess}</span>
+                  if (playerGuess && playerGuess.isCorrect) {
+                    return (
+                      <p className="text-xl font-medium text-green-300">
+                        &quot;{playerGuess.guess}&quot; is correct!
                       </p>
-                    </>
-                  ) : null;
+                    );
+                  } else {
+                    return (
+                      <p className="text-xl font-medium text-text-main">
+                        {selectedEncouragingMessage}
+                      </p>
+                    );
+                  }
+                })()}
+              </div>
+            ) : hasPlayerGuessed ? (
+              <div className="text-center">
+                {(() => {
+                  const playerGuess = getPlayerGuess;
+                  if (!playerGuess) return null;
+
+                  if (playerGuess.isCorrect) {
+                    return (
+                      <p className="text-xl font-medium text-green-300">
+                        &quot;{playerGuess.guess}&quot; is correct!
+                      </p>
+                    );
+                  } else {
+                    return (
+                      <p className="text-xl font-medium text-red-300">
+                        Incorrect. Keep trying!
+                      </p>
+                    );
+                  }
                 })()}
               </div>
             ) : (
-              <form onSubmit={handleGuessSubmit} className="space-y-4">
+              <form onSubmit={handleGuessSubmit}>
                 <input
+                  ref={guessInputRef}
                   type="text"
                   value={currentGuess}
                   onChange={(e) => setCurrentGuess(e.target.value)}
-                  placeholder="Enter your answer..."
+                  onKeyDown={handleGuessKeyDown}
+                  placeholder="Enter your answer and press Enter..."
                   disabled={isSubmitting || phase === "paused"}
-                  className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
                   autoComplete="off"
                   maxLength={100}
                 />
-                <button
-                  type="submit"
-                  disabled={!currentGuess.trim() || isSubmitting || phase === "paused"}
-                  className="w-full px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Guess"}
-                </button>
               </form>
             )}
           </div>
@@ -213,12 +309,16 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Chat Panel */}
-      <div className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
+      <div 
+        ref={chatContainerRef}
+        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20"
+      >
         <Chat
           messages={chatMessages}
           currentPlayerId={currentPlayerId}
           onSendMessage={handleSendMessage}
           disabled={false}
+          shouldAutoFocus={chatHasFocus}
         />
       </div>
     </div>
@@ -239,7 +339,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
     prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
     prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
-    prevProps.gameState.players.get(prevProps.currentPlayerId)?.score === nextProps.gameState.players.get(nextProps.currentPlayerId)?.score &&
+
     prevProps.gameState.roundGuesses.get(prevProps.currentPlayerId) === nextProps.gameState.roundGuesses.get(nextProps.currentPlayerId) &&
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&

@@ -9,6 +9,7 @@ interface ChatProps {
   currentPlayerId: string;
   onSendMessage: (content: string) => void;
   disabled?: boolean;
+  shouldAutoFocus?: boolean;
 }
 
 /**
@@ -20,7 +21,8 @@ export function Chat({
   messages, 
   currentPlayerId, 
   onSendMessage, 
-  disabled = false 
+  disabled = false,
+  shouldAutoFocus = false
 }: ChatProps) {
   // Filter valid messages for accurate counting
   const validMessages = messages.filter((message) => message && message.id && message.playerName && message.content);
@@ -50,6 +52,7 @@ export function Chat({
           onSendMessage={onSendMessage}
           disabled={disabled}
           placeholder={disabled ? "Chat unavailable..." : "Type a message..."}
+          shouldAutoFocus={shouldAutoFocus}
         />
       </div>
     </div>
