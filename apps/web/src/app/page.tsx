@@ -8,9 +8,19 @@ import { Homepage } from "./components/Homepage";
 export default function Home() {
   const { 
     connectionStatus, 
-    gameClient, 
+    gameState,
+    currentPlayerId,
+    gameClient, // Keep for now, for GameLayout
     joinRoom, 
-    createRoom 
+    createRoom,
+    leaveRoom,
+    sendPlayerReady,
+    startGame,
+    submitGuess,
+    joinNextGame,
+    setTopic,
+    setDifficulty,
+    sendChatMessage
   } = useGameConnection();
 
   const handleJoinRoom = async (playerName: string, gamePin: string) => {
@@ -41,5 +51,20 @@ export default function Home() {
     );
   }
 
-  return <GameLayout gameClient={gameClient} />;
+  return (
+    <GameLayout 
+      connectionStatus={connectionStatus}
+      gameState={gameState}
+      currentPlayerId={currentPlayerId}
+      // Actions
+      onLeaveGame={leaveRoom}
+      onPlayerReady={sendPlayerReady}
+      onStartGame={startGame}
+      onSubmitGuess={submitGuess}
+      onJoinNextGame={joinNextGame}
+      onSetTopic={setTopic}
+      onSetDifficulty={setDifficulty}
+      onSendChatMessage={sendChatMessage}
+    />
+  );
 }
