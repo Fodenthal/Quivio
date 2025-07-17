@@ -34,8 +34,14 @@ const PlayerListComponent = memo(function PlayerListInner({
     const bgColor = colors[colorIndex];
 
     return (
-      <div className={`w-12 h-12 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
-        {firstLetter}
+      <div className="relative">
+        <div className={`w-12 h-12 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+          {firstLetter}
+        </div>
+        {/* Score positioned at bottom-left corner of avatar */}
+        <div className="absolute -bottom-2.5 -left-2 w-7 h-6 flex items-center justify-center text-sm font-bold text-white bg-black/70 rounded border border-white/20">
+          {player.score}
+        </div>
       </div>
     );
   };
@@ -78,7 +84,7 @@ const PlayerListComponent = memo(function PlayerListInner({
           return (
             <div
               key={`${player.id}-${index}`}
-              className={`relative flex items-center space-x-4 p-3 rounded-lg transition-colors duration-75 ${
+              className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-75 ${
                 hasCorrectAnswer 
                   ? "bg-pink-500/20 border border-pink-500/30 shadow-lg" 
                   : "bg-black/20"
@@ -92,10 +98,6 @@ const PlayerListComponent = memo(function PlayerListInner({
                     <span className="block truncate">{incorrectGuess}</span>
                   )}
                 </div>
-              </div>
-              {/* Score positioned in bottom-left corner */}
-              <div className="absolute bottom-2 left-2 text-lg font-bold text-text-main bg-black/30 rounded px-2 py-1">
-                {player.score}
               </div>
               {/* Participation status positioned on the right */}
               {showParticipationStatus && (

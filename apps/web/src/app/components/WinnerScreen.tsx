@@ -20,19 +20,22 @@ export function WinnerScreen({
 
   const getWinnerAvatar = (player: PlayerData) => {
     const firstLetter = player.name.charAt(0).toUpperCase();
+    // Expanded color palette to match PlayerList and Chat
     const colors = [
       "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500",
+      "bg-orange-500", "bg-cyan-500", "bg-lime-500", "bg-emerald-500",
+      "bg-violet-500", "bg-rose-500", "bg-amber-500", "bg-sky-500"
     ];
     const colorIndex = player.name.length % colors.length;
     const bgColor = colors[colorIndex];
 
     return (
       <div className="relative">
-        <div className={`w-32 h-32 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-5xl shadow-2xl border-4 border-white`}>
+        <div className={`w-32 h-32 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-5xl shadow-2xl border-4 border-white`}>
           {firstLetter}
         </div>
-        <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+        <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg border-2 border-white">
           <span className="text-3xl">🏆</span>
         </div>
       </div>
