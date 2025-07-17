@@ -1,14 +1,16 @@
-# Gemini CLI Guidelines for PopReplay Repository
+# Gemini CLI Guidelines for Quiv.io Repository
 
-This document outlines the key principles, project-wide constraints, and specific rules for server, testing, and web development within the PopReplay repository. These guidelines are adapted from the project's `.cursor/rules` and are intended to help the Gemini CLI agent work effectively and consistently with the existing codebase.
+This document outlines the key principles, project-wide constraints, and specific rules for server, testing, and web development within the Quiv.io repository. These guidelines are adapted from the project's `.cursor/rules` and are intended to help the Gemini CLI agent work effectively and consistently with the existing codebase.
 
 ## Key Principles
 
 - Break down tasks into small incremental steps instead of tackling everything at once.
+- **Plan atomic steps that are small enough to be completed successfully in a single turn, avoiding complexity limits.**
+- **Provide guidance for verification after complex changes.** For substantial tasks like feature additions or refactors, conclude by explaining how the user can manually verify the changes (e.g., UI steps to follow, or ideas for new automated tests).
 
 ## Project-wide Constraints
 
-- **Use `pnpm test` after each implementation** (no need for pnpm run build)
+- **Use `pnpm test` after each implementation** (pnpm dev or pnpm run build)
 - **Use named exports** (`export const foo`) not `export default` (prevents tree-shaking issues)
 - **Throw `Error` objects** never strings (enables proper stack traces)
 
@@ -62,10 +64,6 @@ This document outlines the key principles, project-wide constraints, and specifi
 - **Avoid `console.log` debugging** use proper assertions and test output
 - **Test error cases and edge conditions** not just happy path
 - **Mock external dependencies** network calls, timers, file system
-
-### Commands
-- **Run full test suite** with `pnpm test` from root (validates entire system)
-- **Run specific app tests** with `pnpm test` in `apps/web` or `apps/server`
 
 ## Web Rules (Next.js + Tailwind)
 
