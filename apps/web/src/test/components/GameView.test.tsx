@@ -320,9 +320,7 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("You got it!")).toBeInTheDocument();
-      expect(screen.getByText("Your guess:")).toBeInTheDocument();
-      expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText('"Paris" is correct!')).toBeInTheDocument();
       expect(screen.queryByText("Submit Guess")).not.toBeInTheDocument();
     });
 
@@ -344,9 +342,7 @@ describe("GameView", () => {
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
-      expect(screen.getByText("❌ Incorrect")).toBeInTheDocument();
-      expect(screen.getByText("Your guess:")).toBeInTheDocument();
-      expect(screen.getByText("London")).toBeInTheDocument();
+      expect(screen.getByText("Incorrect. Keep trying!")).toBeInTheDocument();
       expect(screen.queryByText("Submit Guess")).not.toBeInTheDocument();
     });
 
@@ -360,6 +356,55 @@ describe("GameView", () => {
       
       // Should still show the guess input form but disabled
       expect(screen.getByPlaceholderText("Enter your answer and press Enter...")).toBeDisabled();
+    });
+
+    it("shows appropriate feedback when round has ended", () => {
+      const gameState = createGameState({ 
+        roundStartTime: Date.now() - 1000,
+        roundEnded: true,
+        correctAnswer: "Paris"
+      });
+      
+      // Test for correct answer feedback
+      gameState.roundGuesses.set("player1", {
+        playerId: "player1",
+        guess: "Paris",
+        isCorrect: true,
+        timestamp: Date.now()
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      // Should show the correct answer in question panel
+      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("Paris")).toBeInTheDocument();
+      // Should maintain the correct feedback message
+      expect(screen.getByText('"Paris" is correct!')).toBeInTheDocument();
+    });
+
+    it("shows encouraging message when round ended and player was incorrect", () => {
+      const gameState = createGameState({ 
+        roundStartTime: Date.now() - 1000,
+        roundEnded: true,
+        correctAnswer: "Paris",
+        currentRound: 1
+      });
+      
+      // Test for incorrect answer feedback
+      gameState.roundGuesses.set("player1", {
+        playerId: "player1",
+        guess: "London",
+        isCorrect: false,
+        timestamp: Date.now()
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      // Should show the correct answer in question panel
+      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("Paris")).toBeInTheDocument();
+      // Should show encouraging message
+      expect(screen.getByText("Keep it up, you're getting there!")).toBeInTheDocument();
     });
   });
 

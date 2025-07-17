@@ -95,6 +95,23 @@ export const GameView = memo(function GameView({
 
   const phase = getGamePhase;
 
+  // Random encouraging messages for round-ended feedback
+  const encouragingMessages = useMemo(() => [
+    "Better luck next time!",
+    "Keep it up, you're getting there!",
+    "Every guess gets you closer!",
+    "Don't give up, you've got this!",
+    "Learning with every round!",
+    "Stay focused, victory awaits!"
+  ], []);
+
+  // Select a random encouraging message based on current round
+  const selectedEncouragingMessage = useMemo(() => {
+    if (phase !== "round-ended") return "";
+    const index = gameState.currentRound % encouragingMessages.length;
+    return encouragingMessages[index];
+  }, [gameState.currentRound, encouragingMessages, phase]);
+
   // Auto-focus management
   useEffect(() => {
     // Focus guess input when round starts or when coming back from chat
@@ -220,9 +237,28 @@ export const GameView = memo(function GameView({
           </div>
         )}
 
-        {(phase === "playing" || phase === "paused") && (
+        {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
           <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
-            {hasPlayerGuessed ? (
+            {phase === "round-ended" ? (
+              <div className="text-center">
+                {(() => {
+                  const playerGuess = getPlayerGuess;
+                  if (playerGuess && playerGuess.isCorrect) {
+                    return (
+                      <p className="text-xl font-medium text-green-300">
+                        &quot;{playerGuess.guess}&quot; is correct!
+                      </p>
+                    );
+                  } else {
+                    return (
+                      <p className="text-xl font-medium text-text-main">
+                        {selectedEncouragingMessage}
+                      </p>
+                    );
+                  }
+                })()}
+              </div>
+            ) : hasPlayerGuessed ? (
               <div className="text-center">
                 {(() => {
                   const playerGuess = getPlayerGuess;
