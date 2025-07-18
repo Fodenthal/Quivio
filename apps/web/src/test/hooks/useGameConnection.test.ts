@@ -27,6 +27,7 @@ const mockConvertedState: GameState = {
   roundTime: 30000,
   maxPlayers: 8,
   isPrivate: false,
+  gamePin: "TEST1",
   gameStarted: false,
   gameEnded: false,
   gamePaused: false,

@@ -154,7 +154,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
 
             {/* Game Pins - Below Hero Section */}
             <div className="h-[400px] lg:h-[500px]">
-              <GamePins />
+              <GamePins gamePin={gamePin} />
             </div>
           </div>
           
