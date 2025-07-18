@@ -16,6 +16,7 @@ export interface RawRoomState {
   roundTime?: number;
   maxPlayers?: number;
   isPrivate?: boolean;
+  gamePin?: string;
   gameStarted?: boolean;
   gameEnded?: boolean;
   gamePaused?: boolean;
@@ -156,6 +157,7 @@ export function convertColyseusState(state: unknown): GameState | null {
     roundTime: roomState.roundTime || 30000,
     maxPlayers: roomState.maxPlayers || 8,
     isPrivate: roomState.isPrivate || false,
+    gamePin: roomState.gamePin || "",
     gameStarted: roomState.gameStarted || false,
     gameEnded: roomState.gameEnded || false,
     gamePaused: roomState.gamePaused || false,
