@@ -134,6 +134,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.currentTopic = options.topic || "General Knowledge"; // Use provided topic or default
     this.state.currentDifficulty = options.difficulty || 5; // Use provided difficulty or default
     
+    // Generate and assign game pin
+    this.state.gamePin = this.generateGamePin();
+    console.log(`🎯 Room ${this.roomId} created with game pin: ${this.state.gamePin}`);
+    
     // Set up message handlers
     this.setupMessageHandlers();
     
@@ -906,5 +910,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       case "hard": return 8;
       default: return 5;
     }
+  }
+
+  /**
+   * Generate a unique 5-character alphanumeric game pin
+   */
+  private generateGamePin(): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let gamePin = '';
+    for (let i = 0; i < 5; i++) {
+      gamePin += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return gamePin;
   }
 }
