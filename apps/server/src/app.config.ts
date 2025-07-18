@@ -100,6 +100,33 @@ export default config({
         });
 
         /**
+         * Active Rooms API
+         * GET /api/rooms/active - Get list of available public rooms with metadata
+         */
+        app.get("/api/rooms/active", (req, res) => {
+            try {
+                const registry = GamePinRegistry.getInstance();
+                const activeRooms = registry.listAvailableRooms();
+                
+                console.log(`🔍 Active rooms API called: returning ${activeRooms.length} rooms`);
+                
+                res.json({
+                    rooms: activeRooms,
+                    totalRooms: activeRooms.length,
+                    success: true,
+                    timestamp: Date.now()
+                });
+            } catch (error) {
+                console.error("❌ Active rooms API error:", error);
+                res.status(500).json({
+                    error: "Internal server error",
+                    code: "INTERNAL_ERROR",
+                    success: false
+                });
+            }
+        });
+
+        /**
          * Use @colyseus/playground
          * (It is not recommended to expose this route in a production environment)
          */
