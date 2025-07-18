@@ -105,6 +105,48 @@ export const GameView = memo(function GameView({
     "Stay focused, victory awaits!"
   ], []);
 
+  // AI entities for random attribution
+  const aiEntities = useMemo(() => [
+    "AI", 
+    "Sam Altman",
+  ], []);
+
+  // Find who got the answer first
+  const firstCorrectPlayer = useMemo(() => {
+    if (!gameState.roundEnded) return null;
+    
+    // Get all correct guesses and find the earliest one
+    const correctGuesses = Array.from(gameState.roundGuesses.entries())
+      .filter((entry) => entry[1] && entry[1].isCorrect)
+      .sort((a, b) => (a[1]?.timestamp || 0) - (b[1]?.timestamp || 0));
+    
+    if (correctGuesses.length === 0) return null;
+    
+    const firstCorrectPlayerId = correctGuesses[0][0];
+    return gameState.players.get(firstCorrectPlayerId);
+  }, [gameState.roundEnded, gameState.roundGuesses, gameState.players]);
+
+  // Generate random "submitted by" attribution
+  const submittedByAttribution = useMemo(() => {
+    if (!gameState.roundEnded) return "";
+    
+    // Use round number as seed for consistent randomization per round
+    const seed = gameState.currentRound;
+    const isAI = (seed * 7) % 2 === 0; // 50% chance for AI
+    
+    if (isAI) {
+      const aiIndex = (seed * 3) % aiEntities.length;
+      return `submitted by ${aiEntities[aiIndex]}`;
+    } else {
+      // Get a random player name
+      const playerList = Array.from(gameState.players.values());
+      if (playerList.length === 0) return "submitted by anonymous";
+      
+      const playerIndex = (seed * 5) % playerList.length;
+      return `submitted by ${playerList[playerIndex].name}`;
+    }
+  }, [gameState.roundEnded, gameState.currentRound, gameState.players, aiEntities]);
+
   // Select a random encouraging message based on current round
   const selectedEncouragingMessage = useMemo(() => {
     if (phase !== "round-ended") return "";
@@ -208,16 +250,26 @@ export const GameView = memo(function GameView({
         </div>
 
         {gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col">
+          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
             {gameState.roundEnded && gameState.correctAnswer ? (
               // Answer reveal after round ends
-              <div className="space-y-4">
-                <h4 className="text-lg text-text-secondary font-medium">
-                  The answer was:
-                </h4>
+              <div>
+                <div className="text-lg text-text-main font-medium mb-1">
+                  The answer was
+                </div>
                 <h2 className="text-4xl font-bold text-text-main leading-relaxed">
                   {gameState.correctAnswer}
                 </h2>
+                <div className="text-lg text-text-secondary font-medium mt-4">
+                  {firstCorrectPlayer ? (
+                    <span>{firstCorrectPlayer.name} found it first.</span>
+                  ) : (
+                    <span>no one got it</span>
+                  )}
+                </div>
+                <div className="text-sm text-text-secondary/80 italic mt-2">
+                  {submittedByAttribution}
+                </div>
               </div>
             ) : (
               // Normal question display during round

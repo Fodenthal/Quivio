@@ -114,8 +114,9 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Round ended state - prompt area shows answer reveal
-      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("The answer was")).toBeInTheDocument();
       expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText("no one got it")).toBeInTheDocument();
     });
 
     it("shows disabled input when game is paused", () => {
@@ -207,8 +208,9 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Round ended state - shows answer reveal in prompt area
-      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("The answer was")).toBeInTheDocument();
       expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText("no one got it")).toBeInTheDocument();
     });
 
     it("does not show results when round is active", () => {
@@ -376,8 +378,9 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Should show the correct answer in question panel
-      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("The answer was")).toBeInTheDocument();
       expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText("TestPlayer found it first.")).toBeInTheDocument();
       // Should maintain the correct feedback message
       expect(screen.getByText('"Paris" is correct!')).toBeInTheDocument();
     });
@@ -401,8 +404,9 @@ describe("GameView", () => {
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
       
       // Should show the correct answer in question panel
-      expect(screen.getByText("The answer was:")).toBeInTheDocument();
+      expect(screen.getByText("The answer was")).toBeInTheDocument();
       expect(screen.getByText("Paris")).toBeInTheDocument();
+      expect(screen.getByText("no one got it")).toBeInTheDocument();
       // Should show encouraging message
       expect(screen.getByText("Keep it up, you're getting there!")).toBeInTheDocument();
     });
