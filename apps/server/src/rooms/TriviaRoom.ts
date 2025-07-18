@@ -44,7 +44,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
-  private readonly DEFAULT_ROUND_TIME = 2000; // 20 seconds
+  private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
