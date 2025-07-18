@@ -341,6 +341,13 @@ export const GameView = memo(function GameView({
     prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
 
     prevProps.gameState.roundGuesses.get(prevProps.currentPlayerId) === nextProps.gameState.roundGuesses.get(nextProps.currentPlayerId) &&
+    prevProps.gameState.roundGuesses.size === nextProps.gameState.roundGuesses.size &&
+    prevProps.gameState.playerIncorrectGuesses.size === nextProps.gameState.playerIncorrectGuesses.size &&
+    // Check for incorrect guesses content changes
+    Array.from(prevProps.gameState.playerIncorrectGuesses.entries()).every(([playerId, prevGuess]) => {
+      const nextGuess = nextProps.gameState.playerIncorrectGuesses.get(playerId);
+      return nextGuess && prevGuess.guess === nextGuess.guess && prevGuess.timestamp === nextGuess.timestamp;
+    }) &&
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
     prevProps.onJoinNextGame === nextProps.onJoinNextGame &&
