@@ -155,15 +155,15 @@ export class GamePinRegistry {
   }
 
   /**
-   * Get all available rooms (public rooms only) with metadata
-   * @returns Array of RoomMetadata objects for public, joinable rooms
+   * Get all active rooms (public rooms only) with metadata
+   * @returns Array of RoomMetadata objects for all public rooms (including full ones)
    */
   listAvailableRooms(): RoomMetadata[] {
     const rooms: RoomMetadata[] = [];
     
     for (const [roomId, metadata] of this.roomMetadata) {
-      // Only include public rooms that aren't full
-      if (!metadata.isPrivate && metadata.playerCount < metadata.maxPlayers) {
+      // Only include public rooms (show all, including full rooms)
+      if (!metadata.isPrivate) {
         rooms.push(metadata);
       }
     }
