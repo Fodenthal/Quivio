@@ -1,14 +1,16 @@
-# Gemini CLI Guidelines for PopReplay Repository
+# Gemini CLI Guidelines for Quiv.io Repository
 
-This document outlines the key principles, project-wide constraints, and specific rules for server, testing, and web development within the PopReplay repository. These guidelines are adapted from the project's `.cursor/rules` and are intended to help the Gemini CLI agent work effectively and consistently with the existing codebase.
+This document outlines the key principles, project-wide constraints, and specific rules for server, testing, and web development within the Quiv.io repository. These guidelines are adapted from the project's `.cursor/rules` and are intended to help the Gemini CLI agent work effectively and consistently with the existing codebase.
 
 ## Key Principles
 
 - Break down tasks into small incremental steps instead of tackling everything at once.
+- **Plan atomic steps that are small enough to be completed successfully in a single turn, avoiding complexity limits.**
+- **Provide guidance for verification after complex changes.** For substantial tasks like feature additions or refactors, conclude by explaining how the user can manually verify the changes (e.g., UI steps to follow, or ideas for new automated tests).
 
 ## Project-wide Constraints
 
-- **Use `pnpm test` after each implementation** (no need for pnpm run build)
+- **Use `pnpm test` after each implementation** (pnpm dev or pnpm run build)
 - **Use named exports** (`export const foo`) not `export default` (prevents tree-shaking issues)
 - **Throw `Error` objects** never strings (enables proper stack traces)
 
@@ -63,10 +65,6 @@ This document outlines the key principles, project-wide constraints, and specifi
 - **Test error cases and edge conditions** not just happy path
 - **Mock external dependencies** network calls, timers, file system
 
-### Commands
-- **Run full test suite** with `pnpm test` from root (validates entire system)
-- **Run specific app tests** with `pnpm test` in `apps/web` or `apps/server`
-
 ## Web Rules (Next.js + Tailwind)
 
 ### React Components
@@ -93,3 +91,49 @@ This document outlines the key principles, project-wide constraints, and specifi
 - **Import order**: ① Node built-ins ② third-party ③ workspace packages (`@shared`) ④ relative (`./`)
 - **Document conditional rendering** with JSDoc rationale
 - **Document loading/error states** for async operations
+
+### A Guide to Effective Agent-Assisted Development
+
+This document outlines a collaborative workflow designed to maximize the effectiveness of an AI agent for complex software development tasks like refactoring or feature implementation. The core philosophy is to treat the agent not as a black box, but as a pair programmer that requires clear guidance and a tight feedback loop.
+
+---
+
+### **Phase 1: High-Level Strategy & Alignment**
+
+The goal of this phase is to agree on the "what" and "why" before any code is written.
+
+1.  **User States a Broad Goal:** The user provides a high-level objective.
+    *   *Example: "The connection state logic is duplicated everywhere. Can you analyze it and help me fix it?"*
+
+2.  **Agent Analyzes & Proposes a Strategic Plan:** The agent uses its tools (`glob`, `search_file_content`, `read_file`) to analyze the codebase. It then produces a high-level markdown document that outlines:
+    *   **The Problem:** A clear diagnosis of the issue with code snippets.
+    *   **The Recommended Solution:** A description of the target architecture (e.g., "Create a custom hook," "Extract a utility function").
+    *   **A Phased Implementation Plan:** A logical breakdown of the work into large, sequential phases (e.g., Phase 1: Create Hook, Phase 2: Refactor Component A, etc.).
+
+3.  **Iteration Until User Approves the Strategy:** The user reviews the agent's plan. This is the crucial alignment step. The user confirms that the agent's understanding of the problem and its proposed solution are correct before any code is modified.
+
+---
+
+### **Phase 2: The Atomic Execution Loop**
+
+This is the core of the workflow. Instead of executing the entire strategic plan at once, we loop through it one tiny piece at a time.
+
+1.  **Agent Proposes One Atomic Step:** The agent must define the **smallest possible, verifiable action** it will take next, based on the phased plan.
+    *   **Good:** *"I will now create the file `useGameConnection.ts` with the basic hook structure."*
+    *   **Good:** *"I will now remove the `useState` for `gameClient` from `GameLayout.tsx`."*
+    *   **Bad:** *"I will now create the file `useGameConnection.ts`, refactor GameLayout.tsx.", and extract the MapSchema conversoin into its own utility file* (This is too large and likely to fail).
+
+2.  **User Confirms or Clarifies:** The user gives a simple "Yes, proceed" or, critically, asks clarifying questions to prevent mistakes.
+    *   *Example: "Wait, when you create the hook, will it include the state conversion logic?"* This allows the agent to refine its atomic step.
+
+3.  **Agent Executes the Single Step:** The agent runs the necessary tool calls (`write_file`, `replace`, etc.) for **only** the approved atomic step.
+
+4.  **Agent Reports & Suggests Verification:** After the step is complete, the agent reports what it did and, per our key principles, provides clear instructions on how the user can verify the change.
+    *   *Example: "I have created the file. You can verify that the new `useGameConnection.ts` file exists in the `hooks` directory. No functionality should have changed yet."*
+    *   *Example: "I have completed the refactor. Please run the test suite. I expect the `GameLayout` tests to fail, which will confirm the old logic has been removed."*
+
+5.  **User Verifies & Provides Feedback:** The user performs the verification step. If there are errors (linting, TypeScript, failing tests), the user pastes the **exact, complete error messages** back to the agent.
+
+6.  **Repeat:** The loop continues with the agent proposing the next atomic step.
+
+By following this workflow, we turn a large, complex task into a series of predictable, low-risk steps, ensuring we always make forward progress.

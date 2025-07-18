@@ -65,7 +65,7 @@ const PlayerListComponent = memo(function PlayerListInner({
       if (!incorrectGuess?.guess) return "";
       
       // Truncate long guesses to prevent layout overflow
-      const maxLength = 14;
+      const maxLength = 24;
       if (incorrectGuess.guess.length > maxLength) {
         return incorrectGuess.guess.substring(0, maxLength) + "...";
       }
