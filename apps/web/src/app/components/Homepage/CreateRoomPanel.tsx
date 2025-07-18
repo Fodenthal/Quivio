@@ -9,6 +9,7 @@ export interface CreateRoomPanelProps {
   onPrivateToggle: (isPrivate: boolean) => void;
   onCreateRoom: () => void;
   isCreating: boolean;
+  error?: string | null;
 }
 
 /**
@@ -24,6 +25,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   onPrivateToggle,
   onCreateRoom,
   isCreating,
+  error,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isCreating && roomTopic.trim()) {
@@ -160,6 +162,13 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             </span>
           )}
         </button>
+        
+        {/* Error Display */}
+        {error && (
+          <div className="mt-3 p-3 bg-red-500/20 border border-red-500/40 rounded-lg">
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          </div>
+        )}
       </div>
       
       {/* Subtle premium hint */}
