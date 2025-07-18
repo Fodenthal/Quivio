@@ -2,6 +2,7 @@ import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
 import { MSG, TopicMessage, DifficultyMessage } from "@shared/index";
 import { GeminiService } from "../services/GeminiService";
+import { GamePinRegistry } from "../services/GamePinRegistry";
 
 export interface RoomOptions {
   targetScore?: number;
@@ -134,9 +135,13 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.currentTopic = options.topic || "General Knowledge"; // Use provided topic or default
     this.state.currentDifficulty = options.difficulty || 5; // Use provided difficulty or default
     
-    // Generate and assign game pin
-    this.state.gamePin = this.generateGamePin();
+    // Generate and assign game pin with collision handling
+    this.state.gamePin = this.generateUniqueGamePin();
     console.log(`🎯 Room ${this.roomId} created with game pin: ${this.state.gamePin}`);
+    
+    // Register room in the game pin registry
+    const registry = GamePinRegistry.getInstance();
+    registry.registerRoom(this.state.gamePin, this.roomId);
     
     // Set up message handlers
     this.setupMessageHandlers();
@@ -212,6 +217,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   onDispose() {
     console.log(`Disposing TriviaRoom: ${this.roomId}`);
+    
+    // Remove room from game pin registry
+    const registry = GamePinRegistry.getInstance();
+    registry.removeRoomById(this.roomId);
     
     // Clean up timers
     if (this.roundTimer) {
@@ -913,7 +922,30 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   /**
-   * Generate a unique 5-character alphanumeric game pin
+   * Generate a unique 5-character alphanumeric game pin with collision detection
+   */
+  private generateUniqueGamePin(): string {
+    const registry = GamePinRegistry.getInstance();
+    const maxAttempts = 10;
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const gamePin = this.generateGamePin();
+      
+      if (!registry.isPinInUse(gamePin)) {
+        return gamePin;
+      }
+      
+      console.warn(`⚠️ Game pin collision on attempt ${attempt}: ${gamePin} already in use`);
+    }
+    
+    // If we still have collisions after max attempts, append timestamp for uniqueness
+    const fallbackPin = this.generateGamePin() + Date.now().toString().slice(-1);
+    console.warn(`🚨 Using fallback pin after ${maxAttempts} collisions: ${fallbackPin}`);
+    return fallbackPin.substring(0, 5); // Ensure 5 characters
+  }
+
+  /**
+   * Generate a 5-character alphanumeric game pin
    */
   private generateGamePin(): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
