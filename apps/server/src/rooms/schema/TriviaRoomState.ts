@@ -81,6 +81,9 @@ export class TriviaRoomState extends Schema {
   // Round guesses
   @type({ map: GuessState }) roundGuesses = new MapSchema<GuessState>();
 
+  // Order of correct guesses for scoring (JKLM-style)
+  @type(["string"]) correctGuessOrder: string[] = [];
+
   // Player incorrect guesses (live tracking of wrong answers)
   @type({ map: PlayerIncorrectGuessState }) playerIncorrectGuesses = new MapSchema<PlayerIncorrectGuessState>();
 
