@@ -127,6 +127,20 @@ const PlayerListComponent = memo(function PlayerListInner({
     Array.from(prevProps.gameState.players.values()).every((prevPlayer) => {
       const nextPlayer = nextProps.gameState.players.get(prevPlayer.id);
       return nextPlayer && prevPlayer.score === nextPlayer.score;
+    }) &&
+    // Check if incorrect guesses content has changed
+    Array.from(prevProps.gameState.playerIncorrectGuesses.entries()).every(([playerId, prevGuess]) => {
+      const nextGuess = nextProps.gameState.playerIncorrectGuesses.get(playerId);
+      return nextGuess && 
+             prevGuess.guess === nextGuess.guess && 
+             prevGuess.timestamp === nextGuess.timestamp;
+    }) &&
+    // Check if any new incorrect guesses were added
+    Array.from(nextProps.gameState.playerIncorrectGuesses.entries()).every(([playerId, nextGuess]) => {
+      const prevGuess = prevProps.gameState.playerIncorrectGuesses.get(playerId);
+      return prevGuess && 
+             prevGuess.guess === nextGuess.guess && 
+             prevGuess.timestamp === nextGuess.timestamp;
     })
   );
 });

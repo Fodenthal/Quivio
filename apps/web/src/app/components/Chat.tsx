@@ -15,7 +15,7 @@ interface ChatProps {
 /**
  * Complete chat interface combining message display and input
  * Includes header, scrollable messages, and input controls
- * Fixed height ensures consistent sizing regardless of content
+ * Fixed height ensures consistent sizing regardless of the content
  */
 export function Chat({ 
   messages, 

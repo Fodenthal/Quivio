@@ -36,6 +36,8 @@ describe("PlayerList", () => {
     roundTimeRemaining: 25000,
     roundEnded: false,
     correctAnswer: "",
+    currentTopic: "General Knowledge",
+    currentDifficulty: 5,
     players: playersMap,
     currentPrompt: {
       id: "test-prompt",
@@ -147,6 +149,37 @@ describe("PlayerList", () => {
 
     // Should just show player without any guess text
     expect(screen.getByText("TestPlayer")).toBeInTheDocument();
+  });
+
+  it("updates correctly when incorrect guess changes", () => {
+    const player = createPlayer();
+    const gameState = createGameState([player]);
+    
+    // Set up initial incorrect guess
+    gameState.playerIncorrectGuesses.set(player.id, {
+      playerId: player.id,
+      guess: "first wrong answer",
+      timestamp: Date.now()
+    });
+
+    const { rerender } = render(<PlayerList gameState={gameState} participatingPlayers={new Map()} showParticipationStatus={false} />);
+
+    // Check that the first incorrect guess is displayed
+    expect(screen.getByText(/first wrong answer/)).toBeInTheDocument();
+
+    // Update with new incorrect guess
+    const updatedGameState = createGameState([player]);
+    updatedGameState.playerIncorrectGuesses.set(player.id, {
+      playerId: player.id,
+      guess: "second wrong answer", 
+      timestamp: Date.now() + 1000
+    });
+
+    rerender(<PlayerList gameState={updatedGameState} participatingPlayers={new Map()} showParticipationStatus={false} />);
+
+    // Check that the new incorrect guess is displayed and old one is gone
+    expect(screen.getByText(/second wrong answer/)).toBeInTheDocument();
+    expect(screen.queryByText(/first wrong answer/)).not.toBeInTheDocument();
   });
 
   it("handles multiple players with different guess states", () => {

@@ -44,7 +44,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
-  private readonly DEFAULT_ROUND_TIME = 30000; // 30 seconds
+  private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
@@ -384,6 +384,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.clearRoundGuesses();
     this.state.clearIncorrectGuesses();
     
+    // Clear correct guess order for new round (JKLM-style scoring)
+    this.state.correctGuessOrder = [];
+    
     // Load new prompt (now async)
     await this.loadNewPrompt();
     
@@ -510,14 +513,39 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private handleCorrectGuess(playerId: string) {
-    // Calculate score based on time (base 10 points + time bonus up to 10 more)
-    const elapsed = Date.now() - this.state.roundStartTime;
-    const remainingTime = this.state.roundTime - elapsed;
-    const timeBonus = Math.max(0, Math.floor((remainingTime / this.state.roundTime) * 10));
-    const score = 10 + timeBonus; // Base 10 points + 0-10 bonus points
+    // Add player to correct guess order
+    this.state.correctGuessOrder.push(playerId);
+    const position = this.state.correctGuessOrder.length - 1; // 0-based position
+    
+    // Calculate base rank score
+    let baseScore: number;
+    if (position === 0) {
+      // First player always gets 10 points
+      baseScore = 10;
+    } else {
+      // Subsequent players: 9, 8, 7, ... down to minimum of 1
+      baseScore = Math.max(1, 10 - position);
+    }
+    
+    // Calculate time multiplier for non-first players
+    let finalScore: number;
+    if (position === 0) {
+      // First player always gets full base score regardless of time
+      finalScore = baseScore;
+    } else {
+      // Apply time multiplier to subsequent players
+      const elapsed = Date.now() - this.state.roundStartTime;
+      const remainingTime = this.state.roundTime - elapsed;
+      const timeRatio = remainingTime / this.state.roundTime;
+      
+      // Combine base score with time multiplier, ensure minimum of 1 point
+      finalScore = Math.max(1, Math.round(baseScore * timeRatio));
+    }
+    
+    console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: ${position + 1}, base: ${baseScore})`);
     
     // Award points
-    this.state.addScore(playerId, score);
+    this.state.addScore(playerId, finalScore);
     
     // Check for game winner immediately
     const winner = this.checkForWinner();
@@ -633,6 +661,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Clear round guesses and incorrect guesses
     this.state.clearRoundGuesses();
     this.state.clearIncorrectGuesses();
+    
+    // Clear correct guess order for next game
+    this.state.correctGuessOrder = [];
     
     // Reset all player ready states but preserve scores for winner screen display
     for (const player of this.state.players.values()) {

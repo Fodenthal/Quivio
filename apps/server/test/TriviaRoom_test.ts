@@ -659,15 +659,19 @@ describe("testing TriviaRoom", () => {
     assert.ok(room.state.gameStarted, "Game should still be running");
     assert.strictEqual(room.state.currentRound, 2, "Should have progressed to round 2");
     
-    // Both players should have reasonable scores (10-20 points each)
+    // Both players should have reasonable scores based on JKLM-style scoring
     const player1 = room.state.players.get(client1.sessionId);
     const player2 = room.state.players.get(client2.sessionId);
     assert.ok(player1, "Player 1 should exist");
     assert.ok(player2, "Player 2 should exist");
-    assert.ok(player1.score >= 10, "Player 1 should have at least 10 points for correct answer");
-    assert.ok(player1.score <= 20, "Player 1 should not have excessive points (max 20 with full time bonus)");
-    assert.ok(player2.score >= 10, "Player 2 should have at least 10 points for correct answer");
-    assert.ok(player2.score <= 20, "Player 2 should not have excessive points (max 20 with full time bonus)");
+    
+    // JKLM-style scoring: First player always gets 10 points
+    assert.strictEqual(player1.score, 10, "Player 1 (first) should get exactly 10 points");
+    
+    // Second player gets base 9 points * time ratio, minimum 1 point
+    assert.ok(player2.score >= 1, "Player 2 should have at least 1 point (minimum)");
+    assert.ok(player2.score <= 9, "Player 2 should not exceed 9 points (base score for 2nd place)");
+    
     assert.ok(player1.score < 100 && player2.score < 100, "Neither player should have reached target score in one round");
     
     // Verify round 2 has a new prompt
