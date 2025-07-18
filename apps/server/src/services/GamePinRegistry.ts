@@ -2,10 +2,28 @@
  * GamePinRegistry - Singleton service for managing game pin to room ID mappings
  * Handles room registration, lookup, and cleanup for the trivia game system
  */
+
+/**
+ * Metadata about an active room that can be displayed to users
+ */
+export interface RoomMetadata {
+  gamePin: string;
+  roomId: string;
+  topic: string;
+  difficulty: number;
+  playerCount: number;
+  maxPlayers: number;
+  isPrivate: boolean;
+  gameStarted: boolean;
+  canStart: boolean;
+  createdAt: number;
+}
+
 export class GamePinRegistry {
   private static instance: GamePinRegistry;
   private pinToRoomId = new Map<string, string>();
   private roomIdToPin = new Map<string, string>();
+  private roomMetadata = new Map<string, RoomMetadata>(); // roomId -> metadata
 
   private constructor() {
     // Private constructor for singleton pattern
@@ -22,12 +40,13 @@ export class GamePinRegistry {
   }
 
   /**
-   * Register a room with its game pin
+   * Register a room with its game pin and initial metadata
    * @param gamePin - The 5-character game pin
    * @param roomId - The Colyseus room ID
+   * @param metadata - Initial room metadata (optional for backward compatibility)
    * @returns true if registered successfully, false if pin already exists
    */
-  registerRoom(gamePin: string, roomId: string): boolean {
+  registerRoom(gamePin: string, roomId: string, metadata?: Partial<RoomMetadata>): boolean {
     if (this.pinToRoomId.has(gamePin)) {
       console.warn(`⚠️ Game pin collision detected: ${gamePin} already exists`);
       return false;
@@ -39,7 +58,46 @@ export class GamePinRegistry {
     this.pinToRoomId.set(gamePin, roomId);
     this.roomIdToPin.set(roomId, gamePin);
     
+    // Store metadata if provided
+    if (metadata) {
+      const fullMetadata: RoomMetadata = {
+        gamePin,
+        roomId,
+        topic: metadata.topic || "General Knowledge",
+        difficulty: metadata.difficulty || 5,
+        playerCount: metadata.playerCount || 0,
+        maxPlayers: metadata.maxPlayers || 8,
+        isPrivate: metadata.isPrivate || false,
+        gameStarted: metadata.gameStarted || false,
+        canStart: metadata.canStart || false,
+        createdAt: Date.now()
+      };
+      this.roomMetadata.set(roomId, fullMetadata);
+    }
+    
     console.log(`📌 Registered room ${roomId} with game pin: ${gamePin} (Total rooms: ${this.pinToRoomId.size})`);
+    return true;
+  }
+
+  /**
+   * Update room metadata for an existing room
+   * @param roomId - The room ID to update
+   * @param updates - Partial metadata updates
+   * @returns true if updated successfully, false if room not found
+   */
+  updateRoomMetadata(roomId: string, updates: Partial<Omit<RoomMetadata, 'gamePin' | 'roomId' | 'createdAt'>>): boolean {
+    const existingMetadata = this.roomMetadata.get(roomId);
+    if (!existingMetadata) {
+      return false;
+    }
+
+    // Merge updates with existing metadata
+    const updatedMetadata: RoomMetadata = {
+      ...existingMetadata,
+      ...updates
+    };
+
+    this.roomMetadata.set(roomId, updatedMetadata);
     return true;
   }
 
@@ -67,6 +125,7 @@ export class GamePinRegistry {
 
     this.pinToRoomId.delete(gamePin);
     this.roomIdToPin.delete(roomId);
+    this.roomMetadata.delete(roomId); // Clean up metadata
     
     console.log(`🗑️ Removed room ${roomId} with pin ${gamePin} (Remaining rooms: ${this.pinToRoomId.size})`);
     return true;
@@ -96,24 +155,52 @@ export class GamePinRegistry {
   }
 
   /**
-   * Get all available rooms (public rooms only)
-   * @returns Array of {gamePin, roomId} objects for public rooms
+   * Get all available rooms (public rooms only) with metadata
+   * @returns Array of RoomMetadata objects for public, joinable rooms
    */
-  listAvailableRooms(): Array<{gamePin: string; roomId: string}> {
-    const rooms: Array<{gamePin: string; roomId: string}> = [];
-    for (const [gamePin, roomId] of this.pinToRoomId) {
-      rooms.push({ gamePin, roomId });
+  listAvailableRooms(): RoomMetadata[] {
+    const rooms: RoomMetadata[] = [];
+    
+    for (const [roomId, metadata] of this.roomMetadata) {
+      // Only include public rooms that aren't full
+      if (!metadata.isPrivate && metadata.playerCount < metadata.maxPlayers) {
+        rooms.push(metadata);
+      }
     }
-    return rooms;
+    
+    // Sort by creation time (newest first) and then by player count
+    return rooms.sort((a, b) => {
+      // First sort by whether game has started (lobby rooms first)
+      if (a.gameStarted !== b.gameStarted) {
+        return a.gameStarted ? 1 : -1;
+      }
+      // Then by player count (more players first)
+      if (a.playerCount !== b.playerCount) {
+        return b.playerCount - a.playerCount;
+      }
+      // Finally by creation time (newest first)
+      return b.createdAt - a.createdAt;
+    });
+  }
+
+  /**
+   * Get metadata for a specific room
+   * @param roomId - The room ID to get metadata for
+   * @returns RoomMetadata if found, null otherwise
+   */
+  getRoomMetadata(roomId: string): RoomMetadata | null {
+    return this.roomMetadata.get(roomId) || null;
   }
 
   /**
    * Get current registry statistics
    * @returns Object with registry stats
    */
-  getStats(): {totalRooms: number; pins: string[]} {
+  getStats(): {totalRooms: number; publicRooms: number; pins: string[]} {
+    const publicRooms = Array.from(this.roomMetadata.values()).filter(room => !room.isPrivate).length;
     return {
       totalRooms: this.pinToRoomId.size,
+      publicRooms,
       pins: Array.from(this.pinToRoomId.keys())
     };
   }
@@ -124,6 +211,7 @@ export class GamePinRegistry {
   clear(): void {
     this.pinToRoomId.clear();
     this.roomIdToPin.clear();
+    this.roomMetadata.clear();
     console.log("🧹 GamePinRegistry cleared");
   }
 } 

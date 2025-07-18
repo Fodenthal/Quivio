@@ -139,9 +139,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gamePin = this.generateUniqueGamePin();
     console.log(`🎯 Room ${this.roomId} created with game pin: ${this.state.gamePin}`);
     
-    // Register room in the game pin registry
+    // Register room in the game pin registry with metadata
     const registry = GamePinRegistry.getInstance();
-    registry.registerRoom(this.state.gamePin, this.roomId);
+    registry.registerRoom(this.state.gamePin, this.roomId, {
+      topic: this.state.currentTopic,
+      difficulty: this.state.currentDifficulty,
+      playerCount: 0,
+      maxPlayers: this.state.maxPlayers,
+      isPrivate: this.state.isPrivate,
+      gameStarted: false,
+      canStart: false
+    });
     
     // Set up message handlers
     this.setupMessageHandlers();
@@ -179,6 +187,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.state.players.size >= 2 && this.state.gameStarted && this.state.gamePaused) {
       this.resumeGame();
     }
+
+    // Update room metadata in registry
+    this.updateRoomMetadata();
   }
 
   onLeave(client: Client, consented: boolean) {
@@ -201,6 +212,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Update can start status
     this.state.canStart = this.state.players.size >= 2 && !this.state.gameStarted;
     
+    // Update room metadata in registry
+    this.updateRoomMetadata();
+    
     // If room is empty, schedule disposal with delay
     if (this.state.players.size === 0) {
       this.disposeTimer = setTimeout(() => {
@@ -213,6 +227,22 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         this.disposeTimer = undefined;
       }
     }
+  }
+
+  /**
+   * Update room metadata in the registry with current room state
+   */
+  private updateRoomMetadata() {
+    const registry = GamePinRegistry.getInstance();
+    registry.updateRoomMetadata(this.roomId, {
+      topic: this.state.currentTopic,
+      difficulty: this.state.currentDifficulty,
+      playerCount: this.state.players.size,
+      maxPlayers: this.state.maxPlayers,
+      isPrivate: this.state.isPrivate,
+      gameStarted: this.state.gameStarted,
+      canStart: this.state.canStart
+    });
   }
 
   onDispose() {
@@ -373,6 +403,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     for (const player of this.state.players.values()) {
       player.score = 0;
     }
+    
+    // Update room metadata in registry
+    this.updateRoomMetadata();
     
     // Start first round
     this.startNewRound().catch(error => {
@@ -694,6 +727,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.roundTimer = undefined;
     }
     
+    // Update room metadata in registry
+    this.updateRoomMetadata();
+    
     // JKLM-style restart system: Start 15-second countdown
     this.state.startRestartCountdown();
     this.startRestartCountdown();
@@ -887,6 +923,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       
       // Clear recent questions when topic changes to allow fresh questions
       this.recentQuestions = [];
+      
+      // Update room metadata in registry
+      this.updateRoomMetadata();
     }
   }
 
@@ -897,6 +936,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (difficulty >= 1 && difficulty <= 10) {
       this.state.currentDifficulty = difficulty;
       console.log(`📊 Difficulty set to: ${this.state.currentDifficulty}/10`);
+      
+      // Update room metadata in registry
+      this.updateRoomMetadata();
     }
   }
 
