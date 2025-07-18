@@ -154,8 +154,13 @@ export const GameView = memo(function GameView({
     return encouragingMessages[index];
   }, [gameState.currentRound, encouragingMessages, phase]);
 
-  // Auto-focus management
+  // Auto-focus management and input clearing
   useEffect(() => {
+    // Clear any remaining input text when a new round starts
+    if (phase === "playing" && !hasPlayerGuessed) {
+      setCurrentGuess("");
+    }
+    
     // Focus guess input when round starts or when coming back from chat
     if (phase === "playing" && !hasPlayerGuessed && !chatHasFocus) {
       const timer = setTimeout(() => {
