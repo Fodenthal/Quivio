@@ -16,13 +16,18 @@ const mockRoom = {
 
 const mockClient = {
   joinOrCreate: vi.fn(),
-  joinById: vi.fn()
+  joinById: vi.fn(),
+  create: vi.fn()
 };
 
 vi.mock('colyseus.js', () => ({
   Client: vi.fn(() => mockClient),
   Room: vi.fn(() => mockRoom)
 }));
+
+// Mock fetch for game pin lookup API
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 describe('GameClient', () => {
   let gameClient: GameClient;
@@ -31,6 +36,16 @@ describe('GameClient', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
+    
+    // Setup default successful fetch response for game pin lookup
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        roomId: 'test-room-456',
+        gamePin: 'TEST1',
+        success: true
+      })
+    });
     
     // Create a fresh instance
     gameClient = new GameClient('ws://localhost:2567');
@@ -60,7 +75,7 @@ describe('GameClient', () => {
     });
 
     it('should create GameClient with custom URL', () => {
-      const client = new GameClient('ws://custom-server:3000');
+      const client = new GameClient('ws://custom:3000');
       expect(client).toBeInstanceOf(GameClient);
       expect(client.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
     });
@@ -78,37 +93,57 @@ describe('GameClient', () => {
 
   describe('Event Handlers', () => {
     it('should set event handlers', () => {
-      const newEvents = {
-        onConnectionStatusChange: vi.fn(),
-        onError: vi.fn()
-      };
-      
-      gameClient.setEventHandlers(newEvents);
-      
-      // Verify handlers are set by triggering a status change
-      gameClient.setEventHandlers({ onConnectionStatusChange: mockEvents.onConnectionStatusChange });
+      const events = { onConnectionStatusChange: vi.fn() };
+      gameClient.setEventHandlers(events);
+      // No exception should be thrown
     });
 
     it('should merge event handlers', () => {
-      const additionalEvents = {
-        onStateChange: vi.fn()
-      };
+      const events1 = { onConnectionStatusChange: vi.fn() };
+      const events2 = { onStateChange: vi.fn() };
       
-      gameClient.setEventHandlers(additionalEvents);
-      
-      // Both original and new handlers should be available
-      expect(() => gameClient.setEventHandlers(mockEvents)).not.toThrow();
+      gameClient.setEventHandlers(events1);
+      gameClient.setEventHandlers(events2);
+      // No exception should be thrown
     });
   });
 
   describe('Room Operations', () => {
-    describe('joinRoom', () => {
-      it('should successfully join a room', async () => {
-        // Mock successful room join
-        mockClient.joinOrCreate.mockResolvedValue(mockRoom);
+    describe('createRoom', () => {
+      it('should successfully create a room', async () => {
+        // Mock successful room creation
+        mockClient.create.mockResolvedValue(mockRoom);
         
         const options = {
           playerName: 'TestPlayer',
+          topic: 'Science',
+          difficulty: 5,
+          isPrivate: false
+        };
+
+        const result = await gameClient.createRoom(options);
+
+        expect(mockClient.create).toHaveBeenCalledWith('trivia_room', {
+          playerName: 'TestPlayer',
+          maxPlayers: 8,
+          isPrivate: false,
+          topic: 'Science',
+          difficulty: 5
+        });
+        expect(result).toBe(mockRoom);
+        expect(gameClient.getRoom()).toBe(mockRoom);
+        expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.CONNECTED);
+      });
+    });
+
+    describe('joinRoom', () => {
+      it('should successfully join a room by game pin', async () => {
+        // Mock successful room join
+        mockClient.joinById.mockResolvedValue(mockRoom);
+        
+        const options = {
+          playerName: 'TestPlayer',
+          gamePin: 'TEST1',
           roomOptions: {
             targetScore: 10,
             roundTime: 30000
@@ -117,7 +152,11 @@ describe('GameClient', () => {
 
         const result = await gameClient.joinRoom(options);
 
-        expect(mockClient.joinOrCreate).toHaveBeenCalledWith('trivia_room', {
+        // Should call lookup API
+        expect(mockFetch).toHaveBeenCalledWith('http://localhost:2567/api/rooms/lookup/TEST1');
+        
+        // Should join by room ID after lookup
+        expect(mockClient.joinById).toHaveBeenCalledWith('test-room-456', {
           playerName: 'TestPlayer',
           targetScore: 10,
           roundTime: 30000
@@ -137,17 +176,62 @@ describe('GameClient', () => {
 
         await gameClient.joinRoom(options);
 
+        // Should not call lookup API when roomId is provided
+        expect(mockFetch).not.toHaveBeenCalled();
+        
         expect(mockClient.joinById).toHaveBeenCalledWith('specific-room-123', {
           playerName: 'TestPlayer'
         });
         expect(mockClient.joinOrCreate).not.toHaveBeenCalled();
       });
 
-      it('should handle join room failure', async () => {
-        const error = new Error('Failed to connect');
-        mockClient.joinOrCreate.mockRejectedValue(error);
+      it('should handle game pin not found', async () => {
+        // Mock 404 response
+        mockFetch.mockResolvedValue({
+          ok: false,
+          status: 404,
+          json: () => Promise.resolve({ error: 'Room not found' })
+        });
 
+        const options = { 
+          playerName: 'TestPlayer',
+          gamePin: 'NOTF1' // Valid 5-character format but non-existent room
+        };
+
+        await expect(gameClient.joinRoom(options)).rejects.toThrow('Room not found for game pin: NOTF1');
+        expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
+        expect(mockEvents.onError).toHaveBeenCalled();
+      });
+
+      it('should handle invalid game pin format', async () => {
+        const options = { 
+          playerName: 'TestPlayer',
+          gamePin: 'invalid'
+        };
+
+        await expect(gameClient.joinRoom(options)).rejects.toThrow('Invalid game pin format');
+        // Should not set connecting status for validation errors
+        expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
+        expect(mockEvents.onError).toHaveBeenCalled();
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should handle missing roomId and gamePin', async () => {
         const options = { playerName: 'TestPlayer' };
+
+        await expect(gameClient.joinRoom(options)).rejects.toThrow('Either roomId or gamePin must be provided');
+        expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
+        expect(mockEvents.onError).toHaveBeenCalled();
+      });
+
+      it('should handle join room failure after successful lookup', async () => {
+        const error = new Error('Failed to connect');
+        mockClient.joinById.mockRejectedValue(error);
+
+        const options = { 
+          playerName: 'TestPlayer',
+          gamePin: 'TEST1'
+        };
 
         await expect(gameClient.joinRoom(options)).rejects.toThrow('Failed to join room: Failed to connect');
         expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.ERROR);
@@ -155,9 +239,12 @@ describe('GameClient', () => {
       });
 
       it('should set up room handlers after joining', async () => {
-        mockClient.joinOrCreate.mockResolvedValue(mockRoom);
+        mockClient.joinById.mockResolvedValue(mockRoom);
         
-        await gameClient.joinRoom({ playerName: 'TestPlayer' });
+        await gameClient.joinRoom({ 
+          playerName: 'TestPlayer',
+          gamePin: 'TEST1'
+        });
 
         expect(mockRoom.onStateChange).toHaveBeenCalled();
         expect(mockRoom.onMessage).toHaveBeenCalled();
@@ -167,13 +254,18 @@ describe('GameClient', () => {
     });
 
     describe('leaveRoom', () => {
-      it('should leave room successfully', async () => {
-        // First join a room
-        mockClient.joinOrCreate.mockResolvedValue(mockRoom);
-        await gameClient.joinRoom({ playerName: 'TestPlayer' });
+      beforeEach(async () => {
+        // Join a room first
+        mockClient.joinById.mockResolvedValue(mockRoom);
+        await gameClient.joinRoom({ 
+          playerName: 'TestPlayer',
+          gamePin: 'TEST1'
+        });
+      });
 
-        // Then leave it
+      it('should leave room successfully', async () => {
         mockRoom.leave.mockResolvedValue(undefined);
+
         await gameClient.leaveRoom();
 
         expect(mockRoom.leave).toHaveBeenCalled();
@@ -182,32 +274,34 @@ describe('GameClient', () => {
       });
 
       it('should handle leave room failure gracefully', async () => {
-        mockClient.joinOrCreate.mockResolvedValue(mockRoom);
-        await gameClient.joinRoom({ playerName: 'TestPlayer' });
-
-        // Mock leave failure
         mockRoom.leave.mockRejectedValue(new Error('Leave failed'));
-        
-        // Should not throw
-        await expect(gameClient.leaveRoom()).resolves.toBeUndefined();
+
+        await gameClient.leaveRoom();
+
+        // Should still clean up state even if leave fails
         expect(gameClient.getRoom()).toBeNull();
         expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
       });
+    });
 
-      it('should handle leaving when not connected', async () => {
-        // Should not throw when no room is connected
-        await expect(gameClient.leaveRoom()).resolves.toBeUndefined();
-        expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
-      });
+    it('should handle leaving when not connected', async () => {
+      // Don't join a room first
+      await gameClient.leaveRoom();
+
+      // Should not throw an error
+      expect(gameClient.getRoom()).toBeNull();
+      expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.DISCONNECTED);
     });
   });
 
   describe('Message Sending', () => {
     beforeEach(async () => {
-      // Set up connected state
-      mockClient.joinOrCreate.mockResolvedValue(mockRoom);
-      await gameClient.joinRoom({ playerName: 'TestPlayer' });
-      vi.clearAllMocks(); // Clear join-related calls
+      // Join a room first for message sending tests
+      mockClient.joinById.mockResolvedValue(mockRoom);
+      await gameClient.joinRoom({ 
+        playerName: 'TestPlayer',
+        gamePin: 'TEST1'
+      });
     });
 
     describe('sendPlayerReady', () => {
@@ -324,8 +418,11 @@ describe('GameClient', () => {
 
     beforeEach(async () => {
       // Set up connected state and capture handlers
-      mockClient.joinOrCreate.mockResolvedValue(mockRoom);
-      await gameClient.joinRoom({ playerName: 'TestPlayer' });
+      mockClient.joinById.mockResolvedValue(mockRoom);
+      await gameClient.joinRoom({ 
+        playerName: 'TestPlayer',
+        gamePin: 'TEST1'
+      });
 
       // Extract the handlers that were registered
       stateChangeHandler = mockRoom.onStateChange.mock.calls[0][0];
@@ -381,8 +478,11 @@ describe('GameClient', () => {
   describe('Dispose', () => {
     it('should clean up resources', async () => {
       // Set up connected state
-      mockClient.joinOrCreate.mockResolvedValue(mockRoom);
-      await gameClient.joinRoom({ playerName: 'TestPlayer' });
+      mockClient.joinById.mockResolvedValue(mockRoom);
+      await gameClient.joinRoom({ 
+        playerName: 'TestPlayer',
+        gamePin: 'TEST1'
+      });
 
       gameClient.dispose();
 
@@ -426,15 +526,31 @@ describe('GameClient', () => {
         onConnectionStatusChange: (status) => statusChanges.push(status)
       });
 
-      // Start connecting
-      mockClient.joinOrCreate.mockImplementation(() => {
+      // Mock successful lookup
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          roomId: 'test-room-456',
+          gamePin: 'TEST1',
+          success: true
+        })
+      });
+
+      // Start connecting - simulate delay in joinById
+      mockClient.joinById.mockImplementation(() => {
         // Simulate delay
         return new Promise(resolve => setTimeout(() => resolve(mockRoom), 10));
       });
 
-      const joinPromise = gameClient.joinRoom({ playerName: 'TestPlayer' });
+      const joinPromise = gameClient.joinRoom({ 
+        playerName: 'TestPlayer',
+        gamePin: 'TEST1'
+      });
       
-      // Should be connecting
+      // Wait a bit for the lookup to complete and connection status to change
+      await new Promise(resolve => setTimeout(resolve, 5));
+      
+      // Should be connecting after successful lookup
       expect(gameClient.getConnectionStatus()).toBe(ConnectionStatus.CONNECTING);
       
       await joinPromise;
