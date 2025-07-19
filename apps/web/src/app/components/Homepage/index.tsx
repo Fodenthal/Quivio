@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TrendingTopics } from "../TrendingTopics";
-import { GamePins } from "../GamePins";
+import { ActiveRoomsList } from "../ActiveRoomsList";
 import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 
@@ -152,9 +152,9 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
               </div>
             </div>
 
-            {/* Game Pins - Below Hero Section */}
+            {/* Active Rooms - Below Hero Section */}
             <div className="h-[400px] lg:h-[500px]">
-              <GamePins gamePin={gamePin} />
+              <ActiveRoomsList onJoinRoom={onJoinRoom} />
             </div>
           </div>
           
