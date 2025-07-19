@@ -8,7 +8,7 @@ import { JoinRoomPanel } from "./JoinRoomPanel";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
-  onCreateRoom: (topic: string, difficulty: number, isPrivate: boolean) => void;
+  onCreateRoom: (roomName: string, hostName: string, topics: string[], difficulty: number, isPrivate: boolean) => void;
 }
 
 /**
@@ -18,8 +18,8 @@ export interface HomepageProps {
 export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) => {
   const [playerName, setPlayerName] = useState("");
   const [gamePin, setGamePin] = useState("");
-  const [roomTopic, setRoomTopic] = useState("");
-  const [difficulty, setDifficulty] = useState(5); // Default to medium
+  const [roomName, setRoomName] = useState("");
+  const [hostName, setHostName] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -74,14 +74,26 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     // Clear previous errors
     setCreateError(null);
     
-    if (!roomTopic.trim()) {
-      setCreateError("Please enter a room topic");
+    if (!roomName.trim()) {
+      setCreateError("Please enter a room name");
+      return;
+    }
+
+    if (!hostName.trim()) {
+      setCreateError("Please enter your name");
       return;
     }
 
     setIsCreating(true);
     try {
-      await onCreateRoom(roomTopic.trim(), difficulty, isPrivate);
+      // Pass room name, host name, default topics, difficulty, and privacy setting
+      await onCreateRoom(
+        roomName.trim(),
+        hostName.trim(),
+        ["General Knowledge"],
+        5,
+        isPrivate
+      );
       // If successful, component will unmount as user navigates to game
     } catch (error) {
       console.error("Failed to create room:", error);
@@ -103,8 +115,13 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     if (joinError) setJoinError(null);
   };
 
-  const handleRoomTopicChange = (topic: string) => {
-    setRoomTopic(topic);
+  const handleRoomNameChange = (name: string) => {
+    setRoomName(name);
+    if (createError) setCreateError(null);
+  };
+
+  const handleHostNameChange = (name: string) => {
+    setHostName(name);
     if (createError) setCreateError(null);
   };
 
@@ -128,10 +145,10 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
             <div className="flex flex-col lg:flex-row items-start gap-8 w-full">
               <div className="flex-1 w-full">
                 <CreateRoomPanel
-                  roomTopic={roomTopic}
-                  onRoomTopicChange={handleRoomTopicChange}
-                  difficulty={difficulty}
-                  onDifficultyChange={setDifficulty}
+                  roomName={roomName}
+                  onRoomNameChange={handleRoomNameChange}
+                  hostName={hostName}
+                  onHostNameChange={handleHostNameChange}
                   isPrivate={isPrivate}
                   onPrivateToggle={setIsPrivate}
                   onCreateRoom={handleCreateRoom}

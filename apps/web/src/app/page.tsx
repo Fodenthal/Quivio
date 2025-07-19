@@ -18,6 +18,7 @@ export default function Home() {
     submitGuess,
     joinNextGame,
     setTopic,
+    setTopics,
     setDifficulty,
     sendChatMessage
   } = useGameConnection();
@@ -31,9 +32,9 @@ export default function Home() {
     }
   };
 
-  const handleCreateRoom = async (topic: string, difficulty: number, isPrivate: boolean) => {
+  const handleCreateRoom = async (roomName: string, hostName: string, topics: string[], difficulty: number, isPrivate: boolean) => {
     try {
-      await createRoom({ topic, difficulty, isPrivate });
+      await createRoom({ roomName, hostName, topics, difficulty, isPrivate });
     } catch (error) {
       console.error("Failed to create room:", error);
       throw error; // Re-throw so Homepage can handle it
@@ -62,6 +63,7 @@ export default function Home() {
       onSubmitGuess={submitGuess}
       onJoinNextGame={joinNextGame}
       onSetTopic={setTopic}
+      onSetTopics={setTopics}
       onSetDifficulty={setDifficulty}
       onSendChatMessage={sendChatMessage}
     />

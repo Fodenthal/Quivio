@@ -28,6 +28,7 @@ const mockConvertedState: GameState = {
   maxPlayers: 8,
   isPrivate: false,
   gamePin: "TEST1",
+  roomName: "Test Room",
   gameStarted: false,
   gameEnded: false,
   gamePaused: false,
@@ -41,8 +42,10 @@ const mockConvertedState: GameState = {
   roundTimeRemaining: 30000,
   roundEnded: false,
   correctAnswer: "",
+  topics: ["Test Topic"],
   currentTopic: "Test Topic",
-  currentDifficulty: 5,
+  currentTopicIndex: 0,
+  currentDifficulty: 3,
   players: new Map([
     ["player1", {
       id: "player1",
@@ -236,16 +239,19 @@ describe("useGameConnection", () => {
 
         await act(async () => {
           await result.current.createRoom({
-            topic: "Test Topic",
-            difficulty: 5,
+            roomName: "Test Room",
+            hostName: "TestHost",
+            topics: ["Test Topic"],
+            difficulty: 3,
             isPrivate: false
           });
         });
 
         expect(mockGameClient.createRoom).toHaveBeenCalledWith({
-          playerName: expect.stringMatching(/^Host_[a-z0-9]{6}$/),
-          topic: "Test Topic",
-          difficulty: 5,
+          playerName: "TestHost",
+          roomName: "Test Room",
+          topics: ["Test Topic"],
+          difficulty: 3,
           isPrivate: false,
           maxPlayers: 8
         });
@@ -263,7 +269,9 @@ describe("useGameConnection", () => {
 
         await act(async () => {
           await result.current.createRoom({
-            topic: "Topic1",
+            roomName: "Test Room 1",
+            hostName: "TestHost1",
+            topics: ["Topic1"],
             difficulty: 3,
             isPrivate: false
           });
@@ -271,16 +279,17 @@ describe("useGameConnection", () => {
 
         await act(async () => {
           await result.current.createRoom({
-            topic: "Topic2",
-            difficulty: 7,
+            roomName: "Test Room 2",
+            hostName: "TestHost2",
+            topics: ["Topic2"],
+            difficulty: 4,
             isPrivate: true
           });
         });
 
         expect(calls).toHaveLength(2);
-        expect(calls[0]).not.toBe(calls[1]);
-        expect(calls[0]).toMatch(/^Host_[a-z0-9]{6}$/);
-        expect(calls[1]).toMatch(/^Host_[a-z0-9]{6}$/);
+        expect(calls[0]).toBe("TestHost1");
+        expect(calls[1]).toBe("TestHost2");
       });
 
       it("throws error when GameClient.createRoom fails", async () => {
@@ -290,8 +299,10 @@ describe("useGameConnection", () => {
 
         await expect(
           result.current.createRoom({
-            topic: "Test Topic",
-            difficulty: 5,
+            roomName: "Test Room",
+            hostName: "TestHost",
+            topics: ["Test Topic"],
+            difficulty: 3,
             isPrivate: false
           })
         ).rejects.toThrow("Create failed");

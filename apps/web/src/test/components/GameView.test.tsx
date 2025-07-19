@@ -144,6 +144,29 @@ describe("GameView", () => {
       expect(screen.getByText("won the game!")).toBeInTheDocument();
       expect(screen.getByText("🏆")).toBeInTheDocument();
     });
+
+    it("shows ad placeholder when game started but questions are loading", () => {
+      const gameState = createGameState({ 
+        gameStarted: true,
+        roundStartTime: 0, // No round started yet
+        currentPrompt: {
+          id: "",
+          text: "", // No prompt text available yet
+          category: "",
+          difficulty: "easy",
+          answer: ""
+        }
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      // Should show ad placeholder while questions are being generated
+      expect(screen.getByText("AD")).toBeInTheDocument();
+      expect(screen.getByText("Questions are loading...")).toBeInTheDocument();
+      
+      // Should not show answer input during loading
+      expect(screen.queryByPlaceholderText("Enter your answer and press Enter...")).not.toBeInTheDocument();
+    });
   });
 
   describe("Prompt Display", () => {

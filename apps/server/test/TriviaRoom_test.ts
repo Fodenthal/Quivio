@@ -255,7 +255,9 @@ describe("testing TriviaRoom", () => {
   });
 
   it("should handle edge case: player rejoining paused game", async () => {
-    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {});
+    const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
+      topic: "__DEV__" // Use static prompts for reliable testing
+    });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
     
@@ -386,7 +388,8 @@ describe("testing TriviaRoom", () => {
 
   it("should handle round timeout", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
-      roundTime: 1000 // 1 second round
+      roundTime: 1000, // 1 second round
+      topic: "__DEV__" // Use static prompts for predictable timing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });

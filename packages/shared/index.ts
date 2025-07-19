@@ -26,7 +26,7 @@ export interface Prompt {
   answer: string;
   // New fields for AI-generated questions
   topic?: string;
-  difficultyLevel?: number; // 1-10 scale
+  difficultyLevel?: number; // 1-5 scale
   acceptableAnswers?: string[];
 }
 
@@ -57,7 +57,7 @@ export interface TopicMessage {
 }
 
 export interface DifficultyMessage {
-  difficulty: number; // 1-10 scale
+  difficulty: number; // 1-5 scale
 }
 
 export interface RoomSettings {
@@ -75,6 +75,7 @@ export interface GameState {
   maxPlayers: number;
   isPrivate: boolean;
   gamePin: string;
+  roomName: string;
 
   // Game state
   gameStarted: boolean;
@@ -96,8 +97,10 @@ export interface GameState {
   correctAnswer: string;
 
   // AI Question Generation Settings
+  topics: string[];
   currentTopic: string;
-  currentDifficulty: number; // 1-10 scale
+  currentTopicIndex: number;
+  currentDifficulty: number; // 1-5 scale
 
   // Players
   players: Map<string, PlayerData>;

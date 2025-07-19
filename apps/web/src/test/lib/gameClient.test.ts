@@ -116,8 +116,9 @@ describe('GameClient', () => {
         
         const options = {
           playerName: 'TestPlayer',
-          topic: 'Science',
-          difficulty: 5,
+          roomName: 'Test Room',
+          topics: ['Science'],
+          difficulty: 3,
           isPrivate: false
         };
 
@@ -125,10 +126,11 @@ describe('GameClient', () => {
 
         expect(mockClient.create).toHaveBeenCalledWith('trivia_room', {
           playerName: 'TestPlayer',
-          maxPlayers: 8,
+          roomName: 'Test Room',
+          topics: ['Science'],
+          difficulty: 3,
           isPrivate: false,
-          topic: 'Science',
-          difficulty: 5
+          maxPlayers: 8
         });
         expect(result).toBe(mockRoom);
         expect(gameClient.getRoom()).toBe(mockRoom);

@@ -32,9 +32,11 @@ export const GameView = memo(function GameView({
     if (gameState.gameEnded) return "ended";
     if (gameState.gamePaused) return "paused";
     if (gameState.roundEnded) return "round-ended";
+    // Add loading phase for when game started but questions are being generated
+    if (gameState.gameStarted && (!gameState.currentPrompt?.text || gameState.currentPrompt.text === "")) return "loading";
     if (gameState.roundStartTime > 0) return "playing";
     return "waiting";
-  }, [gameState.gameEnded, gameState.gamePaused, gameState.roundEnded, gameState.roundStartTime]);
+  }, [gameState.gameEnded, gameState.gamePaused, gameState.roundEnded, gameState.gameStarted, gameState.currentPrompt?.text, gameState.roundStartTime]);
 
   const formatTime = useCallback((timeMs: number): string => {
     const seconds = Math.max(0, Math.ceil(timeMs / 1000));
@@ -105,11 +107,7 @@ export const GameView = memo(function GameView({
     "Stay focused, victory awaits!"
   ], []);
 
-  // AI entities for random attribution
-  const aiEntities = useMemo(() => [
-    "AI", 
-    "Sam Altman",
-  ], []);
+
 
   // Find who got the answer first
   const firstCorrectPlayer = useMemo(() => {
@@ -126,26 +124,7 @@ export const GameView = memo(function GameView({
     return gameState.players.get(firstCorrectPlayerId);
   }, [gameState.roundEnded, gameState.roundGuesses, gameState.players]);
 
-  // Generate random "submitted by" attribution
-  const submittedByAttribution = useMemo(() => {
-    if (!gameState.roundEnded) return "";
-    
-    // Use round number as seed for consistent randomization per round
-    const seed = gameState.currentRound;
-    const isAI = (seed * 7) % 2 === 0; // 50% chance for AI
-    
-    if (isAI) {
-      const aiIndex = (seed * 3) % aiEntities.length;
-      return `submitted by ${aiEntities[aiIndex]}`;
-    } else {
-      // Get a random player name
-      const playerList = Array.from(gameState.players.values());
-      if (playerList.length === 0) return "submitted by anonymous";
-      
-      const playerIndex = (seed * 5) % playerList.length;
-      return `submitted by ${playerList[playerIndex].name}`;
-    }
-  }, [gameState.roundEnded, gameState.currentRound, gameState.players, aiEntities]);
+
 
   // Select a random encouraging message based on current round
   const selectedEncouragingMessage = useMemo(() => {
@@ -254,7 +233,20 @@ export const GameView = memo(function GameView({
           </div>
         </div>
 
-        {gameState.currentPrompt && gameState.currentPrompt.text && (
+        {/* Question Display Panel or Ad Placeholder */}
+        {phase === "loading" ? (
+          // Ad placeholder during question generation
+          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+            <div className="flex-grow flex flex-col justify-center">
+              <h2 className="text-8xl font-bold text-text-main tracking-wider">
+                AD
+              </h2>
+              <p className="text-lg text-text-secondary mt-4">
+                Questions are loading...
+              </p>
+            </div>
+          </div>
+        ) : gameState.currentPrompt && gameState.currentPrompt.text && (
           <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
             {gameState.roundEnded && gameState.correctAnswer ? (
               // Answer reveal after round ends
@@ -272,9 +264,7 @@ export const GameView = memo(function GameView({
                     <span>no one got it</span>
                   )}
                 </div>
-                <div className="text-sm text-text-secondary/80 italic mt-2">
-                  {submittedByAttribution}
-                </div>
+
               </div>
             ) : (
               // Normal question display during round

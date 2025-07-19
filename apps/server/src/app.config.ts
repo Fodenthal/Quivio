@@ -1,12 +1,14 @@
 import config from "@colyseus/tools";
 import { monitor } from "@colyseus/monitor";
 import { playground } from "@colyseus/playground";
+import cors from "cors"; // Add this import
 
 /**
  * Import your Room files
  */
 import { TriviaRoom } from "./rooms/TriviaRoom";
 import { GamePinRegistry } from "./services/GamePinRegistry";
+import { QuestionDatabase } from "./services/QuestionDatabase";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -27,6 +29,9 @@ export default config({
     },
 
     initializeExpress: (app) => {
+        // Add CORS middleware at the very beginning
+        app.use(cors());
+        
         /**
          * Bind your custom express routes here:
          * Read more: https://expressjs.com/en/starter/basic-routing.html
@@ -125,6 +130,112 @@ export default config({
                 });
             }
         });
+
+        /**
+         * Question Database Debug API (Development only)
+         * These endpoints allow you to inspect the cached questions
+         */
+        if (isDevelopment) {
+            // Database stats and topic overview
+            app.get('/debug/questions/stats', (req, res) => {
+                try {
+                    const db = QuestionDatabase.getInstance();
+                    const stats = db.getStats();
+                    const topics = db.getAvailableTopics();
+                    
+                    res.json({
+                        success: true,
+                        stats,
+                        topics
+                    });
+                } catch (error) {
+                    res.status(500).json({
+                        success: false,
+                        error: error instanceof Error ? error.message : 'Unknown error'
+                    });
+                }
+            });
+
+            // Get all questions (limited)
+            app.get('/debug/questions/all', (req, res) => {
+                try {
+                    const db = QuestionDatabase.getInstance();
+                    const limit = parseInt(req.query.limit as string) || 100;
+                    const questions = db.getAllQuestions(limit);
+                    
+                    res.json({
+                        success: true,
+                        count: questions.length,
+                        questions
+                    });
+                } catch (error) {
+                    res.status(500).json({
+                        success: false,
+                        error: error instanceof Error ? error.message : 'Unknown error'
+                    });
+                }
+            });
+
+            // Search questions by text
+            app.get('/debug/questions/search', (req, res) => {
+                try {
+                    const db = QuestionDatabase.getInstance();
+                    const searchTerm = req.query.q as string;
+                    const limit = parseInt(req.query.limit as string) || 50;
+                    
+                    if (!searchTerm) {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Search term (q) is required'
+                        });
+                    }
+                    
+                    const questions = db.searchQuestions(searchTerm, limit);
+                    
+                    res.json({
+                        success: true,
+                        searchTerm,
+                        count: questions.length,
+                        questions
+                    });
+                } catch (error) {
+                    res.status(500).json({
+                        success: false,
+                        error: error instanceof Error ? error.message : 'Unknown error'
+                    });
+                }
+            });
+
+            // Get questions by topic and difficulty
+            app.get('/debug/questions/topic/:topic/difficulty/:difficulty', (req, res) => {
+                try {
+                    const db = QuestionDatabase.getInstance();
+                    const { topic, difficulty } = req.params;
+                    const limit = parseInt(req.query.limit as string) || 20;
+                    
+                    const questions = db.getQuestions(topic, parseInt(difficulty), limit);
+                    
+                    res.json({
+                        success: true,
+                        topic,
+                        difficulty: parseInt(difficulty),
+                        count: questions.length,
+                        questions
+                    });
+                } catch (error) {
+                    res.status(500).json({
+                        success: false,
+                        error: error instanceof Error ? error.message : 'Unknown error'
+                    });
+                }
+            });
+
+            console.log("📊 Question database debug endpoints enabled:");
+            console.log("   • GET /debug/questions/stats - Database statistics");
+            console.log("   • GET /debug/questions/all?limit=100 - All questions");
+            console.log("   • GET /debug/questions/search?q=term&limit=50 - Search questions");
+            console.log("   • GET /debug/questions/topic/:topic/difficulty/:difficulty - Questions by topic/difficulty");
+        }
 
         /**
          * Use @colyseus/playground

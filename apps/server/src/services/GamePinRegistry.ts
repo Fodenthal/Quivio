@@ -9,7 +9,8 @@
 export interface RoomMetadata {
   gamePin: string;
   roomId: string;
-  topic: string;
+  roomName: string;
+  topics: string[];
   difficulty: number;
   playerCount: number;
   maxPlayers: number;
@@ -63,7 +64,8 @@ export class GamePinRegistry {
       const fullMetadata: RoomMetadata = {
         gamePin,
         roomId,
-        topic: metadata.topic || "General Knowledge",
+        roomName: metadata.roomName || "Trivia Room",
+        topics: metadata.topics || [],
         difficulty: metadata.difficulty || 5,
         playerCount: metadata.playerCount || 0,
         maxPlayers: metadata.maxPlayers || 8,

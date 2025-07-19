@@ -14,7 +14,7 @@ export interface UseGameConnectionReturn {
   
   // Room actions
   joinRoom: (params: { playerName: string; gamePin: string }) => Promise<void>;
-  createRoom: (params: { topic: string; difficulty: number; isPrivate: boolean }) => Promise<void>;
+  createRoom: (params: { roomName: string; hostName: string; topics: string[]; difficulty: number; isPrivate: boolean }) => Promise<void>;
   leaveRoom: () => Promise<void>;
   
   // Game actions
@@ -23,6 +23,7 @@ export interface UseGameConnectionReturn {
   submitGuess: (guess: string) => void;
   joinNextGame: () => void;
   setTopic: (topic: string) => void;
+  setTopics: (topics: string[]) => void;
   setDifficulty: (difficulty: number) => void;
   sendChatMessage: (content: string) => Promise<void>;
 }
@@ -97,14 +98,13 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [gameClient]);
 
-  const createRoom = useCallback(async ({ topic, difficulty, isPrivate }: { topic: string; difficulty: number; isPrivate: boolean }) => {
+  const createRoom = useCallback(async ({ roomName, hostName, topics, difficulty, isPrivate }: { roomName: string; hostName: string; topics: string[]; difficulty: number; isPrivate: boolean }) => {
     try {
-      // Create a room with the host as the first player
-      const playerName = `Host_${Math.random().toString(36).substring(2, 8)}`;
-      
+      // Use the provided hostName instead of generating a unique one
       await gameClient.createRoom({
-        playerName,
-        topic,
+        playerName: hostName,
+        roomName,
+        topics,
         difficulty,
         isPrivate,
         maxPlayers: 8
@@ -175,6 +175,15 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [gameClient]);
 
+  const setTopics = useCallback((topics: string[]) => {
+    try {
+      gameClient.setTopics(topics);
+    } catch (error) {
+      console.error("Failed to set topics:", error);
+      throw error;
+    }
+  }, [gameClient]);
+
   const setDifficulty = useCallback((difficulty: number) => {
     try {
       gameClient.setDifficulty(difficulty);
@@ -211,6 +220,7 @@ export function useGameConnection(): UseGameConnectionReturn {
     submitGuess,
     joinNextGame,
     setTopic,
+    setTopics,
     setDifficulty,
     sendChatMessage,
   };

@@ -88,7 +88,8 @@ export class GameClient {
    */
   async createRoom(options: {
     playerName: string;
-    topic: string;
+    roomName: string;
+    topics: string[];
     difficulty: number;
     isPrivate?: boolean;
     maxPlayers?: number;
@@ -100,7 +101,8 @@ export class GameClient {
         playerName: options.playerName,
         maxPlayers: options.maxPlayers || 8,
         isPrivate: options.isPrivate || false,
-        topic: options.topic,
+        roomName: options.roomName,
+        topics: options.topics,
         difficulty: options.difficulty
       };
 
@@ -294,11 +296,25 @@ export class GameClient {
   }
 
   /**
+   * Set multiple topics for AI question generation with equal rotation (host only)
+   */
+  setTopics(topics: string[]): void {
+    if (!topics || topics.length === 0) {
+      throw new Error("Topics array cannot be empty");
+    }
+    const validTopics = topics.filter(t => t && t.trim().length > 0).map(t => t.trim());
+    if (validTopics.length === 0) {
+      throw new Error("At least one valid topic is required");
+    }
+    this.sendMessage("SET_TOPICS", { topics: validTopics });
+  }
+
+  /**
    * Set the difficulty for AI question generation (host only)
    */
   setDifficulty(difficulty: number): void {
-    if (difficulty < 1 || difficulty > 10) {
-      throw new Error("Difficulty must be between 1 and 10");
+    if (difficulty < 1 || difficulty > 5) {
+      throw new Error("Difficulty must be between 1 and 5");
     }
     this.sendMessage(MSG.SET_DIFFICULTY, { difficulty });
   }

@@ -17,6 +17,7 @@ export interface RawRoomState {
   maxPlayers?: number;
   isPrivate?: boolean;
   gamePin?: string;
+  roomName?: string;
   gameStarted?: boolean;
   gameEnded?: boolean;
   gamePaused?: boolean;
@@ -30,7 +31,9 @@ export interface RawRoomState {
   roundTimeRemaining?: number;
   roundEnded?: boolean;
   correctAnswer?: string;
+  topics?: string[];
   currentTopic?: string;
+  currentTopicIndex?: number;
   currentDifficulty?: number;
   players?: MapSchemaLike | Record<string, PlayerData>;
   currentPrompt?: {
@@ -158,6 +161,7 @@ export function convertColyseusState(state: unknown): GameState | null {
     maxPlayers: roomState.maxPlayers || 8,
     isPrivate: roomState.isPrivate || false,
     gamePin: roomState.gamePin || "",
+    roomName: roomState.roomName || "Trivia Room",
     gameStarted: roomState.gameStarted || false,
     gameEnded: roomState.gameEnded || false,
     gamePaused: roomState.gamePaused || false,
@@ -173,8 +177,10 @@ export function convertColyseusState(state: unknown): GameState | null {
     correctAnswer: roomState.correctAnswer || "",
     
     // AI Question Generation Settings
-    currentTopic: roomState.currentTopic || "General Knowledge",
-    currentDifficulty: roomState.currentDifficulty || 5,
+    topics: roomState.topics || [],
+    currentTopic: roomState.currentTopic || "",
+    currentTopicIndex: roomState.currentTopicIndex || 0,
+    currentDifficulty: roomState.currentDifficulty || 3,
     
     players: playersMap,
     currentPrompt: {

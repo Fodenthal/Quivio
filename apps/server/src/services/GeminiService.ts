@@ -10,7 +10,7 @@ export interface GeneratedQuestion {
 
 export interface QuestionRequest {
   topic: string;
-  difficulty: number; // 1-10 scale
+  difficulty: number; // 1-5 scale
   previousQuestions?: string[]; // To avoid duplicates
 }
 
@@ -57,7 +57,7 @@ export class GeminiService {
   private buildPrompt(request: QuestionRequest): string {
     const difficultyDescription = this.getDifficultyDescription(request.difficulty);
     
-    let prompt = `Generate a trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/10).
+    let prompt = `Generate a trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).
 
 Requirements:
 1. Create a clear, factual question that has a definitive answer
@@ -141,11 +141,11 @@ Important: Return ONLY the JSON object, no additional text.`;
    * Get human-readable difficulty description
    */
   private getDifficultyDescription(difficulty: number): string {
-    if (difficulty <= 2) return "very easy";
-    if (difficulty <= 4) return "easy";
-    if (difficulty <= 6) return "medium";
-    if (difficulty <= 8) return "hard";
-    return "very hard/expert";
+    if (difficulty <= 1) return "very easy";
+    if (difficulty <= 2) return "easy";
+    if (difficulty <= 3) return "medium";
+    if (difficulty <= 4) return "hard";
+    return "very hard";
   }
 
   /**

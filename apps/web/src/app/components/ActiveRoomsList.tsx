@@ -8,7 +8,8 @@ import { useState, useEffect, useCallback } from "react";
 export interface RoomMetadata {
   gamePin: string;
   roomId: string;
-  topic: string;
+  roomName: string;
+  topics: string[];
   difficulty: number;
   playerCount: number;
   maxPlayers: number;
@@ -106,25 +107,31 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
   }, [onJoinRoom]);
 
   /**
-   * Get difficulty label from numeric value
+   * Get difficulty label from numeric value (5-tier system)
    */
   const getDifficultyLabel = (difficulty: number): string => {
-    if (difficulty <= 2) return "Very Easy";
-    if (difficulty <= 4) return "Easy";
-    if (difficulty <= 6) return "Medium";
-    if (difficulty <= 8) return "Hard";
-    return "Very Hard";
+    switch(difficulty) {
+      case 1: return "Very Easy";
+      case 2: return "Easy";
+      case 3: return "Medium";
+      case 4: return "Hard";
+      case 5: return "Very Hard";
+      default: return "Medium";
+    }
   };
 
   /**
-   * Get difficulty color class
+   * Get difficulty color class (5-tier system)
    */
   const getDifficultyColor = (difficulty: number): string => {
-    if (difficulty <= 2) return "text-green-400";
-    if (difficulty <= 4) return "text-blue-400";
-    if (difficulty <= 6) return "text-yellow-400";
-    if (difficulty <= 8) return "text-orange-400";
-    return "text-red-400";
+    switch(difficulty) {
+      case 1: return "text-green-400";
+      case 2: return "text-blue-400";
+      case 3: return "text-yellow-400";
+      case 4: return "text-orange-400";
+      case 5: return "text-red-400";
+      default: return "text-yellow-400";
+    }
   };
 
   /**
@@ -237,9 +244,12 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-lg font-semibold text-text-main truncate">
-                      {room.topic}
+                      {room.roomName}
                     </h4>
-                    <div className="flex items-center space-x-3 mt-1">
+                    <div className="text-xs text-text-secondary mt-1 mb-2">
+                      Topics: {room.topics.join(", ")}
+                    </div>
+                    <div className="flex items-center space-x-3">
                       <span className="text-sm text-text-secondary">
                         Pin: <span className="font-mono font-bold text-primary">{room.gamePin}</span>
                       </span>
