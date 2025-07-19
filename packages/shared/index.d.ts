@@ -5,6 +5,8 @@ export declare const MSG: {
     readonly START_GAME: "start_game";
     readonly UPDATE_SETTINGS: "update_settings";
     readonly JOIN_NEXT_GAME: "join_next_game";
+    readonly SET_TOPIC: "set_topic";
+    readonly SET_DIFFICULTY: "set_difficulty";
 };
 export interface PlayerData {
     id: string;
@@ -20,6 +22,9 @@ export interface Prompt {
     category: string;
     difficulty: "easy" | "medium" | "hard";
     answer: string;
+    topic?: string;
+    difficultyLevel?: number;
+    acceptableAnswers?: string[];
 }
 export interface Guess {
     playerId: string;
@@ -39,6 +44,12 @@ export interface ChatMessage {
     content: string;
     timestamp: number;
     type: "player" | "system";
+}
+export interface TopicMessage {
+    topic: string;
+}
+export interface DifficultyMessage {
+    difficulty: number;
 }
 export interface RoomSettings {
     targetScore: number;
@@ -65,6 +76,8 @@ export interface GameState {
     roundTimeRemaining: number;
     roundEnded: boolean;
     correctAnswer: string;
+    currentTopic: string;
+    currentDifficulty: number;
     players: Map<string, PlayerData>;
     currentPrompt: Prompt;
     roundGuesses: Map<string, Guess>;

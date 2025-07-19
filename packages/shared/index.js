@@ -7,5 +7,7 @@ exports.MSG = {
     SUBMIT_GUESS: "submit_guess",
     START_GAME: "start_game",
     UPDATE_SETTINGS: "update_settings",
-    JOIN_NEXT_GAME: "join_next_game"
+    JOIN_NEXT_GAME: "join_next_game",
+    SET_TOPIC: "set_topic",
+    SET_DIFFICULTY: "set_difficulty"
 };

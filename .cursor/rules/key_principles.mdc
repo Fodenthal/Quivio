@@ -8,4 +8,4 @@ alwaysApply: true
 
 - **Break down tasks into small, incremental steps.** Avoid tackling everything at once.
 - **Define atomic implementation steps.** Each step should be small enough to be completed in a single turn without hitting complexity limits, ensuring consistent progress.
-- **Provide guidance for verification after complex changes.** For substantial tasks like feature additions or refactors, conclude by explaining how the user can manually verify the changes (e.g., UI steps to follow, or ideas for new automated tests).
+- **Provide guidance for verification after changes.** Unless the task is trivial, conclude turns by explaining how the user can manually verify the changes (e.g., UI steps to follow, or ideas for new automated tests).
