@@ -23,6 +23,7 @@ describe("PlayerList", () => {
     roundTime: 30000,
     maxPlayers: 8,
     isPrivate: false,
+    gamePin: "TEST1",
     gameStarted: true,
     gameEnded: false,
     gamePaused: false,

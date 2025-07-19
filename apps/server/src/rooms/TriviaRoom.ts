@@ -306,8 +306,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         return;
       }
 
+      // Only start if we have at least 2 ready players
       const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
-      
       if (readyPlayers.length >= 2) {
         this.startGame();
       }
