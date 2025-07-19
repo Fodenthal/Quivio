@@ -7,6 +7,7 @@ export interface JoinRoomPanelProps {
   onGamePinChange: (pin: string) => void;
   onJoinRoom: () => void;
   isJoining: boolean;
+  error?: string | null;
 }
 
 /**
@@ -20,6 +21,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
   onGamePinChange,
   onJoinRoom,
   isJoining,
+  error,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isJoining && playerName.trim() && gamePin.trim()) {
@@ -91,6 +93,13 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
             </span>
           )}
         </button>
+        
+        {/* Error Display */}
+        {error && (
+          <div className="mt-3 p-3 bg-red-500/20 border border-red-500/40 rounded-lg">
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          </div>
+        )}
       </div>
       
       {/* Helper text */}

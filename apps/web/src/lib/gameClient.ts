@@ -29,7 +29,7 @@ export interface GameClientEvents {
  */
 export interface JoinRoomOptions {
   playerName: string;
-  gamePin: string;
+  gamePin?: string; // Optional - either gamePin or roomId must be provided
   roomId?: string; // Optional room ID to join specific room
   roomOptions?: {
     targetScore?: number;
@@ -50,12 +50,16 @@ export class GameClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
   private reconnectDelay = 1000; // Start with 1 second
+  private serverHttpUrl: string; // HTTP URL for API calls
 
   constructor(serverUrl?: string) {
     // Default to localhost in development, can be overridden
     const url = serverUrl || (process.env.NEXT_PUBLIC_BACKEND_URL || "ws://localhost:2567");
     
     this.client = new Client(url);
+    
+    // Convert WebSocket URL to HTTP URL for API calls
+    this.serverHttpUrl = url.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
   }
 
   /**
@@ -117,21 +121,81 @@ export class GameClient {
   }
 
   /**
-   * Join or create a trivia room
+   * Look up room ID by game pin using the server API
+   */
+  private async lookupRoomByPin(gamePin: string): Promise<string> {
+    // Client-side validation first
+    if (!gamePin || !/^[A-Z0-9]{5}$/.test(gamePin)) {
+      console.error(`❌ Invalid game pin format: "${gamePin}" - Must be 5 alphanumeric characters`);
+      throw new Error(`Invalid game pin format. Must be 5 alphanumeric characters.`);
+    }
+
+    const apiUrl = `${this.serverHttpUrl}/api/rooms/lookup/${gamePin}`;
+    
+    try {
+      console.log(`🔍 Looking up room for game pin: ${gamePin}`);
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error(`❌ Room not found for game pin: ${gamePin}`);
+          throw new Error(`Room not found for game pin: ${gamePin}`);
+        } else if (response.status === 400) {
+          const errorData = await response.json();
+          console.error(`❌ Invalid game pin format from server: ${gamePin} - ${errorData.error}`);
+          throw new Error(`Invalid game pin format: ${errorData.error}`);
+        } else {
+          console.error(`❌ Server error during lookup for pin ${gamePin}: ${response.status} ${response.statusText}`);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+      }
+      
+      const data = await response.json();
+      console.log(`✅ Found room ${data.roomId} for game pin: ${gamePin}`);
+      return data.roomId;
+      
+    } catch (error) {
+      // Re-throw with consistent error handling
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        console.error(`❌ Unexpected error during lookup for pin ${gamePin}:`, error);
+        throw new Error(`Failed to lookup room: ${String(error)}`);
+      }
+    }
+  }
+
+  /**
+   * Join a trivia room by game pin
    */
   async joinRoom(options: JoinRoomOptions): Promise<Room> {
-    this.setConnectionStatus(ConnectionStatus.CONNECTING);
-    
     try {
       const roomOptions = {
         playerName: options.playerName,
         ...options.roomOptions
       };
 
-      // Join specific room or create/join any available room
-      this.room = options.roomId 
-        ? await this.client.joinById(options.roomId, roomOptions)
-        : await this.client.joinOrCreate("trivia_room", roomOptions);
+      let roomId: string;
+
+      if (options.roomId) {
+        // If roomId is explicitly provided, use it directly
+        roomId = options.roomId;
+        console.log(`🚪 Joining room directly by ID: ${roomId}`);
+      } else if (options.gamePin) {
+        // Look up room ID by game pin (this may throw validation errors)
+        roomId = await this.lookupRoomByPin(options.gamePin);
+      } else {
+        const error = new Error("Either roomId or gamePin must be provided");
+        console.error(`❌ ${error.message}`);
+        throw error;
+      }
+
+      // Only set connecting status after successful validation/lookup
+      this.setConnectionStatus(ConnectionStatus.CONNECTING);
+
+      // Join the specific room by ID
+      console.log(`🚪 Joining room ${roomId} with game pin: ${options.gamePin || 'N/A'}`);
+      this.room = await this.client.joinById(roomId, roomOptions);
 
       this.setupRoomHandlers();
       this.setConnectionStatus(ConnectionStatus.CONNECTED);
@@ -139,8 +203,13 @@ export class GameClient {
 
       return this.room;
     } catch (error) {
-      this.setConnectionStatus(ConnectionStatus.ERROR);
+      // Only set error status if we were in connecting state
+      if (this.connectionStatus === ConnectionStatus.CONNECTING) {
+        this.setConnectionStatus(ConnectionStatus.ERROR);
+      }
+      
       const gameError = new Error(`Failed to join room: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`❌ Join room failed:`, gameError);
       this.events.onError?.(gameError);
       throw gameError;
     }

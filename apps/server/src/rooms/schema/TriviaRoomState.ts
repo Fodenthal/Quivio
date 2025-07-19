@@ -48,6 +48,7 @@ export class TriviaRoomState extends Schema {
   @type("number") roundTime: number = 30000;
   @type("number") maxPlayers: number = 8;
   @type("boolean") isPrivate: boolean = false;
+  @type("string") gamePin: string = "";
 
   // Game state
   @type("boolean") gameStarted: boolean = false;

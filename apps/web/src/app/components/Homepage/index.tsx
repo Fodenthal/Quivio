@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TrendingTopics } from "../TrendingTopics";
-import { GamePins } from "../GamePins";
+import { ActiveRoomsList } from "../ActiveRoomsList";
 import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 
@@ -23,43 +23,89 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const [isPrivate, setIsPrivate] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const handleJoinRoom = async () => {
+    // Clear previous errors
+    setJoinError(null);
+    
+    // Client-side validation
     if (!playerName.trim()) {
-      alert("Please enter your name");
+      setJoinError("Please enter your name");
       return;
     }
     if (!gamePin.trim()) {
-      alert("Please enter a game pin");
+      setJoinError("Please enter a game pin");
+      return;
+    }
+    
+    // Validate game pin format
+    if (!/^[A-Z0-9]{5}$/.test(gamePin.trim())) {
+      setJoinError("Game pin must be 5 alphanumeric characters (A-Z, 0-9)");
       return;
     }
 
     setIsJoining(true);
     try {
-      await onJoinRoom(playerName.trim(), gamePin.trim());
+      await onJoinRoom(playerName.trim(), gamePin.trim().toUpperCase());
+      // If successful, component will unmount as user navigates to game
     } catch (error) {
       console.error("Failed to join room:", error);
-      alert("Failed to join room. Please try again.");
+      
+      // Parse error message for user-friendly display
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes("Room not found")) {
+        setJoinError(`Room "${gamePin.trim().toUpperCase()}" not found. Please check the game pin.`);
+      } else if (errorMessage.includes("Invalid game pin format")) {
+        setJoinError("Invalid game pin format. Must be 5 alphanumeric characters.");
+      } else if (errorMessage.includes("Server error")) {
+        setJoinError("Server error. Please try again in a moment.");
+      } else {
+        setJoinError("Failed to join room. Please try again.");
+      }
     } finally {
       setIsJoining(false);
     }
   };
 
   const handleCreateRoom = async () => {
+    // Clear previous errors
+    setCreateError(null);
+    
     if (!roomTopic.trim()) {
-      alert("Please enter a room topic");
+      setCreateError("Please enter a room topic");
       return;
     }
 
     setIsCreating(true);
     try {
       await onCreateRoom(roomTopic.trim(), difficulty, isPrivate);
+      // If successful, component will unmount as user navigates to game
     } catch (error) {
       console.error("Failed to create room:", error);
-      alert("Failed to create room. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setCreateError(`Failed to create room: ${errorMessage}`);
     } finally {
       setIsCreating(false);
     }
+  };
+
+  // Clear errors when inputs change
+  const handlePlayerNameChange = (name: string) => {
+    setPlayerName(name);
+    if (joinError) setJoinError(null);
+  };
+
+  const handleGamePinChange = (pin: string) => {
+    setGamePin(pin);
+    if (joinError) setJoinError(null);
+  };
+
+  const handleRoomTopicChange = (topic: string) => {
+    setRoomTopic(topic);
+    if (createError) setCreateError(null);
   };
 
   return (
@@ -83,30 +129,32 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
               <div className="flex-1 w-full">
                 <CreateRoomPanel
                   roomTopic={roomTopic}
-                  onRoomTopicChange={setRoomTopic}
+                  onRoomTopicChange={handleRoomTopicChange}
                   difficulty={difficulty}
                   onDifficultyChange={setDifficulty}
                   isPrivate={isPrivate}
                   onPrivateToggle={setIsPrivate}
                   onCreateRoom={handleCreateRoom}
                   isCreating={isCreating}
+                  error={createError}
                 />
               </div>
               <div className="flex-1 w-full">
                 <JoinRoomPanel
                   playerName={playerName}
-                  onPlayerNameChange={setPlayerName}
+                  onPlayerNameChange={handlePlayerNameChange}
                   gamePin={gamePin}
-                  onGamePinChange={setGamePin}
+                  onGamePinChange={handleGamePinChange}
                   onJoinRoom={handleJoinRoom}
                   isJoining={isJoining}
+                  error={joinError}
                 />
               </div>
             </div>
 
-            {/* Game Pins - Below Hero Section */}
+            {/* Active Rooms - Below Hero Section */}
             <div className="h-[400px] lg:h-[500px]">
-              <GamePins />
+              <ActiveRoomsList onJoinRoom={onJoinRoom} />
             </div>
           </div>
           

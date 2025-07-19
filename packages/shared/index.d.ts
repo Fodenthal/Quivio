@@ -51,6 +51,7 @@ export interface GameState {
     roundTime: number;
     maxPlayers: number;
     isPrivate: boolean;
+    gamePin: string;
     gameStarted: boolean;
     gameEnded: boolean;
     gamePaused: boolean;

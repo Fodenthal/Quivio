@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PlayerData, GameState } from "@shared/index";
+import { GamePins } from "./GamePins";
 
 interface GameLobbyProps {
   gameState: GameState;
@@ -94,6 +95,11 @@ export function GameLobby({
 
   return (
     <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 space-y-6">
+      {/* Game Pin Display - Show prominently for easy sharing */}
+      {gameState.gamePin && (
+        <GamePins gamePin={gameState.gamePin} className="mb-6" />
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-text-main">Players</h3>
         <div className="text-text-secondary text-sm font-medium">

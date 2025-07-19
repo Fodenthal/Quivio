@@ -31,6 +31,7 @@ describe("GameLobby", () => {
       roundTime: 30000,
       maxPlayers: 8,
       isPrivate: false,
+      gamePin: "12345",
       gameStarted: false,
       gameEnded: false,
       gamePaused: false,
