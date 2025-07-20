@@ -3,16 +3,17 @@
 import { useState } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
-import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 
 interface AISettingsPanelProps {
   gameState: GameState;
+  onSetTopic?: (topic: string) => void;
   onSetTopics?: (topics: string[]) => void;
   onSetDifficulty?: (difficulty: number) => void;
 }
 
 export function AISettingsPanel({ 
   gameState, 
+  onSetTopic,
   onSetTopics,
   onSetDifficulty
 }: AISettingsPanelProps) {
@@ -22,18 +23,34 @@ export function AISettingsPanel({
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
   const [difficulty, setDifficulty] = useState(currentDifficulty);
 
-  // Debounce topic updates
-  useDebouncedEffect(() => {
-    const validTopics = topics.filter(t => t.trim().length > 0).map(t => t.trim());
-    if (onSetTopics && validTopics.length > 0) {
-      onSetTopics(validTopics);
-    }
-  }, [topics, onSetTopics], 500);
-
   const handleTopicChange = (index: number, value: string) => {
     const newTopics = [...topics];
     newTopics[index] = value;
     setTopics(newTopics);
+  };
+
+  const handleTopicApply = (index: number) => {
+    const topicToSet = topics[index]?.trim();
+    if (onSetTopic && topicToSet && topicToSet !== gameState.currentTopic) {
+      onSetTopic(topicToSet);
+    }
+  };
+
+  const handleTopicsApply = () => {
+    const validTopics = topics.filter(t => t.trim().length > 0).map(t => t.trim());
+    if (validTopics.length > 0 && onSetTopics) {
+      onSetTopics(validTopics);
+    }
+  };
+
+  const handleTopicKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleTopicApply(index);
+    }
+  };
+
+  const handleTopicBlur = (index: number) => {
+    handleTopicApply(index);
   };
 
   const handleAddTopic = () => {
@@ -82,6 +99,8 @@ export function AISettingsPanel({
                   type="text"
                   value={topic}
                   onChange={(e) => handleTopicChange(index, e.target.value)}
+                  onKeyDown={(e) => handleTopicKeyDown(index, e)}
+                  onBlur={() => handleTopicBlur(index)}
                   placeholder="e.g., Space Exploration, Ancient History..."
                   className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -101,6 +120,13 @@ export function AISettingsPanel({
             >
               + Add Another Topic
             </button>
+            <button
+              onClick={handleTopicsApply}
+              disabled={topics.filter(t => t.trim().length > 0).length === 0}
+              className="w-full px-3 py-2 text-sm font-medium bg-primary/20 text-primary border border-primary/30 rounded-md hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Apply All Topics
+            </button>
           </div>
           <div className="text-xs text-text-secondary">
             Active Topic: <span className="font-bold text-text-main">{gameState.currentTopic}</span>
@@ -113,7 +139,7 @@ export function AISettingsPanel({
               </>
             )}
             <br />
-            <span className="text-text-secondary/70">Topics will apply automatically after you finish typing.</span>
+            <span className="text-text-secondary/70">Use &quot;Apply All Topics&quot; to set multiple topics for equal rotation</span>
           </div>
         </div>
 
