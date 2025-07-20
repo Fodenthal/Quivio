@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
+import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 
 interface AISettingsPanelProps {
   gameState: GameState;
@@ -22,6 +23,22 @@ export function AISettingsPanel({
   // Use 5-tier difficulty system directly (1-5)
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
   const [difficulty, setDifficulty] = useState(currentDifficulty);
+
+  // Memoize valid topics calculation for performance
+  const validTopics = useMemo(() => 
+    topics.filter(t => t.trim().length > 0).map(t => t.trim()),
+    [topics]
+  );
+
+  // Unified auto-update logic: always use onSetTopics regardless of count
+  const handleAutoTopicUpdate = useCallback(() => {
+    if (onSetTopics && validTopics.length > 0) {
+      onSetTopics(validTopics);
+    }
+  }, [validTopics, onSetTopics]);
+
+  // Apply updates automatically with debounce
+  useDebouncedEffect(handleAutoTopicUpdate, [validTopics], 500);
 
   const handleTopicChange = (index: number, value: string) => {
     const newTopics = [...topics];
