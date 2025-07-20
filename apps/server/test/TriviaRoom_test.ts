@@ -82,7 +82,7 @@ describe("testing TriviaRoom", () => {
   it("should handle guess submission", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
       targetScore: 50, // High enough to prevent immediate win
-      topic: "__DEV__" // Force static prompts for consistent testing
+      topics: ["__DEV__"] // Force static prompts for consistent testing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
@@ -256,7 +256,7 @@ describe("testing TriviaRoom", () => {
 
   it("should handle edge case: player rejoining paused game", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
-      topic: "__DEV__" // Use static prompts for reliable testing
+      topics: ["__DEV__"] // Use static prompts for reliable testing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
@@ -295,7 +295,7 @@ describe("testing TriviaRoom", () => {
   it("should handle multiple guesses in same round", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
       targetScore: 50, // High enough to prevent immediate win
-      topic: "__DEV__" // Force static prompts for consistent testing
+      topics: ["__DEV__"] // Force static prompts for consistent testing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
@@ -389,7 +389,7 @@ describe("testing TriviaRoom", () => {
   it("should handle round timeout", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
       roundTime: 1000, // 1 second round
-      topic: "__DEV__" // Use static prompts for predictable timing
+      topics: ["__DEV__"] // Use static prompts for predictable timing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
@@ -419,7 +419,7 @@ describe("testing TriviaRoom", () => {
   it("should handle game win condition", async () => {
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
       targetScore: 1, // Low target for testing
-      topic: "__DEV__" // Force static prompts for consistent testing
+      topics: ["__DEV__"] // Force static prompts for consistent testing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });
@@ -587,7 +587,7 @@ describe("testing TriviaRoom", () => {
     // Test that the game continues for multiple rounds instead of ending after round 1
     const room = await colyseus.createRoom<TriviaRoomState>("trivia_room", {
       targetScore: 100, // High enough to require multiple rounds
-      topic: "__DEV__" // Force static prompts for consistent testing
+      topics: ["__DEV__"] // Force static prompts for consistent testing
     });
     const client1 = await colyseus.connectTo(room, { playerName: "Player1" });
     const client2 = await colyseus.connectTo(room, { playerName: "Player2" });

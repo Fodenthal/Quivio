@@ -63,6 +63,7 @@ export interface GameState {
     maxPlayers: number;
     isPrivate: boolean;
     gamePin: string;
+    roomName: string;
     gameStarted: boolean;
     gameEnded: boolean;
     gamePaused: boolean;
@@ -76,7 +77,9 @@ export interface GameState {
     roundTimeRemaining: number;
     roundEnded: boolean;
     correctAnswer: string;
+    topics: string[];
     currentTopic: string;
+    currentTopicIndex: number;
     currentDifficulty: number;
     players: Map<string, PlayerData>;
     currentPrompt: Prompt;

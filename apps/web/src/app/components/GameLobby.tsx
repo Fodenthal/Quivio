@@ -100,7 +100,6 @@ const DifficultySlider: React.FC<{
       `}</style>
       
       <div className="flex items-center justify-between">
-        <span className="text-xs text-text-secondary">Difficulty</span>
         <span className="text-xs font-bold text-primary">
           {getDifficultyLabel(value)}
         </span>
