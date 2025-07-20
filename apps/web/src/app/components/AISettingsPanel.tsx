@@ -53,13 +53,6 @@ export function AISettingsPanel({
     }
   };
 
-  const handleTopicsApply = () => {
-    const validTopics = topics.filter(t => t.trim().length > 0).map(t => t.trim());
-    if (validTopics.length > 0 && onSetTopics) {
-      onSetTopics(validTopics);
-    }
-  };
-
   const handleTopicKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleTopicApply(index);
@@ -137,26 +130,12 @@ export function AISettingsPanel({
             >
               + Add Another Topic
             </button>
-            <button
-              onClick={handleTopicsApply}
-              disabled={topics.filter(t => t.trim().length > 0).length === 0}
-              className="w-full px-3 py-2 text-sm font-medium bg-primary/20 text-primary border border-primary/30 rounded-md hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Apply All Topics
-            </button>
           </div>
           <div className="text-xs text-text-secondary">
-            Active Topic: <span className="font-bold text-text-main">{gameState.currentTopic}</span>
-            {gameState.topics && gameState.topics.length > 1 && (
-              <>
-                <br />
-                <span className="text-text-secondary/70">
-                  ({gameState.currentTopicIndex + 1} of {gameState.topics.length}: {gameState.topics.join(", ")})
-                </span>
-              </>
-            )}
-            <br />
-            <span className="text-text-secondary/70">Use &quot;Apply All Topics&quot; to set multiple topics for equal rotation</span>
+            <span className="text-text-secondary/70">
+              Topics update automatically as you type.
+              {validTopics.length > 1 && " Multiple topics will rotate during the game."}
+            </span>
           </div>
         </div>
 
