@@ -94,46 +94,159 @@ This document outlines the key principles, project-wide constraints, and specifi
 
 ### A Guide to Effective Agent-Assisted Development
 
-This document outlines a collaborative workflow designed to maximize the effectiveness of an AI agent for complex software development tasks like refactoring or feature implementation. The core philosophy is to treat the agent not as a black box, but as a pair programmer that requires clear guidance and a tight feedback loop.
+This document outlines a collaborative workflow designed to maximize the effectiveness of an AI agent for complex software development tasks like refactoring or feature implementation. The core philosophy is to treat the agent not as a black box, but as a pair programmer with a joint workflow that emphasizes semantic exploration, atomic execution, and continuous verification.
 
 ---
 
-### **Phase 1: High-Level Strategy & Alignment**
+## **Phase 1: Deep Understanding & Strategic Planning**
 
-The goal of this phase is to agree on the "what" and "why" before any code is written.
+The goal is to thoroughly understand the problem space before proposing any solutions.
 
-1.  **User States a Broad Goal:** The user provides a high-level objective.
-    *   *Example: "The connection state logic is duplicated everywhere. Can you analyze it and help me fix it?"*
+### 1. **User States a Broad Goal**
+The user provides a high-level objective with context.
+*Example: "Currently, what is the architecture that allows creation of multiple rooms. If I open two tabs and create two different trivia room instances and then I create more tabs and join rooms using random room codes (because there is no check of room codes/game pins to join specific rooms yet) then I always join the first instance."*
 
-2.  **Agent Analyzes & Proposes a Strategic Plan:** The agent uses its tools (`glob`, `search_file_content`, `read_file`) to analyze the codebase. It then produces a high-level markdown document that outlines:
-    *   **The Problem:** A clear diagnosis of the issue with code snippets.
-    *   **The Recommended Solution:** A description of the target architecture (e.g., "Create a custom hook," "Extract a utility function").
-    *   **A Phased Implementation Plan:** A logical breakdown of the work into large, sequential phases (e.g., Phase 1: Create Hook, Phase 2: Refactor Component A, etc.).
+### 2. **Agent Conducts Semantic Exploration**
+**Key Pattern**: Use `codebase_search` extensively with varied queries to build comprehensive understanding:
+- Start broad: *"How are trivia rooms created and managed on the server?"*
+- Narrow down: *"What is the TriviaRoom class and how does it handle multiple room instances?"*
+- Explore connections: *"How does room joining and game pin logic work?"*
+- **Use parallel searches** for efficiency when exploring multiple aspects
 
-3.  **Iteration Until User Approves the Strategy:** The user reviews the agent's plan. This is the crucial alignment step. The user confirms that the agent's understanding of the problem and its proposed solution are correct before any code is modified.
+### 3. **Agent Produces Comprehensive Analysis**
+Create a detailed markdown document that includes:
+- **The Current Architecture**: What exists today (with code references)
+- **The Core Problem**: Clear diagnosis with specific examples
+- **The Root Cause**: Why the current approach fails
+- **Recommended Solution**: Target architecture description
+- **Phased Implementation Plan**: Logical breakdown into sequential phases
+
+### 4. **Iteration Until Strategic Alignment**
+User reviews and confirms the agent's understanding before any code changes.
 
 ---
 
-### **Phase 2: The Atomic Execution Loop**
+## **Phase 2: Atomic Execution Loop with Continuous Verification**
 
-This is the core of the workflow. Instead of executing the entire strategic plan at once, we loop through it one tiny piece at a time.
+### **Core Principles for Atomic Steps**
 
-1.  **Agent Proposes One Atomic Step:** The agent must define the **smallest possible, verifiable action** it will take next, based on the phased plan.
-    *   **Good:** *"I will now create the file `useGameConnection.ts` with the basic hook structure."*
-    *   **Good:** *"I will now remove the `useState` for `gameClient` from `GameLayout.tsx`."*
-    *   **Bad:** *"I will now create the file `useGameConnection.ts`, refactor GameLayout.tsx.", and extract the MapSchema conversoin into its own utility file* (This is too large and likely to fail).
+#### **Step Sizing Guidelines**
+- **Too Small**: Adding a single field ❌ 
+- **Just Right**: Adding field + generation logic + integration ✅
+- **Too Large**: Multiple unrelated changes or cross-cutting concerns ❌
 
-2.  **User Confirms or Clarifies:** The user gives a simple "Yes, proceed" or, critically, asks clarifying questions to prevent mistakes.
-    *   *Example: "Wait, when you create the hook, will it include the state conversion logic?"* This allows the agent to refine its atomic step.
+#### **Good Atomic Step Examples**
+- *"Add gamePin field to TriviaRoomState and implement generation logic in onCreate()"*
+- *"Create GamePinRegistry service with collision detection and integrate with room lifecycle"*
+- *"Implement client-side lookup-then-join pattern with proper error handling"*
 
-3.  **Agent Executes the Single Step:** The agent runs the necessary tool calls (`write_file`, `replace`, etc.) for **only** the approved atomic step.
+#### **Communication Pattern**
+Use consistent structure for clarity:
+```
+## Atomic Step X: [Clear Action Title]
 
-4.  **Agent Reports & Suggests Verification:** After the step is complete, the agent reports what it did and, per our key principles, provides clear instructions on how the user can verify the change.
-    *   *Example: "I have created the file. You can verify that the new `useGameConnection.ts` file exists in the `hooks` directory. No functionality should have changed yet."*
-    *   *Example: "I have completed the refactor. Please run the test suite. I expect the `GameLayout` tests to fail, which will confirm the old logic has been removed."*
+**What I will do**: [Specific changes in technical detail]
 
-5.  **User Verifies & Provides Feedback:** The user performs the verification step. If there are errors (linting, TypeScript, failing tests), the user pastes the **exact, complete error messages** back to the agent.
+**Why this step**: [Logical reasoning and dependencies]
 
-6.  **Repeat:** The loop continues with the agent proposing the next atomic step.
+**Verification**: [How user can confirm success]
+```
 
-By following this workflow, we turn a large, complex task into a series of predictable, low-risk steps, ensuring we always make forward progress.
+### **Execution Loop**
+
+#### 1. **Agent Proposes One Atomic Step**
+- Define the **smallest meaningful, verifiable action**
+- Include specific technical details
+- Explain why this step comes next
+- Provide clear verification steps
+
+#### 2. **User Confirms or Clarifies**
+- Simple "Yes" to proceed
+- Ask clarifying questions to prevent mistakes
+- Suggest modifications if needed
+
+#### 3. **Agent Executes with Maximum Efficiency**
+- **Use parallel tool calls** whenever possible
+- Fix any immediate issues (linting, TypeScript errors)
+- **Test immediately** after significant changes
+- Report completion with verification guidance
+
+#### 4. **Immediate Issue Resolution**
+**Key Pattern**: When tests break or user reports issues:
+- Stop the planned sequence
+- Create mini-atomic step to fix the issue
+- Resume the main flow once stable
+
+*Example: "Before we move onto the next step. Error handling: 1. Invalid game code does not log, room not found does log 2. Is it normal to get actual errors in the dev environment when this happens 3. When a wrong game code is entered, user is sent to the connecting screen..."*
+
+#### 5. **Continuous Verification**
+After each step:
+- **Immediate feedback**: Agent reports what was completed
+- **Verification guidance**: Specific commands to run (tests, compilation)
+- **Expected outcomes**: What success looks like
+- **User confirms**: Success or provides exact error messages
+
+### **Error Handling Protocol**
+
+When issues arise:
+1. **User provides exact error messages** (complete output)
+2. **Agent creates focused fix step** (not part of main plan)
+3. **Fix is implemented and verified** before continuing
+4. **Main workflow resumes** once stable
+
+---
+
+## **Communication Standards**
+
+### **Agent Response Structure**
+- **Clear headings** with step numbers
+- **Emojis for status** (✅ ❌ 🎯 🔍)
+- **Technical specifics** with code references
+- **Verification commands** that user can copy-paste
+
+### **Progress Tracking**
+- Update user on completion: *"✅ Atomic Step X Complete"*
+- Summarize what was achieved
+- Preview next logical step
+- Maintain momentum with clear next actions
+
+---
+
+## **Quality Patterns That Emerged**
+
+### **Semantic Search Strategy**
+1. **Start exploratory**: Broad questions to understand the domain
+2. **Narrow systematically**: Focus on specific implementation areas
+3. **Use parallel searches**: Multiple related queries simultaneously
+4. **Verify assumptions**: Search for edge cases and existing patterns
+
+### **Test-Driven Development**
+- **Run tests after every substantial change**
+- **Fix broken tests immediately** (don't accumulate technical debt)
+- **Use test feedback** to validate step completion
+
+### **Error Prevention**
+- **Comprehensive error handling** from the start
+- **User experience focus**: Inline errors, not browser alerts
+- **Graceful degradation**: Handle missing data elegantly
+
+### **Parallel Tool Execution**
+Default to parallel tool calls unless sequential dependencies exist:
+- Multiple file reads
+- Parallel searches with different patterns
+- Simultaneous information gathering
+
+---
+
+## **Success Metrics**
+
+A successful session demonstrates:
+- **Steady progress**: Each step builds meaningfully on the last
+- **No regression**: Tests remain passing throughout
+- **Clear communication**: Both parties understand next steps
+- **User confidence**: User can verify each change independently
+- **Maintainable result**: Clean, tested, documented implementation
+
+---
+
+*This workflow captures patterns from successful complex implementations. The key is balancing meaningful progress with reliable execution through careful step sizing and continuous verification.*
