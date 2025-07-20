@@ -10,7 +10,6 @@ interface GameLobbyProps {
   currentPlayerId: string;
   onPlayerReady: (ready: boolean) => void;
   onStartGame?: () => void;
-  onSetTopic?: (topic: string) => void;
   onSetTopics?: (topics: string[]) => void;
   onSetDifficulty?: (difficulty: number) => void;
 }
@@ -20,7 +19,6 @@ export function GameLobby({
   currentPlayerId, 
   onPlayerReady, 
   onStartGame,
-  onSetTopic,
   onSetTopics,
   onSetDifficulty
 }: GameLobbyProps) {
@@ -162,7 +160,6 @@ export function GameLobby({
             
             <AISettingsPanel 
               gameState={gameState} 
-              onSetTopic={onSetTopic} 
               onSetTopics={onSetTopics} 
               onSetDifficulty={onSetDifficulty} 
             />
