@@ -155,7 +155,7 @@ Use consistent structure for clarity:
 ### **Execution Loop**
 
 #### 1. **Agent Proposes One Atomic Step**
-- Define the **smallest meaningful, verifiable action**
+- Define a **meaningful, verifiable action**
 - Include specific technical details
 - Explain why this step comes next
 - Provide clear verification steps
