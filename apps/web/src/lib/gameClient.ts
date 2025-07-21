@@ -306,7 +306,7 @@ export class GameClient {
     if (validTopics.length === 0) {
       throw new Error("At least one valid topic is required");
     }
-    this.sendMessage("SET_TOPICS", { topics: validTopics });
+    this.sendMessage(MSG.SET_TOPICS, { topics: validTopics });
   }
 
   /**

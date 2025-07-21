@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, DifficultyMessage } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { QuestionDatabase } from "../services/QuestionDatabase";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -356,7 +356,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
 
     // Handle multiple topics setting (host only)
-    this.onMessage("SET_TOPICS", (client, message: { topics: string[] }) => {
+    this.onMessage(MSG.SET_TOPICS, (client, message: TopicsMessage) => {
       if (client.sessionId === this.state.hostId && Array.isArray(message?.topics)) {
         this.setTopics(message.topics);
       }

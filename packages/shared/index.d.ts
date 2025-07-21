@@ -6,6 +6,7 @@ export declare const MSG: {
     readonly UPDATE_SETTINGS: "update_settings";
     readonly JOIN_NEXT_GAME: "join_next_game";
     readonly SET_TOPIC: "set_topic";
+    readonly SET_TOPICS: "set_topics";
     readonly SET_DIFFICULTY: "set_difficulty";
 };
 export interface PlayerData {
@@ -47,6 +48,9 @@ export interface ChatMessage {
 }
 export interface TopicMessage {
     topic: string;
+}
+export interface TopicsMessage {
+    topics: string[];
 }
 export interface DifficultyMessage {
     difficulty: number;

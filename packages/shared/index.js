@@ -9,5 +9,6 @@ exports.MSG = {
     UPDATE_SETTINGS: "update_settings",
     JOIN_NEXT_GAME: "join_next_game",
     SET_TOPIC: "set_topic",
+    SET_TOPICS: "set_topics",
     SET_DIFFICULTY: "set_difficulty"
 };
