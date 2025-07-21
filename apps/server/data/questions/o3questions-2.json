@@ -1,0 +1,274 @@
+[
+    {
+      "question": "A fair coin is flipped until two consecutive heads appear; what is the expected number of flips?",
+      "correctAnswer": "6",
+      "acceptableAnswers": [
+        "six",
+        "6 flips",
+        "six flips"
+      ],
+      "category": "Expected Value",
+      "difficulty": 3,
+      "topic": "Probability"
+    },
+    {
+      "question": "Three fair dice are rolled; what is the probability their sum equals 9?",
+      "correctAnswer": "25/216",
+      "acceptableAnswers": [
+        "0.1157",
+        "11.57%",
+        "0.116",
+        "11.6%"
+      ],
+      "category": "Discrete Probability",
+      "difficulty": 3,
+      "topic": "Probability"
+    },
+    {
+      "question": "A fair coin is tossed 5 times; what is the probability of exactly 3 heads?",
+      "correctAnswer": "5/16",
+      "acceptableAnswers": [
+        "0.3125",
+        "31.25%",
+        "10/32"
+      ],
+      "category": "Binomial Probability",
+      "difficulty": 2,
+      "topic": "Probability"
+    },
+    {
+      "question": "How many ways can 5 couples sit around a round table if spouses must sit together?",
+      "correctAnswer": "768",
+      "acceptableAnswers": [
+        "seven hundred sixty-eight",
+        "768 arrangements"
+      ],
+      "category": "Circular Permutations",
+      "difficulty": 4,
+      "topic": "Counting & Combinatorics"
+    },
+    {
+      "question": "How many derangements of 6 distinct items exist?",
+      "correctAnswer": "265",
+      "acceptableAnswers": [
+        "two hundred sixty-five",
+        "!6"
+      ],
+      "category": "Derangements",
+      "difficulty": 3,
+      "topic": "Counting & Combinatorics"
+    },
+    {
+      "question": "How many surjective (onto) functions exist from a 4-element set to a 3-element set?",
+      "correctAnswer": "36",
+      "acceptableAnswers": [
+        "thirty-six"
+      ],
+      "category": "Stirling Numbers",
+      "difficulty": 3,
+      "topic": "Counting & Combinatorics"
+    },
+    {
+      "question": "For a sample of size 5 from $N(\\mu, \\sigma^2)$, the statistic $4S^2 / \\sigma^2$ follows which distribution?",
+      "correctAnswer": "$\\chi^2(4)$",
+      "acceptableAnswers": [
+        "chi-square(4)",
+        "chi square with 4 degrees of freedom",
+        "chi-squared 4",
+        "chi^2(4)"
+      ],
+      "category": "Sampling Distributions",
+      "difficulty": 4,
+      "topic": "Statistics"
+    },
+    {
+      "question": "What is the skewness of a standard normal distribution?",
+      "correctAnswer": "0",
+      "acceptableAnswers": [
+        "zero"
+      ],
+      "category": "Moments",
+      "difficulty": 2,
+      "topic": "Statistics"
+    },
+    {
+      "question": "For $N(\\mu, \\sigma^2)$ with known $\\sigma$, what is the Fisher information for $\\mu$ in one observation?",
+      "correctAnswer": "$1/\\sigma^2$",
+      "acceptableAnswers": [
+        "1 over sigma squared",
+        "sigma^-2",
+        "$\\sigma^{-2}$"
+      ],
+      "category": "Fisher Information",
+      "difficulty": 4,
+      "topic": "Statistics"
+    },
+    {
+      "question": "You have nine coins, one of which is a heavier counterfeit. What is the minimum number of weighings on a balance scale to find it?",
+      "correctAnswer": "2",
+      "acceptableAnswers": [
+        "two",
+        "2 weighings",
+        "two weighings"
+      ],
+      "category": "Balance Puzzles",
+      "difficulty": 3,
+      "topic": "Brainteasers"
+    },
+    {
+      "question": "Find the smallest positive integer that leaves a remainder of 1 when divided by 2, 3, 4, 5, and 6, and is divisible by 7.",
+      "correctAnswer": "301",
+      "acceptableAnswers": [
+        "three hundred one"
+      ],
+      "category": "Chinese Remainder",
+      "difficulty": 4,
+      "topic": "Brainteasers"
+    },
+    {
+      "question": "With a 3-liter jug and a 5-liter jug, what is the minimum number of pours to measure exactly 4 liters?",
+      "correctAnswer": "6",
+      "acceptableAnswers": [
+        "six",
+        "6 pours"
+      ],
+      "category": "Water Jug",
+      "difficulty": 3,
+      "topic": "Brainteasers"
+    },
+    {
+      "question": "What is $47^2$?",
+      "correctAnswer": "2209",
+      "acceptableAnswers": [
+        "2,209",
+        "two thousand two hundred nine"
+      ],
+      "category": "Squares",
+      "difficulty": 2,
+      "topic": "Arithmetic & Mental Math"
+    },
+    {
+      "question": "What is $999 \\times 999$?",
+      "correctAnswer": "998001",
+      "acceptableAnswers": [
+        "998,001",
+        "nine hundred ninety-eight thousand one",
+        "(1000-1)^2"
+      ],
+      "category": "Large Products",
+      "difficulty": 2,
+      "topic": "Arithmetic & Mental Math"
+    },
+    {
+      "question": "What is $17^3$?",
+      "correctAnswer": "4913",
+      "acceptableAnswers": [
+        "4,913",
+        "four thousand nine hundred thirteen"
+      ],
+      "category": "Cubes",
+      "difficulty": 2,
+      "topic": "Arithmetic & Mental Math"
+    },
+    {
+      "question": "What is the modular inverse of 7 modulo 26?",
+      "correctAnswer": "15",
+      "acceptableAnswers": [
+        "fifteen"
+      ],
+      "category": "Modular Inverses",
+      "difficulty": 3,
+      "topic": "Number Theory"
+    },
+    {
+      "question": "What is the remainder when $2^{100}$ is divided by 7?",
+      "correctAnswer": "2",
+      "acceptableAnswers": [
+        "two"
+      ],
+      "category": "Modular Exponents",
+      "difficulty": 3,
+      "topic": "Number Theory"
+    },
+    {
+      "question": "What is the value of Euler’s totient function $\\phi(91)$?",
+      "correctAnswer": "72",
+      "acceptableAnswers": [
+        "seventy-two",
+        "phi(91)"
+      ],
+      "category": "Totients",
+      "difficulty": 3,
+      "topic": "Number Theory"
+    },
+    {
+      "question": "The matrix $[[0, -1], [1, 0]]$ represents a rotation by what angle in degrees?",
+      "correctAnswer": "90",
+      "acceptableAnswers": [
+        "90°",
+        "ninety",
+        "pi/2",
+        "$\\pi/2$"
+      ],
+      "category": "Matrix Transformations",
+      "difficulty": 2,
+      "topic": "Linear Algebra"
+    },
+    {
+      "question": "What is the rank of the matrix $[[1, 2, 3], [2, 4, 6], [0, 0, 0]]$?",
+      "correctAnswer": "1",
+      "acceptableAnswers": [
+        "one"
+      ],
+      "category": "Matrix Rank",
+      "difficulty": 3,
+      "topic": "Linear Algebra"
+    },
+    {
+      "question": "Eigenvalues of the 3x3 identity matrix are what value with what multiplicity?",
+      "correctAnswer": "1 (multiplicity 3)",
+      "acceptableAnswers": [
+        "1,1,1",
+        "three ones",
+        "1 triple"
+      ],
+      "category": "Eigenvalues",
+      "difficulty": 1,
+      "topic": "Linear Algebra"
+    },
+    {
+      "question": "The average-case search time in a random binary search tree with n keys is what, in Big-O notation?",
+      "correctAnswer": "$O(\\log n)$",
+      "acceptableAnswers": [
+        "log n",
+        "logarithmic",
+        "logarithmic time"
+      ],
+      "category": "Binary Search Trees",
+      "difficulty": 3,
+      "topic": "Algorithms & Data Structures"
+    },
+    {
+      "question": "Dijkstra’s algorithm with a binary heap runs in what time complexity, in Big-O notation?",
+      "correctAnswer": "$O((n+m) \\log n)$",
+      "acceptableAnswers": [
+        "(n+m) log n",
+        "O(n log n + m log n)"
+      ],
+      "category": "Shortest Paths",
+      "difficulty": 4,
+      "topic": "Algorithms & Data Structures"
+    },
+    {
+      "question": "Merge sort requires how many comparisons in the worst case for n items, in Big-O notation?",
+      "correctAnswer": "$O(n \\log n)$",
+      "acceptableAnswers": [
+        "n log n",
+        "linearithmic",
+        "n lg n"
+      ],
+      "category": "Sorting",
+      "difficulty": 2,
+      "topic": "Algorithms & Data Structures"
+    }
+  ]
