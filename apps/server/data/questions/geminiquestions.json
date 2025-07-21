@@ -1,0 +1,130 @@
+[
+    {
+      "question": "A fair coin is flipped 3 times. What is the probability of observing exactly two heads?",
+      "correctAnswer": "3/8",
+      "acceptableAnswers": ["0.375", "37.5%", "three-eighths"],
+      "category": "Binomial Probability",
+      "difficulty": 2,
+      "topic": "Probability"
+    },
+    {
+      "question": "From a standard 52-card deck, what's the probability of drawing two Kings consecutively without replacement?",
+      "correctAnswer": "1/221",
+      "acceptableAnswers": ["(4/52)*(3/51)", "0.00452", "0.452%"],
+      "category": "Dependent Events",
+      "difficulty": 3,
+      "topic": "Probability"
+    },
+    {
+      "question": "How many unique handshakes occur if 10 people in a room each shake hands with everyone else exactly once?",
+      "correctAnswer": "45",
+      "acceptableAnswers": ["forty-five", "10 choose 2"],
+      "category": "Combinations",
+      "difficulty": 1,
+      "topic": "Counting & Combinatorics"
+    },
+    {
+      "question": "How many distinct ways can you arrange the letters in the word 'APPLE'?",
+      "correctAnswer": "60",
+      "acceptableAnswers": ["sixty", "5!/2!"],
+      "category": "Permutations with Repetition",
+      "difficulty": 2,
+      "topic": "Counting & Combinatorics"
+    },
+    {
+      "question": "Which common measure of central tendency is most robust to extreme outliers in a dataset?",
+      "correctAnswer": "Median",
+      "acceptableAnswers": ["the median"],
+      "category": "Descriptive Statistics",
+      "difficulty": 2,
+      "topic": "Statistics"
+    },
+    {
+      "question": "For a standard normal distribution, what is the Z-score corresponding to the mean?",
+      "correctAnswer": "0",
+      "acceptableAnswers": ["zero"],
+      "category": "Z-Scores",
+      "difficulty": 1,
+      "topic": "Statistics"
+    },
+    {
+      "question": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost, in cents?",
+      "correctAnswer": "5",
+      "acceptableAnswers": ["5 cents", "$0.05", "five", "five cents"],
+      "category": "Logic Puzzle",
+      "difficulty": 2,
+      "topic": "Brainteasers"
+    },
+    {
+      "question": "You are in a race and you overtake the second-place person. What position are you in now?",
+      "correctAnswer": "Second place",
+      "acceptableAnswers": ["2nd", "second"],
+      "category": "Verbal Logic",
+      "difficulty": 1,
+      "topic": "Brainteasers"
+    },
+    {
+      "question": "What is the value of $125 \\times 16$?",
+      "correctAnswer": "2000",
+      "acceptableAnswers": ["two thousand"],
+      "category": "Multiplication",
+      "difficulty": 2,
+      "topic": "Arithmetic & Mental Math"
+    },
+    {
+      "question": "What is 40% of 90?",
+      "correctAnswer": "36",
+      "acceptableAnswers": ["thirty-six"],
+      "category": "Percentages",
+      "difficulty": 1,
+      "topic": "Arithmetic & Mental Math"
+    },
+    {
+      "question": "What is the smallest positive integer that has exactly three distinct prime factors?",
+      "correctAnswer": "30",
+      "acceptableAnswers": ["thirty", "2*3*5"],
+      "category": "Prime Factorization",
+      "difficulty": 3,
+      "topic": "Number Theory"
+    },
+    {
+      "question": "What property must an integer $n > 1$ have if Euler's totient function $\\phi(n)$ equals $n - 1$?",
+      "correctAnswer": "It must be a prime number",
+      "acceptableAnswers": ["prime", "The number is prime", "It's prime", "n is prime"],
+      "category": "Euler's Totient Function",
+      "difficulty": 4,
+      "topic": "Number Theory"
+    },
+    {
+      "question": "What is the term for a square matrix that is equal to its own transpose?",
+      "correctAnswer": "Symmetric matrix",
+      "acceptableAnswers": ["Symmetric"],
+      "category": "Matrix Properties",
+      "difficulty": 2,
+      "topic": "Linear Algebra"
+    },
+    {
+      "question": "For a square matrix $A$, what is the name for a non-zero vector $v$ such that $Av = \\lambda v$ for some scalar $\\lambda$?",
+      "correctAnswer": "Eigenvector",
+      "acceptableAnswers": ["eigen vector", "characteristic vector"],
+      "category": "Eigenvalues & Eigenvectors",
+      "difficulty": 3,
+      "topic": "Linear Algebra"
+    },
+    {
+      "question": "Which fundamental data structure operates on a First-In, First-Out (FIFO) basis?",
+      "correctAnswer": "Queue",
+      "acceptableAnswers": ["queue", "a queue", "the queue"],
+      "category": "Abstract Data Types",
+      "difficulty": 1,
+      "topic": "Algorithms & Data Structures"
+    },
+    {
+      "question": "What is the worst-case time complexity of a quicksort algorithm?",
+      "correctAnswer": "$O(n^2)$",
+      "acceptableAnswers": ["O(n^2)", "quadratic time", "n squared"],
+      "category": "Sorting Algorithms",
+      "difficulty": 3,
+      "topic": "Algorithms & Data Structures"
+    }
+  ]
