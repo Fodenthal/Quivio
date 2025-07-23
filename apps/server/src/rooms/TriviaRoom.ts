@@ -819,33 +819,31 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Add player to correct guess order
     this.state.correctGuessOrder.push(playerId);
     const position = this.state.correctGuessOrder.length - 1; // 0-based position
-    
-    // Calculate base rank score
-    let baseScore: number;
-    if (position === 0) {
-      // First player always gets 10 points
-      baseScore = 10;
-    } else {
-      // Subsequent players: 9, 8, 7, ... down to minimum of 1
-      baseScore = Math.max(1, 10 - position);
-    }
-    
-    // Calculate time multiplier for non-first players
+
     let finalScore: number;
+
     if (position === 0) {
-      // First player always gets full base score regardless of time
-      finalScore = baseScore;
+      // First player to answer correctly always gets 10 points
+      finalScore = 10;
+      console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: 1)`);
     } else {
-      // Apply time multiplier to subsequent players
+      // Subsequent players get a score based on a curve, maxing out at 9
       const elapsed = Date.now() - this.state.roundStartTime;
-      const remainingTime = this.state.roundTime - elapsed;
-      const timeRatio = remainingTime / this.state.roundTime;
+      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
+      const timeFraction = timeRemaining / this.state.roundTime;
+
+      const maxPoints = 9; // Max points for subsequent players
+      const minPoints = 1; // Minimum points for a correct answer
+      const bonusPoints = maxPoints - minPoints;
+
+      // Calculate score using a square root curve for a slower drop-off
+      const score = minPoints + (bonusPoints * Math.sqrt(timeFraction));
       
-      // Combine base score with time multiplier, ensure minimum of 1 point
-      finalScore = Math.max(1, Math.round(baseScore * timeRatio));
+      // Round to nearest integer
+      finalScore = Math.max(minPoints, Math.round(score));
+      
+      console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: ${position + 1}, Time: ${timeRemaining.toFixed(0)}ms, Frac: ${timeFraction.toFixed(2)})`);
     }
-    
-    console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: ${position + 1}, base: ${baseScore})`);
     
     // Award points
     this.state.addScore(playerId, finalScore);
