@@ -1,36 +1,30 @@
 
 import React from 'react';
 
-const ContactPage: React.FC = () => {
-  const markdownContent = `
-# Contact Us
-
-We'd love to hear from you! Whether you have a question, feedback, a suggestion for a new trivia category, or need assistance, our team is here to help.
-
-**How to Reach Us:**
-
-*   **General Inquiries & Support:**
-    For any general questions, technical support, or issues you might be experiencing with the platform, please email us at:
-    **support@quiv.io**
-
-*   **Business & Partnerships:**
-    For business inquiries, potential collaborations, or partnership opportunities, please contact us at:
-    **partnerships@quiv.io**
-
-*   **Feedback & Suggestions:**
-    Your input is invaluable! If you have ideas for new features, improvements, or trivia topics, please send them to:
-    **feedback@quiv.io**
-
-**We aim to respond to all inquiries within 24-48 business hours.**
-
-Thank you for being a part of the Quiv.io community!
-`;
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div dangerouslySetInnerHTML={{ __html: markdownContent }} />
-    </div>
-  );
-};
+const ContactPage: React.FC = () => (
+  <main className="max-w-2xl mx-auto px-4 py-12">
+    <h1 className="text-3xl font-bold mb-4 text-white">Contact Us</h1>
+    <p className="mb-6 text-gray-400">We&apos;d love to hear from you! Whether you have a question, feedback, a suggestion for a new trivia category, or need assistance, our team is here to help.</p>
+    <section className="mb-8">
+      <h2 className="text-xl font-semibold mb-2 text-gray-100">How to Reach Us</h2>
+      <ul className="list-disc list-inside space-y-2 text-gray-400">
+        <li>
+          <span className="font-medium">General Inquiries &amp; Support:</span> Email us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>
+        </li>
+        <li>
+          <span className="font-medium">Business &amp; Partnerships:</span> Contact us at <a href="mailto:partnerships@quizza.io" className="text-blue-400 underline">partnerships@quizza.io</a>
+        </li>
+        <li>
+          <span className="font-medium">Feedback &amp; Suggestions:</span> Send ideas to <a href="mailto:feedback@quizza.io" className="text-blue-400 underline">feedback@quizza.io</a>
+        </li>
+      </ul>
+    </section>
+    <section>
+      <h2 className="text-xl font-semibold mb-2 text-gray-100">Response Time</h2>
+      <p className="text-gray-400">We aim to respond to all inquiries within 24-48 business hours.</p>
+    </section>
+    <p className="mt-8 text-gray-400">Thank you for being a part of the Quizza.io community!</p>
+  </main>
+);
 
 export default ContactPage;
