@@ -65,7 +65,13 @@ The goal is always a fun, real trivia question.
 Requirements:
 - The question must be clear, factual, and under 65 tokens
 - The answer must be unambiguous and not open-ended
-- Provide the main correct answer and a list of all possible acceptable variations (abbreviations, common misspellings, alternative names, etc.)`;
+- Provide the main correct answer and a list of all possible acceptable variations (abbreviations, common misspellings, alternative names, etc.)
+- **Non‑trivial‑number rule:**  
+  * If the correct answer is a bare integer, it must satisfy at least one of:  
+    1. It has ≥ 3 digits (e.g., 2882)  
+    2. It is a calendar year (≥ 1000)  
+    3. It contains a decimal or fraction 
+    4. It lies outside the inclusive range 1 – 20  `;
 
   constructor(apiKey: string) {
     if (!apiKey) {
