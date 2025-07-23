@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { WordTokenizer } from 'natural';
+import { removeStopwords, eng } from 'stopword';
 
 export interface GeneratedQuestion {
   question: string;
@@ -187,37 +189,74 @@ Requirements:
     return "very hard";
   }
 
+  // Word tokenizer instance for consistent tokenization
+  private static readonly tokenizer = new WordTokenizer();
+
   /**
-   * Check if an answer matches any of the acceptable answers
+   * Normalize text while preserving important punctuation in abbreviations
+   * @param text - The text to normalize
+   * @returns string - The normalized text
+   */
+  private static normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      // Preserve periods in abbreviations like "U.S.A." or "Ph.D."
+      .replace(/\b([A-Z]\.){2,}/g, (match) => match.replace(/\./g, ''))
+      // Remove other punctuation
+      .replace(/[^\w\s]/g, ' ')
+      // Normalize whitespace
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Break an answer into significant tokens, removing stop words
+   * @param answer - The answer to tokenize
+   * @returns string[] - Array of significant tokens
+   */
+  private static tokenize(answer: string): string[] {
+    const normalizedText = this.normalizeText(answer);
+    const tokens = this.tokenizer.tokenize(normalizedText) || [];
+    // Remove stop words using the stopword library
+    return removeStopwords(tokens, eng).filter(token => token.length > 0);
+  }
+
+  /**
+   * Check if an answer matches any of the acceptable answers using enhanced token-based matching
    * @param userAnswer - The user's submitted answer
    * @param acceptableAnswers - Array of acceptable answer variations
    * @returns boolean - Whether the answer is acceptable
    */
   static isAnswerAcceptable(userAnswer: string, acceptableAnswers: string[]): boolean {
-    const normalizedUserAnswer = this.normalizeAnswer(userAnswer);
-    
-    return acceptableAnswers.some(acceptable => {
-      const normalizedAcceptable = this.normalizeAnswer(acceptable);
-      return normalizedUserAnswer === normalizedAcceptable;
+    if (!userAnswer?.trim() || !acceptableAnswers?.length) {
+      return false;
+    }
+
+    const userTokens = new Set(this.tokenize(userAnswer));
+
+    // Early return for empty user tokens after stop-word removal
+    if (userTokens.size === 0) {
+      return false;
+    }
+
+    return acceptableAnswers.some(acceptableAnswer => {
+      const acceptableTokens = this.tokenize(acceptableAnswer);
+      
+      // Empty acceptable answer tokens should not match
+      if (acceptableTokens.length === 0) {
+        return false;
+      }
+      
+      // Every token from the accepted answer must appear in the user's tokens
+      return acceptableTokens.every(token => userTokens.has(token));
     });
   }
 
   /**
-   * Normalize an answer for comparison (enhanced version of the original)
-   * @param answer - The answer to normalize
-   * @returns string - The normalized answer
+   * @deprecated Use isAnswerAcceptable instead - kept for backward compatibility
    */
   static normalizeAnswer(answer: string): string {
-    return answer
-      .toLowerCase()
-      .trim()
-      // Remove common articles and filler words
-      .replace(/^(the|a|an)\s+/i, '')
-      .replace(/\s+(the|a|an)\s+/gi, ' ')
-      // Remove punctuation except for important ones like periods in abbreviations
-      .replace(/[^\w\s.]/g, '')
-      // Normalize whitespace
-      .replace(/\s+/g, ' ')
-      .trim();
+    return this.normalizeText(answer);
   }
 } 
