@@ -550,7 +550,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         if (!this.recentQuestions.includes(cachedQuestion.question)) {
           this.questionBuffer.push(cachedQuestion);
           this.recentQuestions.push(cachedQuestion.question);
-          if (this.recentQuestions.length > 10) {
+          if (this.recentQuestions.length > 50) {
             this.recentQuestions.shift();
           }
           
@@ -578,7 +578,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       // Add to buffer and track recent questions
       this.questionBuffer.push(generatedQuestion);
       this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 10) {
+      if (this.recentQuestions.length > 50) {
         this.recentQuestions.shift();
       }
       
@@ -653,7 +653,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       
       // Track recent questions
       this.recentQuestions.push(question.question);
-      if (this.recentQuestions.length > 10) {
+      if (this.recentQuestions.length > 50) {
         this.recentQuestions.shift();
       }
       
@@ -689,7 +689,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       
       // Track recent questions
       this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 10) {
+      if (this.recentQuestions.length > 50) {
         this.recentQuestions.shift();
       }
       
