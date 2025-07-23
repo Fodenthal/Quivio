@@ -1,8 +1,8 @@
-# Product Requirements Document: PopReplay - The Infinite Trivia Engine
+# Product Requirements Document: Quivio - The Infinite Trivia Engine
 
 ## 1. Overview
 
-PopReplay is a real-time, multiplayer trivia game platform designed to create engaging quizzes on literally any topic imaginable. Users can generate a game room simply by providing a topic in natural language, from "80s Action Movies" to "The History of the Ottoman Empire." The platform's core innovation lies in its intelligent question-sourcing system, which dynamically balances a vast internal database with on-the-fly question generation to deliver high-quality, relevant quizzes at the lowest possible cost.
+Quivio is a real-time, multiplayer trivia game platform designed to create engaging quizzes on literally any topic imaginable. Users can generate a game room simply by providing a topic in natural language, from "80s Action Movies" to "The History of the Ottoman Empire." The platform's core innovation lies in its intelligent question-sourcing system, which dynamically balances a vast internal database with on-the-fly question generation to deliver high-quality, relevant quizzes at the lowest possible cost.
 
 ## 2. The Problem
 
@@ -12,7 +12,7 @@ Creating a fun, accurate, and engaging trivia quiz is hard. It requires signific
 
 **Our vision is to make trivia limitless.** Anyone should be able to create and play a great quiz on any topic they are passionate about, instantly.
 
-The primary goal of this project is to build the back-end system and front-end interface for PopReplay, focusing on the intelligent question-sourcing engine. This engine must be able to:
+The primary goal of this project is to build the back-end system and front-end interface for Quivio, focusing on the intelligent question-sourcing engine. This engine must be able to:
 1.  Understand a user's topic request in natural language.
 2.  Fetch relevant, high-quality questions from an internal database.
 3.  Generate new, high-quality questions on-the-fly if the database has insufficient content.

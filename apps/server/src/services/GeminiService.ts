@@ -28,7 +28,12 @@ export class GeminiService {
     }
     
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    this.model = this.genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
   }
 
   /**
@@ -57,31 +62,30 @@ export class GeminiService {
   private buildPrompt(request: QuestionRequest): string {
     const difficultyDescription = this.getDifficultyDescription(request.difficulty);
     
-    let prompt = `Generate a trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).
+    const jsonSchema = `{
+      "type": "object",
+      "properties": {
+        "question": { "type": "string", "description": "The trivia question. Must be under 65 tokens." },
+        "correctAnswer": { "type": "string", "description": "The primary, most accurate answer." },
+        "acceptableAnswers": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "A list of all possible acceptable variations of the answer (e.g., abbreviations, common misspellings, alternative names)."
+        },
+        "category": { "type": "string", "description": "The category this question belongs to (e.g., 'History', 'Science')." }
+      },
+      "required": ["question", "correctAnswer", "acceptableAnswers", "category"]
+    }`;
 
-Requirements:
-1. Create a clear, factual question that has a definitive answer
-2. The question should NOT be open-ended or subjective
-3. The question must be under 65 tokens
-4. Provide the main correct answer
-5. List ALL possible acceptable variations of the answer, including:
-   - Abbreviations (e.g., "USA" for "United States of America")
-   - Shortened forms (e.g., "Einstein" for "Albert Einstein")
-   - Common misspellings that are close enough
-   - Alternative names or titles
-   - Numbers in both digit and word form (e.g., "10" and "ten")
-   - For proper nouns: allow partial matches where logical (e.g., "Stuyvesant" for "Stuyvesant High School" but NOT "High School" for "Stuyvesant High School")
-   - For character names: first names when context is clear (e.g., "Lydia" for "Lydia Bennet" in Pride and Prejudice context)
+    let prompt = `You are a master trivia creator, renowned for crafting fun, engaging, and challenging questions.
 
-Return your response in this EXACT JSON format:
-{
-  "question": "Your question here",
-  "correctAnswer": "The primary correct answer",
-  "acceptableAnswers": ["answer1", "answer2", "answer3"],
-  "category": "The category this question belongs to"
-}
+Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).
 
-Example for topic "Harry Potter" with difficulty 3:
+**Crucial Rule:** The question must be a direct challenge of knowledge *about* the topic, not a meta-question *about* the topic's context. For example, for the topic 'Quant Interviews', you must create an actual probability or logic puzzle, NOT a question about interview techniques or what employers value. The goal is always a fun, real trivia question.
+
+The question must be clear, factual, under 65 tokens, and have a definitive answer. Provide the main correct answer and a list of all possible acceptable variations (abbreviations, common misspelllings, alternative names, etc.).
+
+**Example of question style and quality for topic "Harry Potter" with difficulty 3:**
 {
   "question": "What is the name of Harry Potter's pet owl?",
   "correctAnswer": "Hedwig",
@@ -89,10 +93,14 @@ Example for topic "Harry Potter" with difficulty 3:
   "category": "Literature"
 }
 
-Important: Return ONLY the JSON object, no additional text.`;
+Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
+${jsonSchema}`;
+
 
     if (request.previousQuestions && request.previousQuestions.length > 0) {
-      prompt += `\n\nAvoid creating questions similar to these previous ones: ${request.previousQuestions.join(", ")}`;
+      prompt += `
+
+Avoid creating questions similar to these previous ones: ${request.previousQuestions.join(", ")}`;
     }
 
     return prompt;
@@ -103,10 +111,7 @@ Important: Return ONLY the JSON object, no additional text.`;
    */
   private parseResponse(response: string, request: QuestionRequest): GeneratedQuestion {
     try {
-      // Clean the response - remove any markdown formatting or extra text
-      const cleanResponse = response.trim().replace(/```json\n?|\n?```/g, '');
-      
-      const parsed = JSON.parse(cleanResponse);
+      const parsed = JSON.parse(response);
       
       // Validate required fields
       if (!parsed.question || !parsed.correctAnswer || !parsed.acceptableAnswers) {
