@@ -28,26 +28,21 @@ export class GeminiService {
   private static readonly QUESTION_SCHEMA = `{
     "type": "object",
     "properties": {
-      "question": { 
-        "type": "string", 
-        "description": "The trivia question. Must be under 65 tokens." 
-      },
-      "correctAnswer": { 
-        "type": "string", 
-        "description": "The primary, most accurate answer." 
-      },
-      "acceptableAnswers": { 
-        "type": "array", 
+      "question": { "type": "string", "description": "The trivia question text." },
+      "correctAnswer": { "type": "string", "description": "The primary factual answer." },
+      "acceptableAnswers": {
+        "type": "array",
         "items": { "type": "string" },
-        "description": "A list of all possible acceptable variations of the answer (e.g., abbreviations, common misspellings, alternative names)."
+        "description": "All acceptable answer variants."
       },
-      "category": { 
-        "type": "string", 
-        "description": "The category this question belongs to (e.g., 'History', 'Science')." 
+      "category": {
+        "type": "string",
+        "description": "Broad category (Sports, History, Science, Film, etc.)."
       }
     },
     "required": ["question", "correctAnswer", "acceptableAnswers", "category"]
   }`;
+  
 
   // Example question to demonstrate expected format and quality
   private static readonly EXAMPLE_QUESTION = `{
@@ -58,22 +53,22 @@ export class GeminiService {
   }`;
 
   // Core instructions for question generation
-  private static readonly CORE_INSTRUCTIONS = `You are a master trivia creator, renowned for crafting fun, engaging, and challenging questions.
+  private static readonly CORE_INSTRUCTIONS = `
 
-**Crucial Rule:** The question must be a direct challenge of knowledge *about* the topic, not a meta-question *about* the topic's context. 
-For example, for the topic 'Quant Interviews', you must create an actual probability or logic puzzle, NOT a question about interview techniques or what employers value. 
-The goal is always a fun, real trivia question.
+  You are Quivio’s master trivia author, known for crafting concise, engaging and fun questions. Output ONE JSON object only (no prose).
 
-Requirements:
-- The question must be clear, factual, and under 65 tokens
-- The answer must be unambiguous and not open-ended
-- Provide the main correct answer and a list of all possible acceptable variations (abbreviations, common misspellings, alternative names, etc.)
-- **Non‑trivial‑number rule:**  
-  * If the correct answer is a bare integer, it must satisfy at least one of:  
-    1. It has ≥ 3 digits (e.g., 2882)  
-    2. It is a calendar year (≥ 1000)  
-    3. It contains a decimal or fraction 
-    4. It lies outside the inclusive range 1 – 20  `;
+### Always-True Rules
+1. **Direct trivia:** Test knowledge *about* the topic, never meta (no “What is often asked about…?”).
+2. **Clarity & length:** Question must be ≤65 tokens, factually checkable, and yield an unambiguous answer.
+3. **Difficulty knob:** 1=very easy, 5=expert. Calibrate thoughtfully (see request block).
+4. **Non-trivial-number rule:** If the correct answer is a bare integer, it must satisfy ≥1: (a) ≥3 digits; (b) calendar year ≥1000; (c) decimal/fraction; (d) outside 1–20. If not, rewrite the question.
+5. **Acceptable answers:** Include exhaustive common variants—abbreviations, nicknames, alternative spellings, formal names, punctuation variants (e.g., "GSW", "Golden State Warriors", "Wardell Curry Sr.").
+6. **Diverse phrasing:** Across calls, vary structure (who/what/where/when/how many/records/dates/puzzle). Avoid repeating the same template every time (see prior questions below).
+7. **Category:** Use the broadest sensible label (e.g., Sports for athlete facts unless clearly Film, History, etc.).
+
+### Self-Check Before Returning
+Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.`;
+
 
   constructor(apiKey: string) {
     if (!apiKey) {
@@ -134,7 +129,7 @@ Requirements:
     // Add previous questions constraint if provided
     if (request.previousQuestions && request.previousQuestions.length > 0) {
       sections.push(
-        `**Avoid creating questions similar to these previous ones:**
+        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions**:
         ${request.previousQuestions.join(", ")}`
       );
     }
