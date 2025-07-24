@@ -23,22 +23,12 @@ export default function Home() {
     sendChatMessage
   } = useGameConnection();
 
+  // Adapter functions to match Homepage prop types
   const handleJoinRoom = async (playerName: string, gamePin: string) => {
-    try {
-      await joinRoom({ playerName, gamePin });
-    } catch (error) {
-      console.error("Failed to join room:", error);
-      throw error; // Re-throw so Homepage can handle it
-    }
+    await joinRoom({ playerName, gamePin });
   };
-
   const handleCreateRoom = async (roomName: string, hostName: string, topics: string[], difficulty: number, isPrivate: boolean) => {
-    try {
-      await createRoom({ roomName, hostName, topics, difficulty, isPrivate });
-    } catch (error) {
-      console.error("Failed to create room:", error);
-      throw error; // Re-throw so Homepage can handle it
-    }
+    await createRoom({ roomName, hostName, topics, difficulty, isPrivate });
   };
 
   // Show Homepage when disconnected, GameLayout when connected

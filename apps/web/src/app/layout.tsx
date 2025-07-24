@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import { UserDisplayName } from "./components/UserDisplayName";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "PopReplay",
+  title: "Quivio",
   description: "A multiplayer trivia game",
 };
 
@@ -18,6 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
+        <div className="w-full flex justify-end items-center h-16 px-8">
+          <UserDisplayName />
+        </div>
         {children}
         <footer className="w-full border-t mt-8 py-4 text-center text-sm text-gray-500 bg-white/80">
           <Link href="/about" className="hover:underline mx-2">About</Link>|

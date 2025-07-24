@@ -91,15 +91,12 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
       return;
     }
 
-    // For now, use a simple prompt for player name
-    // In a real app, this might come from user context or a modal
-    const playerName = prompt('Enter your name:');
-    if (!playerName || !playerName.trim()) {
-      return;
-    }
+    // Use global display name from localStorage, or 'Guest' if not set
+    let playerName = localStorage.getItem('quivioDisplayName') || 'Guest';
+    playerName = playerName.trim() ? playerName : 'Guest';
 
     try {
-      await onJoinRoom(playerName.trim(), gamePin);
+      await onJoinRoom(playerName, gamePin);
     } catch (error) {
       console.error('Failed to join room:', error);
       // Error handling is managed by the parent component

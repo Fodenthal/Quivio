@@ -1,39 +1,40 @@
 import React from "react";
 
 export interface JoinRoomPanelProps {
-  playerName: string;
-  onPlayerNameChange: (name: string) => void;
   gamePin: string;
   onGamePinChange: (pin: string) => void;
   onJoinRoom: () => void;
   isJoining: boolean;
   error?: string | null;
+  displayName: string;
 }
 
 /**
  * Join room panel for entering existing games
- * Features name and PIN input with clean design
+ * Features PIN input with clean design
  */
 export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
-  playerName,
-  onPlayerNameChange,
   gamePin,
   onGamePinChange,
   onJoinRoom,
   isJoining,
   error,
+  displayName,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isJoining && playerName.trim() && gamePin.trim()) {
+    if (e.key === "Enter" && !isJoining && displayName.trim() && gamePin.trim()) {
       onJoinRoom();
     }
   };
 
-  const isFormValid = playerName.trim() && gamePin.trim();
+  const isFormValid = displayName.trim() && gamePin.trim();
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 lg:p-8 border border-white/20 hover:border-white/30 transition-all duration-300 h-full min-h-[500px] flex flex-col">
-      <div className="text-center mb-6">
+    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 lg:p-10 border border-white/20 hover:border-white/30 transition-all duration-300 h-full min-h-[500px] flex flex-col justify-center">
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <span className="inline-block text-4xl text-primary/80">🔑</span>
+        </div>
         <h2 className="text-2xl lg:text-3xl font-bold text-text-main mb-2">
           Join a private room
         </h2>
@@ -41,25 +42,7 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
           Enter a room code to join
         </p>
       </div>
-      
-      <div className="flex-grow flex flex-col justify-center space-y-6">
-        {/* Player Name Input */}
-        <div className="space-y-2">
-          <label htmlFor="player-name" className="block text-sm font-medium text-text-main">
-            Your Name
-          </label>
-          <input
-            id="player-name"
-            type="text"
-            value={playerName}
-            onChange={(e) => onPlayerNameChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter your display name"
-            maxLength={16}
-            className="w-full px-4 py-3 lg:py-4 text-center text-base lg:text-lg bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 focus:border-green-500/50 transition-all duration-300"
-          />
-        </div>
-        
+      <div className="flex-grow flex flex-col justify-center space-y-8">
         {/* Game PIN Input */}
         <div className="space-y-2">
           <label htmlFor="game-pin" className="block text-sm font-medium text-text-main">
@@ -75,7 +58,6 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
             className="w-full px-4 py-3 lg:py-4 text-center text-base lg:text-lg bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 focus:border-green-500/50 transition-all duration-300 font-mono tracking-wider"
           />
         </div>
-        
         {/* Join Room Button */}
         <button
           onClick={onJoinRoom}
@@ -93,7 +75,6 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
             </span>
           )}
         </button>
-        
         {/* Error Display */}
         {error && (
           <div className="mt-3 p-3 bg-red-500/20 border border-red-500/40 rounded-lg">
@@ -101,11 +82,10 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
           </div>
         )}
       </div>
-      
       {/* Helper text */}
-      <div className="mt-auto pt-4 text-center">
+      <div className="mt-auto pt-6 text-center">
         <p className="text-xs text-text-secondary">
-          Room codes are case-sensitive.
+          Room codes are case-sensitive. Only join rooms you trust.
         </p>
       </div>
     </div>

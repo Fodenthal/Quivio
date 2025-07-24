@@ -216,21 +216,24 @@ export const GameView = memo(function GameView({
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 h-full min-h-[600px]">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6">
+      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
         <div className="flex items-center justify-between pb-4 border-b border-white/20">
           <h2 className="text-3xl font-bold text-text-main">
             Round {gameState.currentRound}
           </h2>
-          <div className="flex items-center space-x-2">
-            <span className="text-lg font-medium text-text-secondary">Time:</span>
-            <span className={`text-2xl font-bold ${
-              timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
-            }`}>
-              {timerDisplay.time}
-            </span>
-          </div>
+          {/* Only show timer if not loading/AD */}
+          {phase !== "loading" && (
+            <div className="flex items-center space-x-2">
+              <span className="text-lg font-medium text-text-secondary">Time:</span>
+              <span className={`text-2xl font-bold ${
+                timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
+              }`}>
+                {timerDisplay.time}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Question Display Panel or Ad Placeholder */}
@@ -346,8 +349,8 @@ export const GameView = memo(function GameView({
         )}
       </div>
 
-      {/* PlayerList - optimized width */}
-      <div className="w-72">
+      {/* PlayerList - optimized width, now same height as question panel */}
+      <div className="w-72 h-full min-h-[600px] flex flex-col">
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -358,7 +361,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel */}
       <div 
         ref={chatContainerRef}
-        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20"
+        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[600px] flex flex-col"
       >
         <Chat
           messages={chatMessages}

@@ -3,13 +3,12 @@ import React from "react";
 export interface CreateRoomPanelProps {
   roomName: string;
   onRoomNameChange: (name: string) => void;
-  hostName: string;
-  onHostNameChange: (name: string) => void;
   isPrivate: boolean;
   onPrivateToggle: (isPrivate: boolean) => void;
   onCreateRoom: () => void;
   isCreating: boolean;
   error?: string | null;
+  displayName: string;
 }
 
 /**
@@ -19,16 +18,15 @@ export interface CreateRoomPanelProps {
 export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   roomName,
   onRoomNameChange,
-  hostName,
-  onHostNameChange,
   isPrivate,
   onPrivateToggle,
   onCreateRoom,
   isCreating,
   error,
+  displayName,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isCreating && roomName.trim() && hostName.trim()) {
+    if (e.key === "Enter" && !isCreating && roomName.trim() && displayName.trim()) {
       onCreateRoom();
     }
   };
@@ -61,25 +59,6 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
           />
           <p className="text-xs text-text-secondary text-center">
             You&apos;ll set topics and difficulty after creating the room
-          </p>
-        </div>
-        
-        {/* Host Name Input */}
-        <div className="space-y-2">
-          <label htmlFor="host-name" className="block text-sm font-medium text-text-main">
-            Host Name
-          </label>
-          <input
-            id="host-name"
-            type="text"
-            value={hostName}
-            onChange={(e) => onHostNameChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Your Name"
-            className="w-full px-4 py-3 lg:py-4 text-center text-base lg:text-lg bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 focus:border-primary/50 transition-all duration-300"
-          />
-          <p className="text-xs text-text-secondary text-center">
-            This will be your name in the room
           </p>
         </div>
         
@@ -127,7 +106,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
         {/* Create Room Button */}
         <button
           onClick={onCreateRoom}
-          disabled={isCreating || !roomName.trim() || !hostName.trim()}
+          disabled={isCreating || !roomName.trim() || !displayName.trim()}
           className="w-full px-6 py-3 lg:py-4 bg-gradient-to-r from-primary to-primary/80 text-white font-bold text-lg lg:text-xl rounded-lg hover:from-primary/90 hover:to-primary/70 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl"
         >
           {isCreating ? (
