@@ -31,7 +31,6 @@ export function GameLobby({
   onSetMaxPlayers
 }: GameLobbyProps) {
   const [isTogglingReady, setIsTogglingReady] = useState(false);
-  const [customQuestion, setCustomQuestion] = useState("");
 
   // Track the current topics input state from AISettingsPanel
   const [currentTopics, setCurrentTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
@@ -64,11 +63,7 @@ export function GameLobby({
     }
   };
 
-  const handleStartGame = () => {
-    if (onStartGame && canStartGame) {
-      onStartGame();
-    }
-  };
+
 
   const getPlayerStatusIcon = (player: PlayerData) => {
     if (player.ready) {

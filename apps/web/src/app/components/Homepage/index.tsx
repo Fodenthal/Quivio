@@ -20,7 +20,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const [createError, setCreateError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [difficulty, setDifficulty] = useState(2); // 2 = medium
 
   // Sync displayName with localStorage
   useEffect(() => {
@@ -50,9 +49,9 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const handleCreateRoom = async () => {
     setIsCreating(true);
     try {
-      await onCreateRoom(roomName, safeDisplayName, [], difficulty, isPrivate);
-    } catch (error: any) {
-      setCreateError(error?.message || "Failed to create room");
+      await onCreateRoom(roomName, safeDisplayName, [], 2, isPrivate); // Default difficulty: medium
+    } catch (error: unknown) {
+      setCreateError(error instanceof Error ? error.message : "Failed to create room");
     } finally {
       setIsCreating(false);
     }
@@ -62,8 +61,8 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     setIsJoining(true);
     try {
       await onJoinRoom(safeDisplayName, gamePin);
-    } catch (error: any) {
-      setJoinError(error?.message || "Failed to join room");
+    } catch (error: unknown) {
+      setJoinError(error instanceof Error ? error.message : "Failed to join room");
     } finally {
       setIsJoining(false);
     }

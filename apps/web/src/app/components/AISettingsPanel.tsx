@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
