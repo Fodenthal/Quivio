@@ -9,11 +9,11 @@ The current AI question generation system uses a single, static prompt template.
 **Examples of problematic topics:**
 - **Specific Media:** "Succession season 2 episode 4"
 - **Timely Events:** "UFC 317" or "News on July 20th, 2025"
-- **Niche History:** "The Irish Civil War"
+- **Niche History:** "The End of theh Irish Civil War"
 
 The goal is to engineer a system that can source high-quality, relevant context for any given topic and use it to generate specific, accurate, and engaging trivia questions.
 
-## 2. Current Repository State
+## 2. Current Repository State 
 
 As of the start of this task, the repository is in a clean state. The `GeminiService.ts` class contains a direct, framework-less implementation that calls the Google AI API. There are no RAG-specific frameworks or dependencies installed in either the TypeScript server or the wider project.
 
@@ -93,3 +93,4 @@ This solution involves two distinct services communicating over a local network 
 *   **Atomic Step 10: End-to-End Testing**
     *   **What:** Manually run a series of tests with various topic types to ensure the entire two-service system works as expected.
     *   **Why:** To validate the success of the refactoring and the quality of the generated questions.
+    
