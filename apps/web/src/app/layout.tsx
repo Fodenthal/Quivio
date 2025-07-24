@@ -18,6 +18,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
+          crossOrigin="anonymous"
+        ></script>
+      </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <div className="w-full flex justify-end items-center h-16 px-8">
           <UserDisplayName />

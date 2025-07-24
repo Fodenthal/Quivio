@@ -72,7 +72,12 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+
+# Ignore all files in the public directory
+/apps/web/public/*
+
+# Do not ignore ads.txt in the public directory
+!/apps/web/public/ads.txt
 
 # Storybook build outputs
 .out
