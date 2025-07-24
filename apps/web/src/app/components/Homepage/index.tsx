@@ -5,6 +5,7 @@ import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
 import { TrendingTopics } from "../TrendingTopics";
+import { UserDisplayName } from "../UserDisplayName";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
@@ -70,15 +71,15 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
+      {/* Header styled like GameLayout, with Quivio and UserDisplayName */}
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+            <UserDisplayName />
           </div>
         </div>
       </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col gap-8">
