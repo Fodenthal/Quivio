@@ -46,7 +46,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
-  private readonly DEFAULT_TARGET_SCORE = 100;
+  private readonly DEFAULT_TARGET_SCORE = 10;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
@@ -989,11 +989,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Update room metadata in registry
     this.updateRoomMetadata();
     
-    // JKLM-style restart system: Start 15-second countdown
+        // Auto-restart system: Start 10-second countdown
     this.state.startRestartCountdown();
     this.startRestartCountdown();
-    
-    console.log(`🏆 Game ended - Winner: ${winnerId} | Starting 15s restart countdown`);
+   
+    console.log(`🏆 Game ended - Winner: ${winnerId} | Starting 10s countdown to lobby`);
   }
 
   private startRestartCountdown() {
@@ -1020,16 +1020,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.restartTimer = undefined;
     }
 
-    const participatingCount = this.state.getParticipatingPlayerCount();
-    console.log(`⏰ Restart countdown complete - ${participatingCount} players want to play again`);
-
-    if (participatingCount >= 2) {
-      // Enough players to start a new game
-      this.restartGame();
-    } else {
-      // Not enough players - return to lobby
-      this.returnToLobby();
-    }
+    console.log(`⏰ Restart countdown complete - automatically returning to lobby`);
+    
+    // Always return to lobby for host to configure and start new game
+    this.returnToLobby();
   }
 
   private restartGame() {
@@ -1069,16 +1063,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private returnToLobby() {
-    console.log(`🏠 Returning to lobby - not enough players to restart`);
+    console.log(`🏠 Returning to lobby - keeping all players for new game`);
     
-    // Disconnect all players since not enough want to continue
-    // This provides a clean slate for new players to join
-    for (const [playerId, player] of this.state.players) {
-      console.log(`👋 Disconnecting player: ${player.name} (${playerId}) - insufficient players for restart`);
-      const client = this.clients.find(c => c.sessionId === playerId);
-      if (client) {
-        client.leave(1000, "Not enough players for next game"); // Graceful disconnect with reason
-      }
+    // Keep all players but reset their scores and ready states for new game
+    for (const player of this.state.players.values()) {
+      player.score = 0;
+      player.ready = false; // Reset ready state for lobby
     }
 
     // Clear restart system
@@ -1088,7 +1078,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gameStatus = GameStatus.WAITING;
     this.state.winnerId = "";
     this.state.gamePaused = false;
-    this.state.canStart = false;
+    this.state.canStart = this.state.players.size >= 2; // Can start if enough players
     this.state.currentRound = 0;
     this.state.hostId = "";
   }

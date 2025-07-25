@@ -13,7 +13,6 @@ interface GameViewProps {
   currentPlayerId: string;
   // Game actions
   onSubmitGuess?: (guess: string) => void;
-  onJoinNextGame?: () => void;
   onSendChatMessage?: (content: string) => void;
   // Lobby actions
   onStartGame?: () => void;
@@ -29,7 +28,6 @@ export const GameView = memo(function GameView({
   gameState, 
   currentPlayerId,
   onSubmitGuess,
-  onJoinNextGame,
   onSendChatMessage,
   onStartGame,
   onSetTopic,
@@ -220,24 +218,22 @@ export const GameView = memo(function GameView({
     isUrgent: gameState.roundTimeRemaining < 10000
   }), [gameState.roundTimeRemaining, formatTime]);
 
-  if (phase === "ended" && gameState.winnerId) {
-    const winner = gameState.players.get(gameState.winnerId);
-    return winner ? (
-      <WinnerScreen 
-        winner={winner}
-        restartCountdown={gameState.restartCountdown}
-        participatingPlayers={gameState.participatingPlayers}
-        currentPlayerId={currentPlayerId}
-        onJoinNextGame={onJoinNextGame || (() => {})}
-      />
-    ) : null;
-  }
-
   return (
     <div className="flex gap-6 h-full min-h-[600px]">
       {/* Main game content - flex-1 */}
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
         
+        {/* Winner Screen - Show when game has ended */}
+        {phase === "ended" && gameState.winnerId && (() => {
+          const winner = gameState.players.get(gameState.winnerId);
+          return winner ? (
+            <WinnerScreen 
+              winner={winner}
+              restartCountdown={gameState.restartCountdown}
+            />
+          ) : null;
+        })()}
+
         {/* Hosting Controls - Show when waiting for game to start */}
         {gameState.gameStatus === GameStatus.WAITING && (
           <div className="space-y-6">
@@ -354,8 +350,8 @@ export const GameView = memo(function GameView({
           </div>
         )}
 
-        {/* Existing game content - only show when not in lobby */}
-        {gameState.gameStatus !== GameStatus.WAITING && (
+        {/* Existing game content - only show when not in lobby and not ended */}
+        {gameState.gameStatus !== GameStatus.WAITING && phase !== "ended" && (
           <>
             <div className="flex items-center justify-between pb-4 border-b border-white/20">
               <h2 className="text-3xl font-bold text-text-main">
@@ -553,7 +549,6 @@ export const GameView = memo(function GameView({
     }) &&
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
-    prevProps.onJoinNextGame === nextProps.onJoinNextGame &&
     prevProps.onSendChatMessage === nextProps.onSendChatMessage &&
     // Lobby action comparisons
     prevProps.onStartGame === nextProps.onStartGame &&

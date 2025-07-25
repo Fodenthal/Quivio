@@ -236,7 +236,7 @@ export class TriviaRoomState extends Schema {
    */
   
   startRestartCountdown() {
-    this.restartCountdown = 15; // 15 seconds like JKLM
+    this.restartCountdown = 10; // 10 seconds countdown
     this.participatingPlayers.clear();
   }
 

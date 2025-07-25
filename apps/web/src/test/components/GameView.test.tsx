@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { GameView } from "../../app/components/GameView";
-import { GameState, PlayerData } from "@shared/index";
+import { GameState, PlayerData, GameStatus } from "@shared/index";
 
 describe("GameView", () => {
   // Helper function to create a test game state
@@ -24,8 +24,8 @@ describe("GameView", () => {
       maxPlayers: 8,
       isPrivate: false,
       gamePin: "TEST1",
-      gameStarted: true,
-      gameEnded: false,
+      roomName: "Test Room",
+      gameStatus: GameStatus.IN_PROGRESS,
       gamePaused: false,
       canStart: false,
       currentRound: 2,
@@ -37,7 +37,9 @@ describe("GameView", () => {
       roundTimeRemaining: 25000, // 25 seconds left
       roundEnded: false,
       correctAnswer: "",
+      topics: ["General Knowledge"],
       currentTopic: "General Knowledge",
+      currentTopicIndex: 0,
       currentDifficulty: 5,
       players: playersMap,
       currentPrompt: { 
@@ -96,7 +98,7 @@ describe("GameView", () => {
         roundStartTime: Date.now() - 1000,
         gamePaused: false,
         roundEnded: false,
-        gameEnded: false
+        gameStatus: GameStatus.IN_PROGRESS
       });
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
@@ -134,7 +136,7 @@ describe("GameView", () => {
 
     it("shows winner screen when game has ended", () => {
       const gameState = createGameState({ 
-        gameEnded: true,
+        gameStatus: GameStatus.GAME_ENDED,
         winnerId: "player1"
       });
       
@@ -147,7 +149,7 @@ describe("GameView", () => {
 
     it("shows ad placeholder when game started but questions are loading", () => {
       const gameState = createGameState({ 
-        gameStarted: true,
+        gameStatus: GameStatus.IN_PROGRESS,
         roundStartTime: 0, // No round started yet
         currentPrompt: {
           id: "",
@@ -252,7 +254,7 @@ describe("GameView", () => {
   describe("Game End Display", () => {
     it("shows winner screen when game ends", () => {
       const gameState = createGameState({ 
-        gameEnded: true,
+        gameStatus: GameStatus.GAME_ENDED,
         winnerId: "player1"
       });
       
@@ -274,7 +276,7 @@ describe("GameView", () => {
 
     it("handles game end without valid winner", () => {
       const gameState = createGameState({ 
-        gameEnded: true,
+        gameStatus: GameStatus.GAME_ENDED,
         winnerId: "nonexistent"
       });
       
@@ -312,7 +314,7 @@ describe("GameView", () => {
         roundStartTime: Date.now() - 1000, // active round
         gamePaused: false,
         roundEnded: false,
-        gameEnded: false
+        gameStatus: GameStatus.IN_PROGRESS
       });
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
@@ -333,7 +335,7 @@ describe("GameView", () => {
         roundStartTime: Date.now() - 1000,
         gamePaused: false,
         roundEnded: false,
-        gameEnded: false
+        gameStatus: GameStatus.IN_PROGRESS
       });
       
       // Add a correct guess for the current player
@@ -355,7 +357,7 @@ describe("GameView", () => {
         roundStartTime: Date.now() - 1000,
         gamePaused: false,
         roundEnded: false,
-        gameEnded: false
+        gameStatus: GameStatus.IN_PROGRESS
       });
       
       // Add an incorrect guess for the current player
