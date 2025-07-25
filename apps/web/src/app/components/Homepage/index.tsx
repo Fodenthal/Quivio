@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
 import { TrendingTopics } from "../TrendingTopics";
 import { UserDisplayName } from "../UserDisplayName";
+import { useDisplayName } from "../../../contexts/DisplayNameContext";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
@@ -13,6 +14,7 @@ export interface HomepageProps {
 }
 
 export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) => {
+  const { displayName } = useDisplayName();
   const [roomName, setRoomName] = useState("");
   const [gamePin, setGamePin] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
@@ -20,22 +22,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const [isJoining, setIsJoining] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("");
-
-  // Sync displayName with localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("quivioDisplayName");
-    if (stored) setDisplayName(stored);
-    const handleStorage = () => {
-      const updated = localStorage.getItem("quivioDisplayName");
-      setDisplayName(updated || "");
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  // Always use 'Guest' if displayName is empty
-  const safeDisplayName = displayName && displayName.trim() ? displayName : "Guest";
 
   const handleGamePinChange = (pin: string) => {
     setGamePin(pin);
@@ -50,7 +36,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const handleCreateRoom = async () => {
     setIsCreating(true);
     try {
-      await onCreateRoom(roomName, safeDisplayName, [], 2, isPrivate); // Default difficulty: medium
+      await onCreateRoom(roomName, displayName, [], 2, isPrivate); // Default difficulty: medium
     } catch (error: unknown) {
       setCreateError(error instanceof Error ? error.message : "Failed to create room");
     } finally {
@@ -61,7 +47,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   const handleJoinRoom = async () => {
     setIsJoining(true);
     try {
-      await onJoinRoom(safeDisplayName, gamePin);
+      await onJoinRoom(displayName, gamePin);
     } catch (error: unknown) {
       setJoinError(error instanceof Error ? error.message : "Failed to join room");
     } finally {
@@ -95,13 +81,13 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                 onCreateRoom={handleCreateRoom}
                 isCreating={isCreating}
                 error={createError}
-                displayName={safeDisplayName}
+                displayName={displayName}
               />
             </div>
             {/* Middle: Join Room */}
             <div className="flex-1 w-full min-h-[500px] flex">
               <JoinRoomPanel
-                displayName={safeDisplayName}
+                displayName={displayName}
                 gamePin={gamePin}
                 onGamePinChange={handleGamePinChange}
                 onJoinRoom={handleJoinRoom}

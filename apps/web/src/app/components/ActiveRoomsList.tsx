@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useDisplayName } from "../../contexts/DisplayNameContext";
 
 /**
  * Room metadata interface matching the server's RoomMetadata
@@ -39,6 +40,7 @@ export interface ActiveRoomsListProps {
  * Shows room cards with metadata and join functionality
  */
 export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListProps) {
+  const { displayName } = useDisplayName();
   const [rooms, setRooms] = useState<RoomMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,17 +93,13 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
       return;
     }
 
-    // Use global display name from localStorage, or 'Guest' if not set
-    let playerName = localStorage.getItem('quivioDisplayName') || 'Guest';
-    playerName = playerName.trim() ? playerName : 'Guest';
-
     try {
-      await onJoinRoom(playerName, gamePin);
+      await onJoinRoom(displayName, gamePin);
     } catch (error) {
       console.error('Failed to join room:', error);
       // Error handling is managed by the parent component
     }
-  }, [onJoinRoom]);
+  }, [onJoinRoom, displayName]);
 
   /**
    * Get difficulty label from numeric value (5-tier system)

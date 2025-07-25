@@ -1,36 +1,21 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
+import { useDisplayName } from "../../contexts/DisplayNameContext";
 
 /**
  * Global user display name component for Quivio
  * Always shows a text box, updates dynamically as user types (debounced and on blur).
- * Defaults to 'Guest' if no name is set.
+ * Uses DisplayNameContext for global state management.
  */
 export const UserDisplayName: React.FC = () => {
-  const [name, setName] = useState<string>("Guest");
-  const [input, setInput] = useState<string>("");
+  const { displayName, setDisplayName } = useDisplayName();
+  const [input, setInput] = useState<string>(displayName);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("quivioDisplayName");
-    if (stored && stored.trim()) {
-      setName(stored);
-      setInput(stored);
-    } else {
-      setName("Guest");
-      setInput("");
-    }
-  }, []);
-
-  // Save to localStorage when name changes (except 'Guest')
-  useEffect(() => {
-    if (name && name !== "Guest") {
-      localStorage.setItem("quivioDisplayName", name);
-    } else {
-      localStorage.removeItem("quivioDisplayName");
-    }
-  }, [name]);
+  // Sync input with displayName when it changes from context
+  React.useEffect(() => {
+    setInput(displayName);
+  }, [displayName]);
 
   // Debounced update
   const handleInputChange = (val: string) => {
@@ -42,8 +27,7 @@ export const UserDisplayName: React.FC = () => {
   };
 
   const commitName = (val: string) => {
-    const trimmed = val.trim().slice(0, 16);
-    setName(trimmed || "Guest");
+    setDisplayName(val);
   };
 
   const handleBlur = () => {
