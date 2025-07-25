@@ -266,7 +266,17 @@ export const GameView = memo(function GameView({
                     
                     {isHost && (
                       <button
-                        onClick={onStartGame}
+                        onClick={() => {
+                          console.log('Start Game clicked!', { 
+                            canStartGame, 
+                            hasMinPlayers, 
+                            hasTopics, 
+                            playerCount, 
+                            topics: gameState.topics,
+                            onStartGame: !!onStartGame 
+                          });
+                          onStartGame?.();
+                        }}
                         disabled={!canStartGame}
                         className={`px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
                           canStartGame
@@ -278,24 +288,31 @@ export const GameView = memo(function GameView({
                       </button>
                     )}
                     
-                    {/* Status Messages */}
-                    <div className="mt-4 space-y-2">
-                      {!hasMinPlayers && (
-                        <p className="text-yellow-300 text-sm">
-                          Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start
-                        </p>
-                      )}
-                      {!hasTopics && isHost && (
-                        <p className="text-yellow-300 text-sm">
-                          Configure at least one topic below to start
-                        </p>
-                      )}
-                      {!isHost && (
-                        <p className="text-text-secondary text-sm">
-                          The host will start the game when ready
-                        </p>
-                      )}
-                    </div>
+                                         {/* Status Messages */}
+                     <div className="mt-4 space-y-2">
+                       {!hasMinPlayers && (
+                         <p className="text-yellow-300 text-sm">
+                           Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start
+                         </p>
+                       )}
+                       {!hasTopics && isHost && (
+                         <p className="text-yellow-300 text-sm">
+                           Configure at least one topic below to start
+                         </p>
+                       )}
+                       {!isHost && (
+                         <p className="text-text-secondary text-sm">
+                           The host will start the game when ready
+                         </p>
+                       )}
+                       
+                       {/* Debug info */}
+                       {isHost && (
+                         <div className="text-xs text-gray-500 mt-2">
+                           DEBUG: Players: {playerCount}, Topics: {gameState.topics?.length || 0}, Can start: {canStartGame ? 'YES' : 'NO'}
+                         </div>
+                       )}
+                     </div>
                   </div>
 
                   {/* AI Settings Panel - Only show to host */}

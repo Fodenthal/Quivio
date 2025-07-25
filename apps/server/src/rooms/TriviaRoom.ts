@@ -316,21 +316,27 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle game start request
     this.onMessage(MSG.START_GAME, (client) => {
-      // ✅ Re-evaluate readiness on demand instead of relying on a stale flag
+      console.log(`🎮 START_GAME received from client ${client.sessionId}`);
+      
       if (client.sessionId !== this.state.hostId) {
+        console.log(`🎮 START_GAME rejected: ${client.sessionId} is not host (host is ${this.state.hostId})`);
         return;
       }
       
       if (this.state.gameStatus === GameStatus.IN_PROGRESS) {
+        console.log(`🎮 START_GAME rejected: game already in progress`);
         return;
       }
 
-      // Only start if we have at least 2 ready players
-      const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
-      if (readyPlayers.length >= 2) {
+      // Check if we have minimum players (no ready system - presence = readiness)
+      const playerCount = this.state.players.size;
+      if (playerCount >= 2) {
+        console.log(`🎮 Starting game with ${playerCount} players`);
         this.startGame().catch(error => {
-          console.error("Failed to start game:", error);
+          console.error("🎮 Failed to start game:", error);
         });
+      } else {
+        console.log(`🎮 START_GAME rejected: only ${playerCount} players (need 2+)`);
       }
     });
 

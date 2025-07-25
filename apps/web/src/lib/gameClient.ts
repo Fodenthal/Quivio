@@ -254,7 +254,9 @@ export class GameClient {
    * Start the game (host only)
    */
   startGame(): void {
+    console.log('🎮 GameClient.startGame() called - sending START_GAME message');
     this.sendMessage(MSG.START_GAME, {});
+    console.log('🎮 START_GAME message sent via sendMessage()');
   }
 
   /**

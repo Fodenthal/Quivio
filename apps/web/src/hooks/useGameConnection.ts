@@ -140,10 +140,13 @@ export function useGameConnection(): UseGameConnectionReturn {
   }, [gameClient]);
 
   const startGame = useCallback(() => {
+    console.log('🎮 useGameConnection.startGame() called');
     try {
+      console.log('🎮 Calling gameClient.startGame()...');
       gameClient.startGame();
+      console.log('🎮 gameClient.startGame() completed successfully');
     } catch (error) {
-      console.error("Failed to start game:", error);
+      console.error("🎮 Failed to start game:", error);
       throw error;
     }
   }, [gameClient]);
