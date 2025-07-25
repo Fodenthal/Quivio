@@ -5,13 +5,25 @@ import { GameState, GameStatus } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
 import { Chat } from "./Chat";
+import { GamePins } from "./GamePins";
+import { AISettingsPanel } from "./AISettingsPanel";
 
 interface GameViewProps {
   gameState: GameState;
   currentPlayerId: string;
+  // Game actions
   onSubmitGuess?: (guess: string) => void;
   onJoinNextGame?: () => void;
   onSendChatMessage?: (content: string) => void;
+  // Lobby actions
+  onPlayerReady?: (ready: boolean) => void;
+  onStartGame?: () => void;
+  onSetTopic?: (topic: string) => void;
+  onSetTopics?: (topics: string[]) => void;
+  onSetDifficulty?: (difficulty: number) => void;
+  onSetTargetScore?: (score: number) => void;
+  onSetRoundTime?: (seconds: number) => void;
+  onSetMaxPlayers?: (maxPlayers: number) => void;
 }
 
 export const GameView = memo(function GameView({ 
@@ -19,7 +31,15 @@ export const GameView = memo(function GameView({
   currentPlayerId,
   onSubmitGuess,
   onJoinNextGame,
-  onSendChatMessage
+  onSendChatMessage,
+  onPlayerReady,
+  onStartGame,
+  onSetTopic,
+  onSetTopics,
+  onSetDifficulty,
+  onSetTargetScore,
+  onSetRoundTime,
+  onSetMaxPlayers
 }: GameViewProps) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,133 +239,172 @@ export const GameView = memo(function GameView({
     <div className="flex gap-6 h-full min-h-[600px]">
       {/* Main game content - flex-1 */}
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
-        <div className="flex items-center justify-between pb-4 border-b border-white/20">
-          <h2 className="text-3xl font-bold text-text-main">
-            Round {gameState.currentRound}
-          </h2>
-          {/* Only show timer if not loading/AD */}
-          {phase !== "loading" && (
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-medium text-text-secondary">Time:</span>
-              <span className={`text-2xl font-bold ${
-                timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
-              }`}>
-                {timerDisplay.time}
-              </span>
+        
+        {/* TODO: Add lobby content when gameState.gameStatus === GameStatus.WAITING */}
+        {gameState.gameStatus === GameStatus.WAITING && (
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-text-main mb-4">Game Lobby</h3>
+            <p className="text-text-secondary">Lobby content will be implemented in next atomic step...</p>
+            {/* Test the new props with placeholder buttons */}
+            <div className="mt-4 space-x-4">
+              <button 
+                className="px-4 py-2 bg-primary text-white rounded"
+                onClick={() => onPlayerReady?.(true)}
+              >
+                Ready Test
+              </button>
+              <button 
+                className="px-4 py-2 bg-green-600 text-white rounded"
+                onClick={() => onStartGame?.()}
+              >
+                Start Test
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* Question Display Panel or Ad Placeholder */}
-        {phase === "loading" ? (
-          // Ad placeholder during question generation
-          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
-            <div className="flex-grow flex flex-col justify-center">
-              <h2 className="text-8xl font-bold text-text-main tracking-wider">
-                AD
-              </h2>
-              <p className="text-lg text-text-secondary mt-4">
-                Questions are loading...
-              </p>
-            </div>
-          </div>
-        ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-          <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
-            {gameState.roundEnded && gameState.correctAnswer ? (
-              // Answer reveal after round ends
-              <div>
-                <div className="text-lg text-text-main font-medium mb-1">
-                  The answer was
-                </div>
-                <h2 className="text-4xl font-bold text-text-main leading-relaxed">
-                  {gameState.correctAnswer}
-                </h2>
-                <div className="text-lg text-text-secondary font-medium mt-4">
-                  {firstCorrectPlayer ? (
-                    <span>{firstCorrectPlayer.name} found it first.</span>
-                  ) : (
-                    <span>no one got it</span>
-                  )}
-                </div>
-
-              </div>
-            ) : (
-              // Normal question display during round
-              <>
-                <div className="mb-6">
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
-                    {gameState.currentPrompt.category || "General"}
-                  </span>
-                </div>
-                <div className="flex-grow flex flex-col justify-center">
-                  <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
-                    {gameState.currentPrompt.text}
-                  </h3>
-                </div>
-              </>
-            )}
+            {gameState.gamePin && <GamePins gamePin={gameState.gamePin} />}
+            <AISettingsPanel 
+              gameState={gameState}
+              onSetTopic={onSetTopic}
+              onSetTopics={onSetTopics}
+              onSetDifficulty={onSetDifficulty}
+              onSetTargetScore={onSetTargetScore}
+              onSetRoundTime={onSetRoundTime}
+              onSetMaxPlayers={onSetMaxPlayers}
+            />
           </div>
         )}
 
-        {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-          <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
-            {phase === "round-ended" ? (
-              <div className="text-center">
-                {(() => {
-                  const playerGuess = getPlayerGuess;
-                  if (playerGuess && playerGuess.isCorrect) {
-                    return (
-                      <p className="text-xl font-medium text-green-300">
-                        &quot;{playerGuess.guess}&quot; is correct!
-                      </p>
-                    );
-                  } else {
-                    return (
-                      <p className="text-xl font-medium text-text-main">
-                        {selectedEncouragingMessage}
-                      </p>
-                    );
-                  }
-                })()}
-              </div>
-            ) : hasPlayerGuessed ? (
-              <div className="text-center">
-                {(() => {
-                  const playerGuess = getPlayerGuess;
-                  if (!playerGuess) return null;
+        {/* Existing game content - only show when not in lobby */}
+        {gameState.gameStatus !== GameStatus.WAITING && (
+          <>
+            <div className="flex items-center justify-between pb-4 border-b border-white/20">
+              <h2 className="text-3xl font-bold text-text-main">
+                Round {gameState.currentRound}
+              </h2>
+              {/* Only show timer if not loading/AD */}
+              {phase !== "loading" && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-medium text-text-secondary">Time:</span>
+                  <span className={`text-2xl font-bold ${
+                    timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
+                  }`}>
+                    {timerDisplay.time}
+                  </span>
+                </div>
+              )}
+            </div>
 
-                  if (playerGuess.isCorrect) {
-                    return (
-                      <p className="text-xl font-medium text-green-300">
-                        &quot;{playerGuess.guess}&quot; is correct!
-                      </p>
-                    );
-                  } else {
-                    return (
-                      <p className="text-xl font-medium text-red-300">
-                        Incorrect. Keep trying!
-                      </p>
-                    );
-                  }
-                })()}
+            {/* Question Display Panel or Ad Placeholder */}
+            {phase === "loading" ? (
+              // Ad placeholder during question generation
+              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+                <div className="flex-grow flex flex-col justify-center">
+                  <h2 className="text-8xl font-bold text-text-main tracking-wider">
+                    AD
+                  </h2>
+                  <p className="text-lg text-text-secondary mt-4">
+                    Questions are loading...
+                  </p>
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleGuessSubmit}>
-                <input
-                  ref={guessInputRef}
-                  type="text"
-                  value={currentGuess}
-                  onChange={(e) => setCurrentGuess(e.target.value)}
-                  onKeyDown={handleGuessKeyDown}
-                  placeholder="Enter your answer and press Enter..."
-                  disabled={isSubmitting || phase === "paused"}
-                  className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
-                  autoComplete="off"
-                  maxLength={100}
-                />
-              </form>
+            ) : gameState.currentPrompt && gameState.currentPrompt.text && (
+              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+                {gameState.roundEnded && gameState.correctAnswer ? (
+                  // Answer reveal after round ends
+                  <div>
+                    <div className="text-lg text-text-main font-medium mb-1">
+                      The answer was
+                    </div>
+                    <h2 className="text-4xl font-bold text-text-main leading-relaxed">
+                      {gameState.correctAnswer}
+                    </h2>
+                    <div className="text-lg text-text-secondary font-medium mt-4">
+                      {firstCorrectPlayer ? (
+                        <span>{firstCorrectPlayer.name} found it first.</span>
+                      ) : (
+                        <span>no one got it</span>
+                      )}
+                    </div>
+
+                  </div>
+                ) : (
+                  // Normal question display during round
+                  <>
+                    <div className="mb-6">
+                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
+                        {gameState.currentPrompt.category || "General"}
+                      </span>
+                    </div>
+                    <div className="flex-grow flex flex-col justify-center">
+                      <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                        {gameState.currentPrompt.text}
+                      </h3>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
-          </div>
+
+            {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
+              <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
+                {phase === "round-ended" ? (
+                  <div className="text-center">
+                    {(() => {
+                      const playerGuess = getPlayerGuess;
+                      if (playerGuess && playerGuess.isCorrect) {
+                        return (
+                          <p className="text-xl font-medium text-green-300">
+                            &quot;{playerGuess.guess}&quot; is correct!
+                          </p>
+                        );
+                      } else {
+                        return (
+                          <p className="text-xl font-medium text-text-main">
+                            {selectedEncouragingMessage}
+                          </p>
+                        );
+                      }
+                    })()}
+                  </div>
+                ) : hasPlayerGuessed ? (
+                  <div className="text-center">
+                    {(() => {
+                      const playerGuess = getPlayerGuess;
+                      if (!playerGuess) return null;
+
+                      if (playerGuess.isCorrect) {
+                        return (
+                          <p className="text-xl font-medium text-green-300">
+                            &quot;{playerGuess.guess}&quot; is correct!
+                          </p>
+                        );
+                      } else {
+                        return (
+                          <p className="text-xl font-medium text-red-300">
+                            Incorrect. Keep trying!
+                          </p>
+                        );
+                      }
+                    })()}
+                  </div>
+                ) : (
+                  <form onSubmit={handleGuessSubmit}>
+                    <input
+                      ref={guessInputRef}
+                      type="text"
+                      value={currentGuess}
+                      onChange={(e) => setCurrentGuess(e.target.value)}
+                      onKeyDown={handleGuessKeyDown}
+                      placeholder="Enter your answer and press Enter..."
+                      disabled={isSubmitting || phase === "paused"}
+                      className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                      autoComplete="off"
+                      maxLength={100}
+                    />
+                  </form>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -401,6 +460,15 @@ export const GameView = memo(function GameView({
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
     prevProps.onJoinNextGame === nextProps.onJoinNextGame &&
-    prevProps.onSendChatMessage === nextProps.onSendChatMessage
+    prevProps.onSendChatMessage === nextProps.onSendChatMessage &&
+    // Lobby action comparisons
+    prevProps.onPlayerReady === nextProps.onPlayerReady &&
+    prevProps.onStartGame === nextProps.onStartGame &&
+    prevProps.onSetTopic === nextProps.onSetTopic &&
+    prevProps.onSetTopics === nextProps.onSetTopics &&
+    prevProps.onSetDifficulty === nextProps.onSetDifficulty &&
+    prevProps.onSetTargetScore === nextProps.onSetTargetScore &&
+    prevProps.onSetRoundTime === nextProps.onSetRoundTime &&
+    prevProps.onSetMaxPlayers === nextProps.onSetMaxPlayers
   );
 });

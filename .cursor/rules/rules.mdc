@@ -6,7 +6,7 @@ alwaysApply: true
 
 ## Project-wide constraints
 
-- Use `pnpm test` after implementing complex tasks
+- Use `pnpm test` after implementing complex tasks (not pnpm dev)
 - **Use named exports** (`export const foo`) not `export default`
 - **Throw `Error` objects** never strings (enables proper stack traces)
 - Document **all non-trivial code paths** with comprehensive JSDoc. Include:

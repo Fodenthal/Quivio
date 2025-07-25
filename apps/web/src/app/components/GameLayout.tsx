@@ -1,9 +1,8 @@
 "use client";
 
 import { ConnectionStatus } from "@/lib/gameClient";
-import { GameLobby } from "./GameLobby";
 import { GameView } from "./GameView";
-import { GameState, GameStatus } from "@shared/index";
+import { GameState } from "@shared/index";
 
 export interface GameLayoutProps {
   connectionStatus: ConnectionStatus;
@@ -18,6 +17,9 @@ export interface GameLayoutProps {
   onSetTopic: (topic: string) => void;
   onSetTopics: (topics: string[]) => void;
   onSetDifficulty: (difficulty: number) => void;
+  onSetTargetScore?: (score: number) => void;
+  onSetRoundTime?: (seconds: number) => void;
+  onSetMaxPlayers?: (maxPlayers: number) => void;
   onSendChatMessage: (content: string) => void;
 }
 
@@ -33,6 +35,9 @@ export function GameLayout({
   onSetTopic,
   onSetTopics,
   onSetDifficulty,
+  onSetTargetScore,
+  onSetRoundTime,
+  onSetMaxPlayers,
   onSendChatMessage
 }: GameLayoutProps) {
   // This component receives all state and actions as props from a parent component
@@ -70,31 +75,24 @@ export function GameLayout({
   // Determine which view to show
   const renderMainContent = () => {
     if (connectionStatus === ConnectionStatus.CONNECTED && gameState) {
-      if (gameState.gameStatus === GameStatus.WAITING) {
-        // Show lobby when connected but game hasn't started and hasn't ended
-        return (
-          <GameLobby
-            gameState={gameState}
-            currentPlayerId={currentPlayerId}
-            onPlayerReady={onPlayerReady}
-            onStartGame={onStartGame}
-            onSetTopic={onSetTopic}
-            onSetTopics={onSetTopics}
-            onSetDifficulty={onSetDifficulty}
-          />
-        );
-      } else {
-        // Show game interface when game has started OR when game has ended (for winner screen)
-        return (
-          <GameView
-            gameState={gameState}
-            currentPlayerId={currentPlayerId}
-            onSubmitGuess={onSubmitGuess}
-            onJoinNextGame={onJoinNextGame}
-            onSendChatMessage={onSendChatMessage}
-          />
-        );
-      }
+      // Always show unified GameView - it handles all game states internally
+      return (
+        <GameView
+          gameState={gameState}
+          currentPlayerId={currentPlayerId}
+          onSubmitGuess={onSubmitGuess}
+          onJoinNextGame={onJoinNextGame}
+          onSendChatMessage={onSendChatMessage}
+          onPlayerReady={onPlayerReady}
+          onStartGame={onStartGame}
+          onSetTopic={onSetTopic}
+          onSetTopics={onSetTopics}
+          onSetDifficulty={onSetDifficulty}
+          onSetTargetScore={onSetTargetScore}
+          onSetRoundTime={onSetRoundTime}
+          onSetMaxPlayers={onSetMaxPlayers}
+        />
+      );
     }
 
     // Show loading/connecting state
