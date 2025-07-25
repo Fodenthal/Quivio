@@ -1,9 +1,74 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { GameView } from "../../app/components/GameView";
 import { GameState, PlayerData, GameStatus } from "@shared/index";
 
+// Mock the AISettingsPanel component
+vi.mock("../../app/components/AISettingsPanel", () => ({
+  AISettingsPanel: vi.fn(({ onSetTopic, onSetTopics, onSetDifficulty, onSetTargetScore, onSetRoundTime, onSetMaxPlayers }) => (
+    <div data-testid="ai-settings-panel">
+      <div>AI Settings Panel</div>
+      <button onClick={() => onSetTopic && onSetTopic("Test Topic")}>Set Topic</button>
+      <button onClick={() => onSetTopics && onSetTopics(["Topic 1", "Topic 2"])}>Set Topics</button>
+      <button onClick={() => onSetDifficulty && onSetDifficulty(3)}>Set Difficulty</button>
+      <button onClick={() => onSetTargetScore && onSetTargetScore(15)}>Set Target Score</button>
+      <button onClick={() => onSetRoundTime && onSetRoundTime(45)}>Set Round Time</button>
+      <button onClick={() => onSetMaxPlayers && onSetMaxPlayers(6)}>Set Max Players</button>
+    </div>
+  ))
+}));
+
+// Mock the GamePins component
+vi.mock("../../app/components/GamePins", () => ({
+  GamePins: vi.fn(({ gamePin }) => (
+    <div data-testid="game-pins">
+      <div>Game Pin: {gamePin}</div>
+    </div>
+  ))
+}));
+
+// Mock the WinnerScreen component
+vi.mock("../../app/components/WinnerScreen", () => ({
+  WinnerScreen: vi.fn(({ winner, restartCountdown }) => (
+    <div data-testid="winner-screen">
+      <h1>{winner.name}</h1>
+      <div>won the game!</div>
+      <div>Final Score</div>
+      <div>{winner.score} points</div>
+      <div>🏆</div>
+      {restartCountdown > 0 && <div>Next game in {restartCountdown}s</div>}
+    </div>
+  ))
+}));
+
+// Mock the PlayerList component
+vi.mock("../../app/components/PlayerList", () => ({
+  PlayerList: vi.fn(() => (
+    <div data-testid="player-list">Player List</div>
+  ))
+}));
+
+// Mock the Chat component
+vi.mock("../../app/components/Chat", () => ({
+  Chat: vi.fn(() => (
+    <div data-testid="chat">Chat Component</div>
+  ))
+}));
+
 describe("GameView", () => {
+  // Mock functions
+  const mockOnStartGame = vi.fn();
+  const mockOnSetTopic = vi.fn();
+  const mockOnSetTopics = vi.fn();
+  const mockOnSetDifficulty = vi.fn();
+  const mockOnSetTargetScore = vi.fn();
+  const mockOnSetRoundTime = vi.fn();
+  const mockOnSetMaxPlayers = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   // Helper function to create a test game state
   const createGameState = (overrides: Partial<GameState> = {}): GameState => {
     const defaultPlayer: PlayerData = {
@@ -56,6 +121,318 @@ describe("GameView", () => {
     };
   };
 
+  describe("Lobby State (GameStatus.WAITING)", () => {
+    describe("Game Pin Display", () => {
+      it("displays game pin when in lobby", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          gamePin: "ABC123"
+        });
+        
+        render(<GameView gameState={gameState} currentPlayerId="player1" />);
+        
+        expect(screen.getByTestId("game-pins")).toBeInTheDocument();
+        expect(screen.getByText("Game Pin: ABC123")).toBeInTheDocument();
+      });
+
+      it("does not display game pin when not in lobby", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.IN_PROGRESS 
+        });
+        
+        render(<GameView gameState={gameState} currentPlayerId="player1" />);
+        
+        expect(screen.queryByTestId("game-pins")).not.toBeInTheDocument();
+      });
+    });
+
+    describe("Host Controls", () => {
+      it("shows host controls section for host player", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"]
+        });
+        
+        render(<GameView gameState={gameState} currentPlayerId="player1" />);
+        
+        expect(screen.getByText("Host Controls")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Start Game" })).toBeInTheDocument();
+      });
+
+      it("does not show host controls for non-host player", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING 
+        });
+        
+        // Add non-host player
+        const nonHostPlayer: PlayerData = {
+          id: "player2",
+          name: "NonHost",
+          score: 0,
+          ready: false,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", nonHostPlayer);
+        
+        render(<GameView gameState={gameState} currentPlayerId="player2" />);
+        
+        expect(screen.queryByText("Host Controls")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Start Game" })).not.toBeInTheDocument();
+        expect(screen.getByText("Waiting for Host")).toBeInTheDocument();
+      });
+
+      it("shows AI settings panel for host", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"]
+        });
+        
+        render(<GameView gameState={gameState} currentPlayerId="player1" />);
+        
+        expect(screen.getByTestId("ai-settings-panel")).toBeInTheDocument();
+        expect(screen.getByText("Game Settings")).toBeInTheDocument();
+      });
+
+      it("shows read-only game settings for non-host", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Science", "History"],
+          currentDifficulty: 4,
+          targetScore: 15
+        });
+        
+        // Add non-host player
+        const nonHostPlayer: PlayerData = {
+          id: "player2",
+          name: "NonHost",
+          score: 0,
+          ready: false,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", nonHostPlayer);
+        
+        render(<GameView gameState={gameState} currentPlayerId="player2" />);
+        
+        expect(screen.getByText("Game Settings")).toBeInTheDocument();
+        expect(screen.getByText("Topics:")).toBeInTheDocument();
+        expect(screen.getByText("Science, History")).toBeInTheDocument();
+        expect(screen.getByText("Difficulty:")).toBeInTheDocument();
+        expect(screen.getByText("4/5")).toBeInTheDocument();
+        expect(screen.getByText("Target Score:")).toBeInTheDocument();
+        expect(screen.getByText("15")).toBeInTheDocument();
+        
+        // Should not show AI settings panel for non-host
+        expect(screen.queryByTestId("ai-settings-panel")).not.toBeInTheDocument();
+      });
+    });
+
+    describe("Start Game Button", () => {
+      it("enables start game button when conditions are met", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"] // Has at least one topic
+        });
+        
+        // Add second player to meet minimum player requirement
+        const player2: PlayerData = {
+          id: "player2",
+          name: "Player2",
+          score: 0,
+          ready: true,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", player2);
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onStartGame={mockOnStartGame}
+        />);
+        
+        const startButton = screen.getByRole("button", { name: "Start Game" });
+        expect(startButton).not.toBeDisabled();
+      });
+
+      it("disables start game button when not enough players", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"]
+        });
+        // Only one player
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onStartGame={mockOnStartGame}
+        />);
+        
+        const startButton = screen.getByRole("button", { name: "Start Game" });
+        expect(startButton).toBeDisabled();
+        expect(screen.getByText("Need 1 more player to start")).toBeInTheDocument();
+      });
+
+      it("disables start game button when no topics configured", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: [] // No topics configured
+        });
+        
+        // Add second player
+        const player2: PlayerData = {
+          id: "player2",
+          name: "Player2",
+          score: 0,
+          ready: true,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", player2);
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onStartGame={mockOnStartGame}
+        />);
+        
+        const startButton = screen.getByRole("button", { name: "Start Game" });
+        expect(startButton).toBeDisabled();
+        expect(screen.getByText("Configure at least one topic below to start")).toBeInTheDocument();
+      });
+
+      it("disables start game button when topics are empty strings", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["", "   ", ""] // Empty/whitespace topics
+        });
+        
+        // Add second player
+        const player2: PlayerData = {
+          id: "player2",
+          name: "Player2",
+          score: 0,
+          ready: true,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", player2);
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onStartGame={mockOnStartGame}
+        />);
+        
+        const startButton = screen.getByRole("button", { name: "Start Game" });
+        expect(startButton).toBeDisabled();
+      });
+
+      it("calls onStartGame when start button is clicked", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"]
+        });
+        
+        // Add second player
+        const player2: PlayerData = {
+          id: "player2",
+          name: "Player2",
+          score: 0,
+          ready: true,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", player2);
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onStartGame={mockOnStartGame}
+        />);
+        
+        const startButton = screen.getByRole("button", { name: "Start Game" });
+        fireEvent.click(startButton);
+        
+        expect(mockOnStartGame).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("AI Settings Panel Integration", () => {
+      it("passes correct callbacks to AI settings panel", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Test Topic"]
+        });
+        
+        render(<GameView 
+          gameState={gameState} 
+          currentPlayerId="player1" 
+          onSetTopic={mockOnSetTopic}
+          onSetTopics={mockOnSetTopics}
+          onSetDifficulty={mockOnSetDifficulty}
+          onSetTargetScore={mockOnSetTargetScore}
+          onSetRoundTime={mockOnSetRoundTime}
+          onSetMaxPlayers={mockOnSetMaxPlayers}
+        />);
+        
+        // Test each callback by clicking the mocked buttons
+        fireEvent.click(screen.getByRole("button", { name: "Set Topic" }));
+        expect(mockOnSetTopic).toHaveBeenCalledWith("Test Topic");
+        
+        fireEvent.click(screen.getByRole("button", { name: "Set Topics" }));
+        expect(mockOnSetTopics).toHaveBeenCalledWith(["Topic 1", "Topic 2"]);
+        
+        fireEvent.click(screen.getByRole("button", { name: "Set Difficulty" }));
+        expect(mockOnSetDifficulty).toHaveBeenCalledWith(3);
+        
+        fireEvent.click(screen.getByRole("button", { name: "Set Target Score" }));
+        expect(mockOnSetTargetScore).toHaveBeenCalledWith(15);
+        
+        fireEvent.click(screen.getByRole("button", { name: "Set Round Time" }));
+        expect(mockOnSetRoundTime).toHaveBeenCalledWith(45);
+        
+        fireEvent.click(screen.getByRole("button", { name: "Set Max Players" }));
+        expect(mockOnSetMaxPlayers).toHaveBeenCalledWith(6);
+      });
+    });
+
+    describe("Status Messages", () => {
+      it("shows appropriate message for non-host waiting", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING 
+        });
+        
+        const nonHostPlayer: PlayerData = {
+          id: "player2",
+          name: "NonHost",
+          score: 0,
+          ready: false,
+          isHost: false,
+          joinedAt: Date.now()
+        };
+        gameState.players.set("player2", nonHostPlayer);
+        
+        render(<GameView gameState={gameState} currentPlayerId="player2" />);
+        
+        expect(screen.getByText("The host will start the game when ready")).toBeInTheDocument();
+      });
+
+      it("shows debug information for host", () => {
+        const gameState = createGameState({ 
+          gameStatus: GameStatus.WAITING,
+          topics: ["Topic1", "Topic2"]
+        });
+        
+        render(<GameView gameState={gameState} currentPlayerId="player1" />);
+        
+        // Check for debug info
+        expect(screen.getByText(/DEBUG: Players: 1, Topics: 2, Can start:/)).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("Game Header Display", () => {
     it("displays round number correctly", () => {
       const gameState = createGameState({ currentRound: 3 });
@@ -89,6 +466,18 @@ describe("GameView", () => {
       
       const timerElement = screen.getByText("0:15");
       expect(timerElement).toHaveClass("text-text-main");
+    });
+
+    it("does not show timer during lobby phase", () => {
+      const gameState = createGameState({ 
+        gameStatus: GameStatus.WAITING,
+        roundTimeRemaining: 30000
+      });
+      
+      render(<GameView gameState={gameState} currentPlayerId="player1" />);
+      
+      expect(screen.queryByText("Time:")).not.toBeInTheDocument();
+      expect(screen.queryByText("0:30")).not.toBeInTheDocument();
     });
   });
 
@@ -271,7 +660,6 @@ describe("GameView", () => {
       // Check for the specific large winner title (more specific than just "TestPlayer")
       const winnerTitle = screen.getByRole("heading", { level: 1 });
       expect(winnerTitle).toHaveTextContent("TestPlayer");
-      expect(winnerTitle).toHaveClass("text-5xl", "font-bold", "text-primary");
     });
 
     it("handles game end without valid winner", () => {
