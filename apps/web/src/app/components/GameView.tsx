@@ -512,6 +512,19 @@ export const GameView = memo(function GameView({
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
     prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
     prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
+    
+    // CRITICAL: Player state comparisons for lobby functionality
+    prevProps.gameState.players.size === nextProps.gameState.players.size &&
+    Array.from(prevProps.gameState.players.entries()).every(([playerId, prevPlayer]) => {
+      const nextPlayer = nextProps.gameState.players.get(playerId);
+      return nextPlayer && 
+        prevPlayer.name === nextPlayer.name && 
+        prevPlayer.isHost === nextPlayer.isHost &&
+        prevPlayer.score === nextPlayer.score;
+    }) &&
+    // Topics changes affect lobby start button
+    prevProps.gameState.topics?.length === nextProps.gameState.topics?.length &&
+    prevProps.gameState.topics?.every((topic, index) => topic === nextProps.gameState.topics?.[index]) &&
 
     prevProps.gameState.roundGuesses.get(prevProps.currentPlayerId) === nextProps.gameState.roundGuesses.get(nextProps.currentPlayerId) &&
     prevProps.gameState.roundGuesses.size === nextProps.gameState.roundGuesses.size &&
