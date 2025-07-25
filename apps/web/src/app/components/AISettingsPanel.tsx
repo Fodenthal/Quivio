@@ -150,21 +150,19 @@ export function AISettingsPanel({
           </span>
         </div>
       </section>
+      <div className="my-6 border-t border-white/10" />
       {/* Difficulty Section */}
       <section>
-        <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty</h3>
+        <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-text-main">Difficulty Level</label>
           <DifficultySlider
             value={difficulty}
             onChange={handleDifficultyChange}
             getDifficultyLabel={getDifficultyLabel}
           />
-          <div className="text-xs text-text-secondary">
-            Level: <span className="font-bold text-text-main">{getDifficultyLabel(difficulty)}</span>
-          </div>
         </div>
       </section>
+      <div className="my-6 border-t border-white/10" />
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
