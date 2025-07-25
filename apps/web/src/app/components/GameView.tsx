@@ -16,7 +16,6 @@ interface GameViewProps {
   onSendChatMessage?: (content: string) => void;
   // Lobby actions
   onStartGame?: () => void;
-  onSetTopic?: (topic: string) => void;
   onSetTopics?: (topics: string[]) => void;
   onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
@@ -30,7 +29,6 @@ export const GameView = memo(function GameView({
   onSubmitGuess,
   onSendChatMessage,
   onStartGame,
-  onSetTopic,
   onSetTopics,
   onSetDifficulty,
   onSetTargetScore,
@@ -261,7 +259,6 @@ export const GameView = memo(function GameView({
                     )}
                     <AISettingsPanel 
                       gameState={gameState}
-                      onSetTopic={onSetTopic}
                       onSetTopics={onSetTopics}
                       onSetDifficulty={onSetDifficulty}
                       onSetTargetScore={onSetTargetScore}
@@ -530,7 +527,6 @@ export const GameView = memo(function GameView({
     prevProps.onSendChatMessage === nextProps.onSendChatMessage &&
     // Lobby action comparisons
     prevProps.onStartGame === nextProps.onStartGame &&
-    prevProps.onSetTopic === nextProps.onSetTopic &&
     prevProps.onSetTopics === nextProps.onSetTopics &&
     prevProps.onSetDifficulty === nextProps.onSetDifficulty &&
     prevProps.onSetTargetScore === nextProps.onSetTargetScore &&
