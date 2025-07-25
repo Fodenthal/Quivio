@@ -234,121 +234,99 @@ export const GameView = memo(function GameView({
           ) : null;
         })()}
 
-        {/* Hosting Controls - Show when waiting for game to start */}
-        {gameState.gameStatus === GameStatus.WAITING && (
-          <div className="space-y-6">
-            {/* Game Pin Display */}
-            {gameState.gamePin && (
-              <GamePins gamePin={gameState.gamePin} />
-            )}
-            
-            {/* Host Controls */}
-            {(() => {
-              const currentPlayer = gameState.players.get(currentPlayerId);
-              const isHost = currentPlayer?.isHost || false;
-              const playersArray = Array.from(gameState.players.values());
-              const playerCount = playersArray.length;
-              const hasMinPlayers = playerCount >= 2;
-              const hasTopics = gameState.topics && gameState.topics.length > 0 && gameState.topics.some(topic => topic.trim().length > 0);
-              const canStartGame = hasMinPlayers && hasTopics && isHost;
+        {/* Waiting for Players Panel */}
+        {gameState.gameStatus === GameStatus.WAITING && (() => {
+          const currentPlayer = gameState.players.get(currentPlayerId);
+          const isHost = currentPlayer?.isHost || false;
+          const playerCount = gameState.players.size;
+          const hasMinPlayers = playerCount >= 2;
+          const hasTopics = gameState.topics && gameState.topics.length > 0 && gameState.topics.some(topic => topic.trim().length > 0);
+          const canStartGame = hasMinPlayers && hasTopics && isHost;
 
-              return (
-                <div className="space-y-6">
-                  {/* Start Game Section */}
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-text-main mb-4">
-                      {isHost ? "Host Controls" : "Waiting for Host"}
-                    </h2>
-                    
-                    {isHost && (
-                      <button
-                        onClick={() => {
-                          console.log('Start Game clicked!', { 
-                            canStartGame, 
-                            hasMinPlayers, 
-                            hasTopics, 
-                            playerCount, 
-                            topics: gameState.topics,
-                            onStartGame: !!onStartGame 
-                          });
-                          onStartGame?.();
-                        }}
-                        disabled={!canStartGame}
-                        className={`px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
-                          canStartGame
-                            ? "bg-primary hover:bg-opacity-90 text-white focus:ring-primary"
-                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        }`}
-                      >
-                        Start Game
-                      </button>
+          return (
+            <div className="flex flex-col h-full">
+              
+
+              
+
+              {/* Host View */}
+              {isHost && (
+                <div className="flex flex-col flex-grow space-y-6">
+                  <div className="relative flex-grow">
+                    {/* Game Pin Display in top-right corner of this container */}
+                    {gameState.gamePin && (
+                      <div className="absolute top-0 right-0">
+                        <GamePins gamePin={gameState.gamePin} />
+                      </div>
                     )}
-                    
-                                         {/* Status Messages */}
-                     <div className="mt-4 space-y-2">
-                       {!hasMinPlayers && (
-                         <p className="text-yellow-300 text-sm">
-                           Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start
-                         </p>
-                       )}
-                       {!hasTopics && isHost && (
-                         <p className="text-yellow-300 text-sm">
-                           Configure at least one topic below to start
-                         </p>
-                       )}
-                       {!isHost && (
-                         <p className="text-text-secondary text-sm">
-                           The host will start the game when ready
-                         </p>
-                       )}
-                       
-                       {/* Debug info */}
-                       {isHost && (
-                         <div className="text-xs text-gray-500 mt-2">
-                           DEBUG: Players: {playerCount}, Topics: {gameState.topics?.length || 0}, Can start: {canStartGame ? 'YES' : 'NO'}
-                         </div>
-                       )}
-                     </div>
+                    <AISettingsPanel 
+                      gameState={gameState}
+                      onSetTopic={onSetTopic}
+                      onSetTopics={onSetTopics}
+                      onSetDifficulty={onSetDifficulty}
+                      onSetTargetScore={onSetTargetScore}
+                      onSetRoundTime={onSetRoundTime}
+                      onSetMaxPlayers={onSetMaxPlayers}
+                    />
                   </div>
-
-                  {/* AI Settings Panel - Only show to host */}
-                  {isHost && (
-                    <div className="bg-white/10 rounded-lg p-6 border border-white/20">
-                      <h3 className="text-xl font-semibold text-text-main mb-4">Game Settings</h3>
-                      <AISettingsPanel 
-                        gameState={gameState}
-                        onSetTopic={onSetTopic}
-                        onSetTopics={onSetTopics}
-                        onSetDifficulty={onSetDifficulty}
-                        onSetTargetScore={onSetTargetScore}
-                        onSetRoundTime={onSetRoundTime}
-                        onSetMaxPlayers={onSetMaxPlayers}
-                      />
-                    </div>
-                  )}
                   
-                  {/* Non-host view of settings */}
-                  {!isHost && (
-                    <div className="bg-white/10 rounded-lg p-6 border border-white/20">
-                      <h3 className="text-xl font-semibold text-text-main mb-4">Game Settings</h3>
-                      <div className="space-y-4 text-text-secondary">
-                        <div>
-                          <span className="font-medium">Topics:</span> {gameState.topics?.join(", ") || "Not set"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Difficulty:</span> {gameState.currentDifficulty}/5
-                        </div>
-                        <div>
-                          <span className="font-medium">Target Score:</span> {gameState.targetScore}
-                        </div>
+                  {/* Start Game Button and Status Messages */}
+                  <div className="mt-auto pt-6 border-t border-white/20">
+                    <button
+                      onClick={onStartGame}
+                      disabled={!canStartGame}
+                      className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
+                        canStartGame
+                          ? "bg-primary hover:bg-opacity-90 text-white focus:ring-primary"
+                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Start Game
+                    </button>
+                    <div className="mt-4 space-y-1 text-center">
+                      {!hasMinPlayers && (
+                        <p className="text-yellow-300 text-sm">
+                          Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start.
+                        </p>
+                      )}
+                      {!hasTopics && (
+                        <p className="text-yellow-300 text-sm">
+                          Please set at least one topic to start the game.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Non-Host View */}
+              {!isHost && (
+                <div className="flex flex-col h-full items-center justify-center text-center">
+                  <div className="bg-white/10 rounded-lg p-8 border border-white/20 max-w-md w-full">
+                    <h3 className="text-xl font-semibold text-text-main mb-6">Game Settings</h3>
+                    <div className="space-y-4 text-text-secondary text-left">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-text-main">Topics:</span> 
+                        <span>{gameState.topics?.join(", ") || "Not set"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-text-main">Difficulty:</span> 
+                        <span>{gameState.currentDifficulty}/5</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-text-main">Target Score:</span> 
+                        <span>{gameState.targetScore}</span>
                       </div>
                     </div>
-                  )}
+                    <p className="text-text-secondary text-sm mt-8">
+                      The host is configuring the game. The fun will begin shortly!
+                    </p>
+                  </div>
                 </div>
-              );
-            })()}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* Existing game content - only show when not in lobby and not ended */}
         {gameState.gameStatus !== GameStatus.WAITING && phase !== "ended" && (
