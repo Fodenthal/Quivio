@@ -3,7 +3,7 @@
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameLobby } from "./GameLobby";
 import { GameView } from "./GameView";
-import { GameState } from "@shared/index";
+import { GameState, GameStatus } from "@shared/index";
 
 export interface GameLayoutProps {
   connectionStatus: ConnectionStatus;
@@ -70,7 +70,7 @@ export function GameLayout({
   // Determine which view to show
   const renderMainContent = () => {
     if (connectionStatus === ConnectionStatus.CONNECTED && gameState) {
-      if (!gameState.gameStarted && !gameState.gameEnded) {
+      if (gameState.gameStatus === GameStatus.WAITING) {
         // Show lobby when connected but game hasn't started and hasn't ended
         return (
           <GameLobby

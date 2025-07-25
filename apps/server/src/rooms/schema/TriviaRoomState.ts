@@ -1,5 +1,5 @@
 import { Schema, type, MapSchema } from "@colyseus/schema";
-import { PlayerData, Prompt, Guess, ChatMessage, RoomSettings } from "@shared/index";
+import { PlayerData, Prompt, Guess, ChatMessage, RoomSettings, GameStatus } from "@shared/index";
 
 export class PlayerState extends Schema {
   @type("string") id: string = "";
@@ -52,8 +52,7 @@ export class TriviaRoomState extends Schema {
   @type("string") roomName: string = "";
 
   // Game state
-  @type("boolean") gameStarted: boolean = false;
-  @type("boolean") gameEnded: boolean = false;
+  @type("string") gameStatus: string = GameStatus.WAITING;
   @type("boolean") gamePaused: boolean = false;
   @type("boolean") canStart: boolean = false;
   @type("number") currentRound: number = 0;

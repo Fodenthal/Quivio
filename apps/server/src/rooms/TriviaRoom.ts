@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { QuestionDatabase } from "../services/QuestionDatabase";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -162,7 +162,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       playerCount: 0,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
-      gameStarted: false,
+      gameStarted: false, // Keep for backwards compatibility with registry
       canStart: false
     });
     
@@ -194,12 +194,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
 
     // If we have enough players and game hasn't started, allow starting
-    if (this.state.players.size >= 2 && !this.state.gameStarted) {
+    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) {
       this.state.canStart = true;
     }
 
     // Resume paused game if we now have enough players
-    if (this.state.players.size >= 2 && this.state.gameStarted && this.state.gamePaused) {
+    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) {
       this.resumeGame();
     }
 
@@ -220,12 +220,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
     
     // If not enough players, pause game
-    if (this.state.players.size < 2 && this.state.gameStarted) {
+    if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) {
       this.pauseGame();
     }
     
     // Update can start status
-    this.state.canStart = this.state.players.size >= 2 && !this.state.gameStarted;
+    this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
     
     // Update room metadata in registry
     this.updateRoomMetadata();
@@ -256,7 +256,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       playerCount: this.state.players.size,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
-      gameStarted: this.state.gameStarted,
+      gameStarted: this.state.gameStatus === GameStatus.IN_PROGRESS,
       canStart: this.state.canStart
     });
   }
@@ -321,7 +321,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         return;
       }
       
-      if (this.state.gameStarted) {
+      if (this.state.gameStatus === GameStatus.IN_PROGRESS) {
         return;
       }
 
@@ -372,7 +372,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Handle join next game (JKLM-style restart system)
     this.onMessage(MSG.JOIN_NEXT_GAME, (client) => {
       // Only allow joining if we're in the game ended state with countdown active
-      if (this.state.gameEnded && this.state.restartCountdown > 0) {
+      if (this.state.gameStatus === GameStatus.GAME_ENDED && this.state.restartCountdown > 0) {
         this.state.addParticipatingPlayer(client.sessionId);
         console.log(`🎮 Player ${client.sessionId} joined next game (${this.state.getParticipatingPlayerCount()} total)`);
       }
@@ -382,7 +382,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private startGameLoop() {
     // Game loop runs every 100ms for better performance vs 50ms
     this.gameLoopTimer = setInterval(() => {
-      if (this.state.gameStarted && !this.state.gamePaused) {
+      if (this.state.gameStatus === GameStatus.IN_PROGRESS && !this.state.gamePaused) {
         this.updateGameState();
       }
     }, this.GAME_LOOP_INTERVAL);
@@ -413,18 +413,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private checkGameStart() {
     const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
-    const canStart = readyPlayers.length >= 2 && !this.state.gameStarted;
+    const canStart = readyPlayers.length >= 2 && this.state.gameStatus === GameStatus.WAITING;
     this.state.canStart = canStart;
   }
 
   private async startGame() {
     console.log(`🎮 Starting game in room ${this.roomId}`);
     
-    this.state.gameStarted = true;
+    this.state.gameStatus = GameStatus.IN_PROGRESS;
     this.state.canStart = false;
     this.state.currentRound = 0;
     this.state.gamePaused = false;
-    this.state.gameEnded = false;
     this.state.winnerId = "";
     
     // Reset all player scores for new game
@@ -771,11 +770,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private handleGuess(playerId: string, guess: string) {
     if (
-      !this.state.gameStarted ||
-      this.state.roundEnded ||
+      !this.state.currentPrompt ||
+      !this.state.currentPrompt.text ||
+      this.state.gameStatus !== GameStatus.IN_PROGRESS ||
       this.state.gamePaused ||
-      typeof guess !== "string" ||
-      !guess.trim()
+      this.state.roundEnded
     ) {
       return;
     }
@@ -930,7 +929,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     } else {
       // Start next round after delay
       setTimeout(async () => {
-        if (this.state.gameStarted && !this.state.gameEnded) {
+        if (this.state.gameStatus === GameStatus.IN_PROGRESS) {
           await this.startNewRound();
         }
       }, 3000); // 3 second delay between rounds
@@ -947,9 +946,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private endGame(winnerId: string) {
-    this.state.gameEnded = true;
+    this.state.gameStatus = GameStatus.GAME_ENDED;
     this.state.winnerId = winnerId;
-    this.state.gameStarted = false;
     this.state.gamePaused = false;
     
     // Reset game state for next game
@@ -1081,9 +1079,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.clearRestartSystem();
     
     // Reset game state to initial lobby state
-    this.state.gameEnded = false;
+    this.state.gameStatus = GameStatus.WAITING;
     this.state.winnerId = "";
-    this.state.gameStarted = false;
     this.state.gamePaused = false;
     this.state.canStart = false;
     this.state.currentRound = 0;
@@ -1101,7 +1098,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private resumeGame() {
-    if (!this.state.gamePaused || !this.state.gameStarted) {
+    if (!this.state.gamePaused || this.state.gameStatus !== GameStatus.IN_PROGRESS) {
       return;
     }
 

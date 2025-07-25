@@ -4,6 +4,7 @@ import { ColyseusTestServer, boot } from "@colyseus/testing";
 // import your "app.config.ts" file here.
 import appConfig from "../src/app.config";
 import { TriviaRoomState } from "../src/rooms/schema/TriviaRoomState";
+import { GameStatus } from "@shared/index";
 
 // Helper function to wait for state changes
 const waitForState = (ms: number = 100) => new Promise(resolve => setTimeout(resolve, ms));
@@ -215,7 +216,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(300);
     
     // Verify game is active
-    assert.strictEqual(room.state.gameStarted, true);
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.strictEqual(room.state.gamePaused, false);
     
     // Player leaves, should pause game
@@ -223,7 +224,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(200);
     
     assert.strictEqual(room.state.gamePaused, true);
-    assert.strictEqual(room.state.gameStarted, true); // Still started, just paused
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS); // Still started, just paused
   });
 
   it("should resume game when enough players rejoin", async () => {
@@ -250,7 +251,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(200);
     
     assert.strictEqual(room.state.gamePaused, false);
-    assert.strictEqual(room.state.gameStarted, true);
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.strictEqual(room.state.players.size, 2);
   });
 
@@ -280,7 +281,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(800); // Wait longer for game to start
     
     // Verify game started
-    assert.ok(room.state.gameStarted, "Game should have started");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
     // Remove one player
@@ -311,7 +312,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(800); // Wait for game to start
     
     // Verify game is running
-    assert.ok(room.state.gameStarted, "Game should be started");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
     // Wait for prompt to load and get the correct answer
@@ -405,7 +406,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(800); // Wait for game to start
     
     // Verify game is running
-    assert.ok(room.state.gameStarted, "Game should be started");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
     // Wait for round to timeout (1000ms round + some buffer)
@@ -435,7 +436,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(800); // Wait for game to start
     
     // Verify game is running
-    assert.ok(room.state.gameStarted, "Game should be started");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.ok(room.state.currentRound > 0, "Should be in an active round");
     
     // Wait for prompt to load and get the correct answer
@@ -488,9 +489,9 @@ describe("testing TriviaRoom", () => {
     await waitForState(1000); // Wait longer for game end processing
     
     // Game should have ended
-    assert.ok(room.state.gameEnded, "Game should have ended");
+    assert.strictEqual(room.state.gameStatus, GameStatus.GAME_ENDED);
     assert.strictEqual(room.state.winnerId, client1.sessionId, "Player 1 should be winner");
-    assert.ok(!room.state.gameStarted, "Game should be stopped after win");
+    assert.strictEqual(room.state.gameStatus, GameStatus.GAME_ENDED);
   });
 
   it("should handle invalid messages gracefully", async () => {
@@ -602,7 +603,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(500);
     
     // Verify game started
-    assert.ok(room.state.gameStarted, "Game should be started");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.strictEqual(room.state.currentRound, 1, "Should be in round 1");
     
     // Get the correct answer for round 1
@@ -658,8 +659,8 @@ describe("testing TriviaRoom", () => {
     await waitForState(4000); // Wait for transition delay (3s) + buffer
     
     // Game should NOT have ended - should progress to round 2
-    assert.ok(!room.state.gameEnded, "Game should not have ended after round 1");
-    assert.ok(room.state.gameStarted, "Game should still be running");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS, "Game should still be in progress after round 1");
+    assert.strictEqual(room.state.gameStatus, GameStatus.IN_PROGRESS);
     assert.strictEqual(room.state.currentRound, 2, "Should have progressed to round 2");
     
     // Both players should have reasonable scores based on JKLM-style scoring

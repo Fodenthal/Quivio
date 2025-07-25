@@ -9,6 +9,11 @@ export declare const MSG: {
     readonly SET_TOPICS: "set_topics";
     readonly SET_DIFFICULTY: "set_difficulty";
 };
+export declare enum GameStatus {
+    WAITING = "waiting",
+    IN_PROGRESS = "in_progress",
+    GAME_ENDED = "game_ended"
+}
 export interface PlayerData {
     id: string;
     name: string;
@@ -68,8 +73,7 @@ export interface GameState {
     isPrivate: boolean;
     gamePin: string;
     roomName: string;
-    gameStarted: boolean;
-    gameEnded: boolean;
+    gameStatus: GameStatus;
     gamePaused: boolean;
     canStart: boolean;
     currentRound: number;

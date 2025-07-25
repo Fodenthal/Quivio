@@ -10,6 +10,12 @@ export const MSG = {
   SET_DIFFICULTY: "set_difficulty"
 } as const;
 
+export enum GameStatus {
+  WAITING = "waiting",
+  IN_PROGRESS = "in_progress",
+  GAME_ENDED = "game_ended",
+}
+
 export interface PlayerData {
   id: string;
   name: string;
@@ -83,8 +89,7 @@ export interface GameState {
   roomName: string;
 
   // Game state
-  gameStarted: boolean;
-  gameEnded: boolean;
+  gameStatus: GameStatus;
   gamePaused: boolean;
   canStart: boolean;
   currentRound: number;

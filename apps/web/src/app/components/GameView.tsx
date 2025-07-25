@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
-import { GameState } from "@shared/index";
+import { GameState, GameStatus } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
 import { Chat } from "./Chat";
@@ -29,14 +29,14 @@ export const GameView = memo(function GameView({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
   const getGamePhase = useMemo((): string => {
-    if (gameState.gameEnded) return "ended";
+    if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
     if (gameState.gamePaused) return "paused";
     if (gameState.roundEnded) return "round-ended";
     // Add loading phase for when game started but questions are being generated
-    if (gameState.gameStarted && (!gameState.currentPrompt?.text || gameState.currentPrompt.text === "")) return "loading";
+    if (gameState.gameStatus === GameStatus.IN_PROGRESS && (!gameState.currentPrompt?.text || gameState.currentPrompt.text === "")) return "loading";
     if (gameState.roundStartTime > 0) return "playing";
     return "waiting";
-  }, [gameState.gameEnded, gameState.gamePaused, gameState.roundEnded, gameState.gameStarted, gameState.currentPrompt?.text, gameState.roundStartTime]);
+  }, [gameState.gameStatus, gameState.gamePaused, gameState.roundEnded, gameState.currentPrompt?.text, gameState.roundStartTime]);
 
   const formatTime = useCallback((timeMs: number): string => {
     const seconds = Math.max(0, Math.ceil(timeMs / 1000));
@@ -379,7 +379,7 @@ export const GameView = memo(function GameView({
   return (
     prevProps.currentPlayerId === nextProps.currentPlayerId &&
     prevProps.gameState.currentRound === nextProps.gameState.currentRound &&
-    prevProps.gameState.gameEnded === nextProps.gameState.gameEnded &&
+    prevProps.gameState.gameStatus === nextProps.gameState.gameStatus &&
     prevProps.gameState.gamePaused === nextProps.gameState.gamePaused &&
     prevProps.gameState.roundEnded === nextProps.gameState.roundEnded &&
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
