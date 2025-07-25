@@ -9,7 +9,7 @@ This document outlines the key principles, project-wide constraints, and specifi
 - **Provide guidance for verification after complex changes.** For substantial tasks like feature additions or refactors, conclude by explaining how the user can manually verify the changes (e.g., UI steps to follow, or ideas for new automated tests).
 
 ## Project-wide Constraints
-- Use `pnpm test` after implementing complex tasks
+- Use `pnpm test` after implementing complex tasks (never pnpm dev)
 - **Use named exports** (`export const foo`) not `export default` (prevents tree-shaking issues)
 - **Throw `Error` objects** never strings (enables proper stack traces)
 

@@ -45,7 +45,7 @@ The architecture assumes games are **discrete sessions** requiring explicit setu
 
 ## 3. Vision & Goal
 
-**Primary Goal**: Eliminate the `GameLobby` component and merge its functionality into a single, continuous `GameView`. This creates a more immersive and modern user experience, removing friction points and enabling seamless game-to-game transitions.
+**Primary Goal**: Eliminate the `GameLobby` component and merge its functionality into a single, continuous `GameView`. This will create a more immersive and modern user experience, removing friction points and enabling seamless game-to-game transitions.
 
 ## 4. The New, Unified Flow
 

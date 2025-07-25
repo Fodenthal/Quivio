@@ -13,7 +13,6 @@ export default function Home() {
     joinRoom, 
     createRoom,
     leaveRoom,
-    sendPlayerReady,
     startGame,
     submitGuess,
     joinNextGame,
@@ -48,7 +47,6 @@ export default function Home() {
       currentPlayerId={currentPlayerId}
       // Actions
       onLeaveGame={leaveRoom}
-      onPlayerReady={sendPlayerReady}
       onStartGame={startGame}
       onSubmitGuess={submitGuess}
       onJoinNextGame={joinNextGame}

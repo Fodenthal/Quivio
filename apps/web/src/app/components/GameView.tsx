@@ -16,7 +16,6 @@ interface GameViewProps {
   onJoinNextGame?: () => void;
   onSendChatMessage?: (content: string) => void;
   // Lobby actions
-  onPlayerReady?: (ready: boolean) => void;
   onStartGame?: () => void;
   onSetTopic?: (topic: string) => void;
   onSetTopics?: (topics: string[]) => void;
@@ -32,7 +31,6 @@ export const GameView = memo(function GameView({
   onSubmitGuess,
   onJoinNextGame,
   onSendChatMessage,
-  onPlayerReady,
   onStartGame,
   onSetTopic,
   onSetTopics,
@@ -240,36 +238,102 @@ export const GameView = memo(function GameView({
       {/* Main game content - flex-1 */}
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
         
-        {/* TODO: Add lobby content when gameState.gameStatus === GameStatus.WAITING */}
+        {/* Hosting Controls - Show when waiting for game to start */}
         {gameState.gameStatus === GameStatus.WAITING && (
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-text-main mb-4">Game Lobby</h3>
-            <p className="text-text-secondary">Lobby content will be implemented in next atomic step...</p>
-            {/* Test the new props with placeholder buttons */}
-            <div className="mt-4 space-x-4">
-              <button 
-                className="px-4 py-2 bg-primary text-white rounded"
-                onClick={() => onPlayerReady?.(true)}
-              >
-                Ready Test
-              </button>
-              <button 
-                className="px-4 py-2 bg-green-600 text-white rounded"
-                onClick={() => onStartGame?.()}
-              >
-                Start Test
-              </button>
-            </div>
-            {gameState.gamePin && <GamePins gamePin={gameState.gamePin} />}
-            <AISettingsPanel 
-              gameState={gameState}
-              onSetTopic={onSetTopic}
-              onSetTopics={onSetTopics}
-              onSetDifficulty={onSetDifficulty}
-              onSetTargetScore={onSetTargetScore}
-              onSetRoundTime={onSetRoundTime}
-              onSetMaxPlayers={onSetMaxPlayers}
-            />
+          <div className="space-y-6">
+            {/* Game Pin Display */}
+            {gameState.gamePin && (
+              <GamePins gamePin={gameState.gamePin} />
+            )}
+            
+            {/* Host Controls */}
+            {(() => {
+              const currentPlayer = gameState.players.get(currentPlayerId);
+              const isHost = currentPlayer?.isHost || false;
+              const playersArray = Array.from(gameState.players.values());
+              const playerCount = playersArray.length;
+              const hasMinPlayers = playerCount >= 2;
+              const hasTopics = gameState.topics && gameState.topics.length > 0 && gameState.topics.some(topic => topic.trim().length > 0);
+              const canStartGame = hasMinPlayers && hasTopics && isHost;
+
+              return (
+                <div className="space-y-6">
+                  {/* Start Game Section */}
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-text-main mb-4">
+                      {isHost ? "Host Controls" : "Waiting for Host"}
+                    </h2>
+                    
+                    {isHost && (
+                      <button
+                        onClick={onStartGame}
+                        disabled={!canStartGame}
+                        className={`px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
+                          canStartGame
+                            ? "bg-primary hover:bg-opacity-90 text-white focus:ring-primary"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        Start Game
+                      </button>
+                    )}
+                    
+                    {/* Status Messages */}
+                    <div className="mt-4 space-y-2">
+                      {!hasMinPlayers && (
+                        <p className="text-yellow-300 text-sm">
+                          Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start
+                        </p>
+                      )}
+                      {!hasTopics && isHost && (
+                        <p className="text-yellow-300 text-sm">
+                          Configure at least one topic below to start
+                        </p>
+                      )}
+                      {!isHost && (
+                        <p className="text-text-secondary text-sm">
+                          The host will start the game when ready
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI Settings Panel - Only show to host */}
+                  {isHost && (
+                    <div className="bg-white/10 rounded-lg p-6 border border-white/20">
+                      <h3 className="text-xl font-semibold text-text-main mb-4">Game Settings</h3>
+                      <AISettingsPanel 
+                        gameState={gameState}
+                        onSetTopic={onSetTopic}
+                        onSetTopics={onSetTopics}
+                        onSetDifficulty={onSetDifficulty}
+                        onSetTargetScore={onSetTargetScore}
+                        onSetRoundTime={onSetRoundTime}
+                        onSetMaxPlayers={onSetMaxPlayers}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Non-host view of settings */}
+                  {!isHost && (
+                    <div className="bg-white/10 rounded-lg p-6 border border-white/20">
+                      <h3 className="text-xl font-semibold text-text-main mb-4">Game Settings</h3>
+                      <div className="space-y-4 text-text-secondary">
+                        <div>
+                          <span className="font-medium">Topics:</span> {gameState.topics?.join(", ") || "Not set"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Difficulty:</span> {gameState.currentDifficulty}/5
+                        </div>
+                        <div>
+                          <span className="font-medium">Target Score:</span> {gameState.targetScore}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -462,7 +526,6 @@ export const GameView = memo(function GameView({
     prevProps.onJoinNextGame === nextProps.onJoinNextGame &&
     prevProps.onSendChatMessage === nextProps.onSendChatMessage &&
     // Lobby action comparisons
-    prevProps.onPlayerReady === nextProps.onPlayerReady &&
     prevProps.onStartGame === nextProps.onStartGame &&
     prevProps.onSetTopic === nextProps.onSetTopic &&
     prevProps.onSetTopics === nextProps.onSetTopics &&

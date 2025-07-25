@@ -10,7 +10,6 @@ export interface GameLayoutProps {
   currentPlayerId: string;
   // Actions
   onLeaveGame: () => void;
-  onPlayerReady: (ready: boolean) => void;
   onStartGame: () => void;
   onSubmitGuess: (guess: string) => void;
   onJoinNextGame: () => void;
@@ -28,7 +27,6 @@ export function GameLayout({
   gameState,
   currentPlayerId,
   onLeaveGame,
-  onPlayerReady,
   onStartGame,
   onSubmitGuess,
   onJoinNextGame,
@@ -83,7 +81,6 @@ export function GameLayout({
           onSubmitGuess={onSubmitGuess}
           onJoinNextGame={onJoinNextGame}
           onSendChatMessage={onSendChatMessage}
-          onPlayerReady={onPlayerReady}
           onStartGame={onStartGame}
           onSetTopic={onSetTopic}
           onSetTopics={onSetTopics}
