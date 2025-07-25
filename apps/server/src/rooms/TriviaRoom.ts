@@ -1080,7 +1080,26 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gamePaused = false;
     this.state.canStart = this.state.players.size >= 2; // Can start if enough players
     this.state.currentRound = 0;
-    this.state.hostId = "";
+    
+    // Preserve existing host if they're still in the room, otherwise assign new host
+    if (this.state.hostId && !this.state.players.has(this.state.hostId)) {
+      // Current host is no longer in room, assign new host
+      if (this.state.players.size > 0) {
+        const newHostId = Array.from(this.state.players.keys())[0];
+        this.state.setHost(newHostId);
+        console.log(`🏠 Previous host left, assigned new host: ${newHostId}`);
+      } else {
+        this.state.hostId = "";
+        console.log(`🏠 No players remaining, cleared host`);
+      }
+    } else if (this.state.hostId) {
+      console.log(`🏠 Preserved existing host: ${this.state.hostId}`);
+    } else if (this.state.players.size > 0) {
+      // No host assigned but players exist, assign first player as host
+      const newHostId = Array.from(this.state.players.keys())[0];
+      this.state.setHost(newHostId);
+      console.log(`🏠 No host was assigned, set new host: ${newHostId}`);
+    }
   }
 
   private pauseGame() {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --parallel --filter=@getmoney/server dev & pnpm --filter=web dev",
+        "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter web dev\"",
     "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=web dev",
     "server": "pnpm --filter=@getmoney/server start",
     "web": "pnpm --filter=web dev",
@@ -20,5 +20,8 @@
   "license": "ISC",
   "dependencies": {
     "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
   }
 }
