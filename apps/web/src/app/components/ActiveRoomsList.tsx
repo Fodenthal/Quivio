@@ -160,7 +160,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (loading) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 ${className}`}>
+      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <span className="ml-3 text-text-secondary">Loading active rooms...</span>
@@ -171,7 +171,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (error) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 ${className}`}>
+      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-text-main mb-2">Failed to Load Rooms</h3>
           <p className="text-text-secondary mb-4">{error}</p>
@@ -189,7 +189,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (rooms.length === 0) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 ${className}`}>
+      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-text-main mb-2">No Active Rooms</h3>
           <p className="text-text-secondary mb-4">Be the first to create a room and start playing!</p>
@@ -206,7 +206,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
   }
 
   return (
-    <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass border border-white/20 ${className}`}>
+    <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass border border-white/20 h-full flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-white/10">
         <div>
@@ -223,7 +223,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
       </div>
 
       {/* Rooms Grid */}
-      <div className="p-6">
+      <div className="p-6 flex-1 overflow-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {rooms.map((room) => {
             const status = getRoomStatus(room);

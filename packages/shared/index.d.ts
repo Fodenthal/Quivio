@@ -8,6 +8,7 @@ export declare const MSG: {
     readonly SET_TOPIC: "set_topic";
     readonly SET_TOPICS: "set_topics";
     readonly SET_DIFFICULTY: "set_difficulty";
+    readonly UPDATE_PLAYER_NAME: "update_player_name";
 };
 export declare enum GameStatus {
     WAITING = "waiting",
@@ -58,7 +59,11 @@ export interface TopicsMessage {
     topics: string[];
 }
 export interface DifficultyMessage {
-    difficulty: number;
+    minDifficulty: number;
+    maxDifficulty: number;
+}
+export interface UpdatePlayerNameMessage {
+    playerName: string;
 }
 export interface RoomSettings {
     targetScore: number;
@@ -88,7 +93,8 @@ export interface GameState {
     topics: string[];
     currentTopic: string;
     currentTopicIndex: number;
-    currentDifficulty: number;
+    minDifficulty: number;
+    maxDifficulty: number;
     players: Map<string, PlayerData>;
     currentPrompt: Prompt;
     roundGuesses: Map<string, Guess>;
