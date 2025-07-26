@@ -38,10 +38,7 @@ This solution involves two distinct services communicating over a local network 
 *   **Responsibilities:**
     *   Expose a single, simple API endpoint (e.g., `/get-context`).
     *   Accept a `topic` and `category` in the request body.
-    *   Use the full Python `llama-index` library to select the best data source:
-        *   **Wikipedia:** For `History`, `Media`, and `General` topics.
-        *   **Web Search:** For `News` and `Sports` topics requiring timeliness.
-    *   Fetch and process the data from the chosen source.
+    *   FILL IN HERE
     *   Return a clean, context-rich string in a JSON response.
 
 ## 4. Phased Implementation Plan
@@ -63,7 +60,7 @@ This solution involves two distinct services communicating over a local network 
 **Phase 2: Implement RAG Logic in Python**
 
 *   **Atomic Step 4: Implement LlamaIndex Data Loaders**
-    *   **What:** In the Python service, write the code to initialize and use the `WikipediaReader` and a web search reader from LlamaIndex.
+    *   **What:** FILL IN HERE
     *   **Why:** To build the core data retrieval functionality.
 
 *   **Atomic Step 5: Implement the Hybrid Selection Logic**
@@ -83,14 +80,4 @@ This solution involves two distinct services communicating over a local network 
 *   **Atomic Step 8: Update Final Prompt Construction**
     *   **What:** Create a new `buildPrompt` method in `GeminiService.ts` that takes the context string returned from the Python service and injects it into a master prompt that instructs the LLM to generate a question based on the provided context.
     *   **Why:** To ensure the LLM effectively uses the high-quality context for question generation.
-
-**Phase 4: Testing and Validation**
-
-*   **Atomic Step 9: Document the Development Workflow**
-    *   **What:** Add instructions to the project's main `README.md` or a new development guide on how to run both the TypeScript and Python services concurrently for local development.
-    *   **Why:** To ensure a smooth developer experience for anyone working on the project.
-
-*   **Atomic Step 10: End-to-End Testing**
-    *   **What:** Manually run a series of tests with various topic types to ensure the entire two-service system works as expected.
-    *   **Why:** To validate the success of the refactoring and the quality of the generated questions.
     
