@@ -322,6 +322,36 @@ export class GameClient {
   }
 
   /**
+   * Set the target score for the game (host only)
+   */
+  setTargetScore(score: number): void {
+    if (score < 1 || score > 100) {
+      throw new Error("Target score must be between 1 and 100");
+    }
+    this.updateSettings({ targetScore: score });
+  }
+
+  /**
+   * Set the round time in seconds (host only)
+   */
+  setRoundTime(seconds: number): void {
+    if (seconds < 10 || seconds > 600) {
+      throw new Error("Round time must be between 10 and 600 seconds");
+    }
+    this.updateSettings({ roundTime: seconds });
+  }
+
+  /**
+   * Set the maximum number of players (host only)
+   */
+  setMaxPlayers(maxPlayers: number): void {
+    if (maxPlayers < 2 || maxPlayers > 20) {
+      throw new Error("Max players must be between 2 and 20");
+    }
+    this.updateSettings({ maxPlayers });
+  }
+
+  /**
    * Generic method to send messages to the room
    */
   private sendMessage(type: string, data: unknown): void {
