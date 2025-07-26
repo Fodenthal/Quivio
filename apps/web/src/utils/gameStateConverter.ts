@@ -10,7 +10,7 @@ export interface MapSchemaLike {
   [key: string]: unknown;
 }
 
-// Type for the raw Colyseus room state as received by the client
+// Type for the raw Colyseus room state as received by da client
 export interface RawRoomState {
   targetScore?: number;
   roundTime?: number;
