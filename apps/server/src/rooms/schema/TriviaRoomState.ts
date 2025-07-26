@@ -73,8 +73,7 @@ export class TriviaRoomState extends Schema {
   @type(["string"]) topics: string[] = [];
   @type("string") currentTopic: string = "";
   @type("number") currentTopicIndex: number = 0;
-  @type("number") minDifficulty: number = 1; // 1-5 scale
-  @type("number") maxDifficulty: number = 5; // 1-5 scale
+  @type("number") currentDifficulty: number = 3; // 1-5 scale
 
   // Players
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();

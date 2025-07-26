@@ -11,8 +11,7 @@ export interface RoomMetadata {
   roomId: string;
   roomName: string;
   topics: string[];
-  minDifficulty: number;
-  maxDifficulty: number;
+  difficulty: number;
   playerCount: number;
   maxPlayers: number;
   isPrivate: boolean;
@@ -67,8 +66,7 @@ export class GamePinRegistry {
         roomId,
         roomName: metadata.roomName || "Trivia Room",
         topics: metadata.topics || [],
-        minDifficulty: metadata.minDifficulty || 1,
-        maxDifficulty: metadata.maxDifficulty || 5,
+        difficulty: metadata.difficulty || 5,
         playerCount: metadata.playerCount || 0,
         maxPlayers: metadata.maxPlayers || 8,
         isPrivate: metadata.isPrivate || false,

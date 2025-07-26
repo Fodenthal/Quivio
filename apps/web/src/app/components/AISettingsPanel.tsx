@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
-import { DifficultyRangeSlider } from "./DifficultyRangeSlider";
+import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 
 interface AISettingsPanelProps {
   gameState: GameState;
   isReadOnly?: boolean;
   onSetTopics?: (topics: string[]) => void;
-  onSetDifficulty?: (minDifficulty: number, maxDifficulty: number) => void;
+  onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
   onSetRoundTime?: (seconds: number) => void;
   onSetMaxPlayers?: (maxPlayers: number) => void;
@@ -27,10 +27,9 @@ export function AISettingsPanel({
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
   
-  // Use difficulty range system (1-5)
-  const minDifficulty = Math.min(5, Math.max(1, gameState.minDifficulty || 1));
-  const maxDifficulty = Math.min(5, Math.max(1, gameState.maxDifficulty || 5));
-  const [difficultyRange, setDifficultyRange] = useState({ min: minDifficulty, max: maxDifficulty });
+  // Use 5-tier difficulty system directly (1-5)
+  const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
+  const [difficulty, setDifficulty] = useState(currentDifficulty);
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
   const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
   const [maxPlayers, setMaxPlayers] = useState(gameState.maxPlayers || 8);
@@ -41,10 +40,9 @@ export function AISettingsPanel({
   }, [gameState.topics, gameState.currentTopic]);
 
   useEffect(() => {
-    const newMinDifficulty = Math.min(5, Math.max(1, gameState.minDifficulty || 1));
-    const newMaxDifficulty = Math.min(5, Math.max(1, gameState.maxDifficulty || 5));
-    setDifficultyRange({ min: newMinDifficulty, max: newMaxDifficulty });
-  }, [gameState.minDifficulty, gameState.maxDifficulty]);
+    const newDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty));
+    setDifficulty(newDifficulty);
+  }, [gameState.currentDifficulty]);
 
   useEffect(() => {
     setTargetScore(gameState.targetScore || 10);
@@ -95,11 +93,11 @@ export function AISettingsPanel({
     }
   };
 
-  const handleDifficultyChange = (min: number, max: number) => {
-    setDifficultyRange({ min, max });
+  const handleDifficultyChange = (value: number) => {
+    setDifficulty(value);
     
-    if (onSetDifficulty && (min !== gameState.minDifficulty || max !== gameState.maxDifficulty)) {
-      onSetDifficulty(min, max);
+    if (onSetDifficulty && value !== gameState.currentDifficulty) {
+      onSetDifficulty(value);
     }
   };
 
@@ -196,11 +194,10 @@ export function AISettingsPanel({
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
         <div className="space-y-2">
-                  <DifficultyRangeSlider
-          minValue={difficultyRange.min}
-          maxValue={difficultyRange.max}
-          onChange={handleDifficultyChange}
-          getDifficultyLabel={getDifficultyLabel}
+          <DifficultySlider
+            value={difficulty}
+            onChange={handleDifficultyChange}
+            getDifficultyLabel={getDifficultyLabel}
             disabled={isReadOnly}
           />
           {isReadOnly && (
