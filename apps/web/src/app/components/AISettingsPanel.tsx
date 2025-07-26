@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 
 interface AISettingsPanelProps {
   gameState: GameState;
+  isReadOnly?: boolean;
   onSetTopics?: (topics: string[]) => void;
   onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
@@ -16,6 +17,7 @@ interface AISettingsPanelProps {
 
 export function AISettingsPanel({ 
   gameState, 
+  isReadOnly = false,
   onSetTopics,
   onSetDifficulty,
   onSetTargetScore,
@@ -31,6 +33,28 @@ export function AISettingsPanel({
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
   const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
   const [maxPlayers, setMaxPlayers] = useState(gameState.maxPlayers || 8);
+
+  // Sync internal state with gameState changes for real-time updates
+  useEffect(() => {
+    setTopics(gameState.topics || [gameState.currentTopic || ""]);
+  }, [gameState.topics, gameState.currentTopic]);
+
+  useEffect(() => {
+    const newDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty));
+    setDifficulty(newDifficulty);
+  }, [gameState.currentDifficulty]);
+
+  useEffect(() => {
+    setTargetScore(gameState.targetScore || 10);
+  }, [gameState.targetScore]);
+
+  useEffect(() => {
+    setRoundTime(Math.round((gameState.roundTime || 60000) / 1000));
+  }, [gameState.roundTime]);
+
+  useEffect(() => {
+    setMaxPlayers(gameState.maxPlayers || 8);
+  }, [gameState.maxPlayers]);
 
   // Memoize valid topics calculation for performance
   const validTopics = useMemo(() => 
@@ -115,14 +139,16 @@ export function AISettingsPanel({
           {topics.map((topic, index) => (
             <span key={index} className="flex items-center bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium">
               {topic}
-              <button
-                type="button"
-                onClick={() => handleRemoveTopic(index)}
-                className="ml-2 text-primary hover:text-red-500 focus:outline-none"
-                aria-label={`Remove topic ${topic}`}
-              >
-                ×
-              </button>
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTopic(index)}
+                  className="ml-2 text-primary hover:text-red-500 focus:outline-none"
+                  aria-label={`Remove topic ${topic}`}
+                >
+                  ×
+                </button>
+              )}
             </span>
           ))}
         </div>
@@ -133,21 +159,34 @@ export function AISettingsPanel({
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={handleNewTopicKeyDown}
             placeholder="Add a topic..."
-            className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={isReadOnly}
+            className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
+              isReadOnly 
+                ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                : "bg-white/10 border-white/20 text-text-main"
+            }`}
           />
-          <button
-            type="button"
-            onClick={handleAddTopicChip}
-            className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            + Add
-          </button>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleAddTopicChip}
+              className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              + Add
+            </button>
+          )}
         </div>
         <div className="text-xs text-text-secondary mt-1">
-          <span className="text-text-secondary/70">
-            Topics update automatically as you type.
-            {validTopics.length > 1 && " Multiple topics will rotate during the game."}
-          </span>
+          {isReadOnly ? (
+            <span className="text-text-secondary/70 italic">
+              The host is configuring these topics.
+            </span>
+          ) : (
+            <span className="text-text-secondary/70">
+              Topics update automatically as you type.
+              {validTopics.length > 1 && " Multiple topics will rotate during the game."}
+            </span>
+          )}
         </div>
       </section>
       <div className="my-6 border-t border-white/10" />
@@ -159,7 +198,13 @@ export function AISettingsPanel({
             value={difficulty}
             onChange={handleDifficultyChange}
             getDifficultyLabel={getDifficultyLabel}
+            disabled={isReadOnly}
           />
+          {isReadOnly && (
+            <div className="text-xs text-text-secondary/70 italic mt-1">
+              Host is setting the difficulty level.
+            </div>
+          )}
         </div>
       </section>
       <div className="my-6 border-t border-white/10" />
@@ -175,7 +220,12 @@ export function AISettingsPanel({
               max={100}
               value={targetScore}
               onChange={handleTargetScoreChange}
-              className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
             />
           </div>
           <div className="flex flex-col">
@@ -186,7 +236,12 @@ export function AISettingsPanel({
               max={600}
               value={roundTime}
               onChange={handleRoundTimeChange}
-              className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
             />
           </div>
           <div className="flex flex-col">
@@ -197,10 +252,20 @@ export function AISettingsPanel({
               max={20}
               value={maxPlayers}
               onChange={handleMaxPlayersChange}
-              className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
             />
           </div>
         </div>
+        {isReadOnly && (
+          <div className="text-xs text-text-secondary/70 italic mt-2">
+            Host is configuring the game settings.
+          </div>
+        )}
       </section>
     </div>
   );

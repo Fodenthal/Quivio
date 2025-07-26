@@ -5,15 +5,15 @@ import { GameState, PlayerData, GameStatus } from "@shared/index";
 
 // Mock the AISettingsPanel component
 vi.mock("../../app/components/AISettingsPanel", () => ({
-  AISettingsPanel: vi.fn(({ onSetTopic, onSetTopics, onSetDifficulty, onSetTargetScore, onSetRoundTime, onSetMaxPlayers }) => (
+  AISettingsPanel: vi.fn(({ isReadOnly, onSetTopic, onSetTopics, onSetDifficulty, onSetTargetScore, onSetRoundTime, onSetMaxPlayers }) => (
     <div data-testid="ai-settings-panel">
       <div>AI Settings Panel</div>
-      <button onClick={() => onSetTopic && onSetTopic("Test Topic")}>Set Topic</button>
-      <button onClick={() => onSetTopics && onSetTopics(["Topic 1", "Topic 2"])}>Set Topics</button>
-      <button onClick={() => onSetDifficulty && onSetDifficulty(3)}>Set Difficulty</button>
-      <button onClick={() => onSetTargetScore && onSetTargetScore(15)}>Set Target Score</button>
-      <button onClick={() => onSetRoundTime && onSetRoundTime(45)}>Set Round Time</button>
-      <button onClick={() => onSetMaxPlayers && onSetMaxPlayers(6)}>Set Max Players</button>
+      {!isReadOnly && <button onClick={() => onSetTopic && onSetTopic("Test Topic")}>Set Topic</button>}
+      {!isReadOnly && <button onClick={() => onSetTopics && onSetTopics(["Topic 1", "Topic 2"])}>Set Topics</button>}
+      {!isReadOnly && <button onClick={() => onSetDifficulty && onSetDifficulty(3)}>Set Difficulty</button>}
+      {!isReadOnly && <button onClick={() => onSetTargetScore && onSetTargetScore(15)}>Set Target Score</button>}
+      {!isReadOnly && <button onClick={() => onSetRoundTime && onSetRoundTime(45)}>Set Round Time</button>}
+      {!isReadOnly && <button onClick={() => onSetMaxPlayers && onSetMaxPlayers(6)}>Set Max Players</button>}
     </div>
   ))
 }));

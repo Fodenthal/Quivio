@@ -243,31 +243,28 @@ export const GameView = memo(function GameView({
 
           return (
             <div className="flex flex-col h-full">
-              
-
-              
-
-              {/* Host View */}
-              {isHost && (
-                <div className="flex flex-col flex-grow space-y-6">
-                  <div className="relative flex-grow">
-                    {/* Game Pin Display in top-right corner of this container */}
-                    {gameState.gamePin && (
-                      <div className="absolute top-0 right-0">
-                        <GamePins gamePin={gameState.gamePin} />
-                      </div>
-                    )}
-                    <AISettingsPanel 
-                      gameState={gameState}
-                      onSetTopics={onSetTopics}
-                      onSetDifficulty={onSetDifficulty}
-                      onSetTargetScore={onSetTargetScore}
-                      onSetRoundTime={onSetRoundTime}
-                      onSetMaxPlayers={onSetMaxPlayers}
-                    />
-                  </div>
-                  
-                  {/* Start Game Button and Status Messages */}
+              {/* Unified View for All Players */}
+              <div className="flex flex-col flex-grow space-y-6">
+                <div className="relative flex-grow">
+                  {/* Game Pin Display in top-right corner of this container */}
+                  {gameState.gamePin && (
+                    <div className="absolute top-0 right-0">
+                      <GamePins gamePin={gameState.gamePin} />
+                    </div>
+                  )}
+                  <AISettingsPanel 
+                    gameState={gameState}
+                    isReadOnly={!isHost}
+                    onSetTopics={isHost ? onSetTopics : undefined}
+                    onSetDifficulty={isHost ? onSetDifficulty : undefined}
+                    onSetTargetScore={isHost ? onSetTargetScore : undefined}
+                    onSetRoundTime={isHost ? onSetRoundTime : undefined}
+                    onSetMaxPlayers={isHost ? onSetMaxPlayers : undefined}
+                  />
+                </div>
+                
+                {/* Start Game Button and Status Messages - Host Only */}
+                {isHost && (
                   <div className="mt-auto pt-6 border-t border-white/20">
                     <button
                       onClick={onStartGame}
@@ -293,34 +290,8 @@ export const GameView = memo(function GameView({
                       )}
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Non-Host View */}
-              {!isHost && (
-                <div className="flex flex-col h-full items-center justify-center text-center">
-                  <div className="bg-white/10 rounded-lg p-8 border border-white/20 max-w-md w-full">
-                    <h3 className="text-xl font-semibold text-text-main mb-6">Game Settings</h3>
-                    <div className="space-y-4 text-text-secondary text-left">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-text-main">Topics:</span> 
-                        <span>{gameState.topics?.join(", ") || "Not set"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-text-main">Difficulty:</span> 
-                        <span>{gameState.currentDifficulty}/5</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-text-main">Target Score:</span> 
-                        <span>{gameState.targetScore}</span>
-                      </div>
-                    </div>
-                    <p className="text-text-secondary text-sm mt-8">
-                      The host is configuring the game. The fun will begin shortly!
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })()}
