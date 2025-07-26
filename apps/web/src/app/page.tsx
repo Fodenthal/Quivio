@@ -18,6 +18,9 @@ export default function Home() {
     setTopic,
     setTopics,
     setDifficulty,
+    setTargetScore,
+    setRoundTime,
+    setMaxPlayers,
     sendChatMessage
   } = useGameConnection();
 
@@ -51,6 +54,9 @@ export default function Home() {
       onSetTopic={setTopic}
       onSetTopics={setTopics}
       onSetDifficulty={setDifficulty}
+      onSetTargetScore={setTargetScore}
+      onSetRoundTime={setRoundTime}
+      onSetMaxPlayers={setMaxPlayers}
       onSendChatMessage={sendChatMessage}
     />
   );

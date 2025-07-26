@@ -494,6 +494,11 @@ export const GameView = memo(function GameView({
       return nextGuess && prevGuess.guess === nextGuess.guess && prevGuess.timestamp === nextGuess.timestamp;
     }) &&
     prevProps.gameState.chatMessages.size === nextProps.gameState.chatMessages.size &&
+    // Check for game settings changes that should trigger re-renders
+    prevProps.gameState.targetScore === nextProps.gameState.targetScore &&
+    prevProps.gameState.roundTime === nextProps.gameState.roundTime &&
+    prevProps.gameState.maxPlayers === nextProps.gameState.maxPlayers &&
+    prevProps.gameState.currentDifficulty === nextProps.gameState.currentDifficulty &&
     prevProps.onSubmitGuess === nextProps.onSubmitGuess &&
     prevProps.onSendChatMessage === nextProps.onSendChatMessage &&
     // Lobby action comparisons

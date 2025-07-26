@@ -338,7 +338,8 @@ export class GameClient {
     if (seconds < 10 || seconds > 600) {
       throw new Error("Round time must be between 10 and 600 seconds");
     }
-    this.updateSettings({ roundTime: seconds });
+    // Convert seconds to milliseconds for server
+    this.updateSettings({ roundTime: seconds * 1000 });
   }
 
   /**
