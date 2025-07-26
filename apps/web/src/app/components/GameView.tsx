@@ -7,6 +7,7 @@ import { WinnerScreen } from "./WinnerScreen";
 import { Chat } from "./Chat";
 import { GamePins } from "./GamePins";
 import { AISettingsPanel } from "./AISettingsPanel";
+import { UserDisplayName } from "./UserDisplayName";
 
 interface GameViewProps {
   gameState: GameState;

@@ -10,7 +10,8 @@ exports.MSG = {
     JOIN_NEXT_GAME: "join_next_game",
     SET_TOPIC: "set_topic",
     SET_TOPICS: "set_topics",
-    SET_DIFFICULTY: "set_difficulty"
+    SET_DIFFICULTY: "set_difficulty",
+    UPDATE_PLAYER_NAME: "update_player_name"
 };
 var GameStatus;
 (function (GameStatus) {

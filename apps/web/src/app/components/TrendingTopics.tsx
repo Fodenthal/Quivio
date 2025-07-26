@@ -106,53 +106,49 @@ export const TrendingTopics = () => {
   }, []);
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full">
-      <h2 className="text-2xl font-bold text-text-main mb-4 text-center">
+    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-4 border border-white/20">
+      <h2 className="text-lg font-bold text-text-main mb-3 text-center">
         Trending Topics
       </h2>
       
-      <div className="h-[calc(100%-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1">
-        <div className="space-y-3 px-1 py-2">
-          {topics.map((topic, index) => {
-            const { color, arrow, changeColor } = getTrendDisplay(topic.trending);
-            
-            return (
-              <div
-                key={topic.id}
-                className="flex items-start gap-2 py-3 hover:bg-white/5 transition-all duration-200 cursor-pointer border-b border-white/10 last:border-b-0"
-              >
-                <div className="flex-shrink-0 w-6 text-right">
-                  <span className="text-text-secondary text-sm font-mono font-medium">
-                    {index + 1}.
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+        {topics.map((topic, index) => {
+          const { color, arrow, changeColor } = getTrendDisplay(topic.trending);
+          
+          return (
+            <div
+              key={topic.id}
+              className="bg-white/5 rounded-lg p-2 hover:bg-white/10 transition-all duration-200 cursor-pointer border border-white/10"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-text-secondary text-xs font-mono font-medium">
+                  #{index + 1}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className={`text-xs font-bold ${color}`}>
+                    {arrow}
                   </span>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <p className="text-text-main text-sm font-medium leading-relaxed mb-1">
-                    {topic.topic}
-                  </p>
-                  <p className="text-xs text-text-secondary opacity-75">
-                    {topic.category}
-                  </p>
-                </div>
-                
-                <div className="flex flex-col items-end text-right flex-shrink-0">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className={`text-sm font-bold ${color}`}>
-                      {arrow}
-                    </span>
-                    <span className={`text-xs font-medium ${changeColor}`}>
-                      {topic.change > 0 ? `+${topic.change}` : topic.change}%
-                    </span>
-                  </div>
-                  <span className="text-xs text-text-secondary">
-                    {topic.popularity.toLocaleString()} plays
+                  <span className={`text-xs font-medium ${changeColor}`}>
+                    {topic.change > 0 ? `+${topic.change}` : topic.change}%
                   </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              
+              <p className="text-text-main text-xs font-medium leading-tight mb-1 line-clamp-2">
+                {topic.topic}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-text-secondary">
+                  {topic.category}
+                </span>
+                <span className="text-xs text-text-secondary">
+                  {topic.popularity.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

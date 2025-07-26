@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { useDisplayName } from "../../contexts/DisplayNameContext";
+import { useGameConnection } from "../../hooks/useGameConnection";
 
 /**
  * Global user display name component for Quivio
@@ -9,6 +10,7 @@ import { useDisplayName } from "../../contexts/DisplayNameContext";
  */
 export const UserDisplayName: React.FC = () => {
   const { displayName, setDisplayName } = useDisplayName();
+  const { updatePlayerName, connectionStatus } = useGameConnection();
   const [input, setInput] = useState<string>(displayName);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -28,6 +30,13 @@ export const UserDisplayName: React.FC = () => {
 
   const commitName = (val: string) => {
     setDisplayName(val);
+    
+    // If connected to a game, update the player name in the game
+    if (connectionStatus === "connected") {
+      updatePlayerName(val).catch(error => {
+        console.error("Failed to update player name in game:", error);
+      });
+    }
   };
 
   const handleBlur = () => {

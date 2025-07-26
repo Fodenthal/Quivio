@@ -7,7 +7,8 @@ export const MSG = {
   JOIN_NEXT_GAME: "join_next_game",
   SET_TOPIC: "set_topic",
   SET_TOPICS: "set_topics",
-  SET_DIFFICULTY: "set_difficulty"
+  SET_DIFFICULTY: "set_difficulty",
+  UPDATE_PLAYER_NAME: "update_player_name"
 } as const;
 
 export enum GameStatus {
@@ -68,7 +69,12 @@ export interface TopicsMessage {
 }
 
 export interface DifficultyMessage {
-  difficulty: number; // 1-5 scale
+  minDifficulty: number; // 1-5 scale
+  maxDifficulty: number; // 1-5 scale
+}
+
+export interface UpdatePlayerNameMessage {
+  playerName: string;
 }
 
 export interface RoomSettings {
@@ -110,7 +116,8 @@ export interface GameState {
   topics: string[];
   currentTopic: string;
   currentTopicIndex: number;
-  currentDifficulty: number; // 1-5 scale
+  minDifficulty: number; // 1-5 scale
+  maxDifficulty: number; // 1-5 scale
 
   // Players
   players: Map<string, PlayerData>;

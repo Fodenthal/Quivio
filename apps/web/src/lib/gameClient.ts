@@ -312,13 +312,13 @@ export class GameClient {
   }
 
   /**
-   * Set the difficulty for AI question generation (host only)
+   * Set the difficulty range for AI question generation (host only)
    */
-  setDifficulty(difficulty: number): void {
-    if (difficulty < 1 || difficulty > 5) {
-      throw new Error("Difficulty must be between 1 and 5");
+  setDifficulty(minDifficulty: number, maxDifficulty: number): void {
+    if (minDifficulty < 1 || minDifficulty > 5 || maxDifficulty < 1 || maxDifficulty > 5 || minDifficulty > maxDifficulty) {
+      throw new Error("Difficulty range must be between 1 and 5, with min <= max");
     }
-    this.sendMessage(MSG.SET_DIFFICULTY, { difficulty });
+    this.sendMessage(MSG.SET_DIFFICULTY, { minDifficulty, maxDifficulty });
   }
 
   /**
@@ -350,6 +350,13 @@ export class GameClient {
       throw new Error("Max players must be between 2 and 20");
     }
     this.updateSettings({ maxPlayers });
+  }
+
+  updatePlayerName(playerName: string): void {
+    if (!playerName || !playerName.trim()) {
+      throw new Error("Player name cannot be empty");
+    }
+    this.sendMessage(MSG.UPDATE_PLAYER_NAME, { playerName: playerName.trim() });
   }
 
   /**

@@ -3,6 +3,7 @@
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameView } from "./GameView";
 import { GameState } from "@shared/index";
+import { UserDisplayName } from "./UserDisplayName";
 
 export interface GameLayoutProps {
   connectionStatus: ConnectionStatus;
@@ -108,6 +109,11 @@ export function GameLayout({
             <h1 className="text-3xl font-bold text-primary">Quivio</h1>
             
             <div className="flex items-center space-x-4">
+              {/* User Display Name - shown when connected */}
+              {connectionStatus === ConnectionStatus.CONNECTED && (
+                <UserDisplayName />
+              )}
+              
               {/* Leave Game Button - shown when connected */}
               {connectionStatus === ConnectionStatus.CONNECTED && (
                 <button

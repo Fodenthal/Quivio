@@ -69,35 +69,38 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col gap-8">
-          {/* Main Row: Create Room, Join Room, Active Rooms */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left: Create Room */}
-            <div className="flex-1 w-full min-h-[500px] flex">
-              <CreateRoomPanel
-                roomName={roomName}
-                onRoomNameChange={handleRoomNameChange}
-                isPrivate={isPrivate}
-                onPrivateToggle={setIsPrivate}
-                onCreateRoom={handleCreateRoom}
-                isCreating={isCreating}
-                error={createError}
-                displayName={displayName}
-              />
-            </div>
-            {/* Middle: Join Room */}
-            <div className="flex-1 w-full min-h-[500px] flex">
-              <JoinRoomPanel
-                displayName={displayName}
-                gamePin={gamePin}
-                onGamePinChange={handleGamePinChange}
-                onJoinRoom={handleJoinRoom}
-                isJoining={isJoining}
-                error={joinError}
-              />
-            </div>
-            {/* Right: Active Rooms */}
-            <div className="flex-1 w-full min-h-[500px] flex">
+          {/* Main Row: Active Rooms (left) and Create/Join Room panels (right) */}
+          <div className="flex flex-col lg:flex-row h-[600px] gap-4">
+            {/* Left: Active Rooms - takes remaining space */}
+            <div className="flex-1 h-full">
               <ActiveRoomsList onJoinRoom={onJoinRoom} />
+            </div>
+            {/* Right: Create and Join Room panels stacked - fixed width */}
+            <div className="w-80 h-full flex flex-col gap-4">
+              {/* Create Room Panel */}
+              <div className="flex-1">
+                <CreateRoomPanel
+                  roomName={roomName}
+                  onRoomNameChange={handleRoomNameChange}
+                  isPrivate={isPrivate}
+                  onPrivateToggle={setIsPrivate}
+                  onCreateRoom={handleCreateRoom}
+                  isCreating={isCreating}
+                  error={createError}
+                  displayName={displayName}
+                />
+              </div>
+              {/* Join Room Panel */}
+              <div className="flex-1">
+                <JoinRoomPanel
+                  displayName={displayName}
+                  gamePin={gamePin}
+                  onGamePinChange={handleGamePinChange}
+                  onJoinRoom={handleJoinRoom}
+                  isJoining={isJoining}
+                  error={joinError}
+                />
+              </div>
             </div>
           </div>
           {/* Bottom: Trending Topics, full width */}

@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, UpdatePlayerNameMessage, GameStatus } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { QuestionDatabase } from "../services/QuestionDatabase";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -12,7 +12,8 @@ export interface RoomOptions {
   isPrivate?: boolean;
   roomName?: string;
   topics?: string[];
-  difficulty?: number;
+  minDifficulty?: number;
+  maxDifficulty?: number;
 }
 
 interface PlayerReadyMessage {
@@ -147,7 +148,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.topics = options.topics || [];
     this.state.currentTopic = this.state.topics[0] || "";
     this.state.currentTopicIndex = 0;
-    this.state.currentDifficulty = options.difficulty || 3;
+    this.state.minDifficulty = Math.max(1, Math.min(5, options.minDifficulty || 1));
+    this.state.maxDifficulty = Math.max(1, Math.min(5, options.maxDifficulty || 5));
+    // Ensure min <= max
+    if (this.state.minDifficulty > this.state.maxDifficulty) {
+      this.state.minDifficulty = this.state.maxDifficulty;
+    }
     
     // Generate and assign game pin with collision handling
     this.state.gamePin = this.generateUniqueGamePin();
@@ -158,7 +164,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     registry.registerRoom(this.state.gamePin, this.roomId, {
       roomName: this.state.roomName,
       topics: this.state.topics,
-      difficulty: this.state.currentDifficulty,
+      minDifficulty: this.state.minDifficulty,
+      maxDifficulty: this.state.maxDifficulty,
       playerCount: 0,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
@@ -252,7 +259,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     registry.updateRoomMetadata(this.roomId, {
       roomName: this.state.roomName,
       topics: this.state.topics,
-      difficulty: this.state.currentDifficulty,
+      minDifficulty: this.state.minDifficulty,
+      maxDifficulty: this.state.maxDifficulty,
       playerCount: this.state.players.size,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
@@ -370,8 +378,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle difficulty setting (host only)
     this.onMessage(MSG.SET_DIFFICULTY, (client, message: DifficultyMessage) => {
-      if (client.sessionId === this.state.hostId && typeof message?.difficulty === "number") {
-        this.setDifficulty(message.difficulty);
+      if (client.sessionId === this.state.hostId && typeof message?.minDifficulty === "number" && typeof message?.maxDifficulty === "number") {
+        this.setDifficulty(message.minDifficulty, message.maxDifficulty);
       }
     });
 
@@ -381,6 +389,21 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       if (this.state.gameStatus === GameStatus.GAME_ENDED && this.state.restartCountdown > 0) {
         this.state.addParticipatingPlayer(client.sessionId);
         console.log(`🎮 Player ${client.sessionId} joined next game (${this.state.getParticipatingPlayerCount()} total)`);
+      }
+    });
+
+    // Handle player name update
+    this.onMessage(MSG.UPDATE_PLAYER_NAME, (client, message: UpdatePlayerNameMessage) => {
+      if (typeof message?.playerName === "string" && message.playerName.trim()) {
+        const player = this.state.players.get(client.sessionId);
+        if (player) {
+          const newName = message.playerName.trim().slice(0, 16); // Limit to 16 characters
+          player.name = newName;
+          console.log(`🎮 Player ${client.sessionId} updated name to: ${newName}`);
+          
+          // Add a system message to chat about the name change
+          this.state.addSystemMessage(`${player.name} updated their display name`);
+        }
       }
     });
   }
@@ -491,7 +514,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (!topic) {
       throw new Error("No topic set. Please add at least one topic before starting the game.");
     }
-    const difficulty = this.state.currentDifficulty || 3;
+    const difficulty = this.getRandomDifficulty();
 
     console.log(`🔄 Pre-filling ${this.QUESTION_BUFFER_SIZE} questions for buffer...`);
     
@@ -542,7 +565,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         throw new Error("No topics set. Please add at least one topic before starting the game.");
       }
       const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-      const difficulty = this.state.currentDifficulty || 3;
+      const difficulty = this.getRandomDifficulty();
       
       // First, try to get questions from database
       const dbQuestions = this.questionDatabase.getQuestions(topic, difficulty, 1);
@@ -646,7 +669,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       throw new Error("No topics set. Please add at least one topic before starting the game.");
     }
     const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-    const difficulty = this.state.currentDifficulty || 3;
+    const difficulty = this.getRandomDifficulty();
     
     console.log("⚠️ Question buffer empty, checking database...");
     
@@ -1237,12 +1260,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   /**
-   * Set the difficulty level for AI question generation (host only)
+   * Get a random difficulty within the current range
    */
-  private setDifficulty(difficulty: number): void {
-    if (difficulty >= 1 && difficulty <= 5) {
-      this.state.currentDifficulty = difficulty;
-      console.log(`📊 Difficulty set to: ${this.state.currentDifficulty}/5`);
+  private getRandomDifficulty(): number {
+    return Math.floor(Math.random() * (this.state.maxDifficulty - this.state.minDifficulty + 1)) + this.state.minDifficulty;
+  }
+
+  /**
+   * Set the difficulty range for AI question generation (host only)
+   */
+  private setDifficulty(minDifficulty: number, maxDifficulty: number): void {
+    if (minDifficulty >= 1 && minDifficulty <= 5 && maxDifficulty >= 1 && maxDifficulty <= 5 && minDifficulty <= maxDifficulty) {
+      this.state.minDifficulty = minDifficulty;
+      this.state.maxDifficulty = maxDifficulty;
+      console.log(`📊 Difficulty range set to: ${this.state.minDifficulty}-${this.state.maxDifficulty}/5`);
       
       // Clear question buffer since questions are for the old difficulty
       this.clearQuestionBuffer();

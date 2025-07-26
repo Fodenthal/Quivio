@@ -24,10 +24,11 @@ export interface UseGameConnectionReturn {
   joinNextGame: () => void;
   setTopic: (topic: string) => void;
   setTopics: (topics: string[]) => void;
-  setDifficulty: (difficulty: number) => void;
+  setDifficulty: (minDifficulty: number, maxDifficulty: number) => void;
   setTargetScore: (score: number) => void;
   setRoundTime: (seconds: number) => void;
   setMaxPlayers: (maxPlayers: number) => void;
+  updatePlayerName: (playerName: string) => Promise<void>;
   sendChatMessage: (content: string) => Promise<void>;
 }
 
@@ -190,9 +191,9 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [gameClient]);
 
-  const setDifficulty = useCallback((difficulty: number) => {
+  const setDifficulty = useCallback((minDifficulty: number, maxDifficulty: number) => {
     try {
-      gameClient.setDifficulty(difficulty);
+      gameClient.setDifficulty(minDifficulty, maxDifficulty);
     } catch (error) {
       console.error("Failed to set difficulty:", error);
       throw error;
@@ -222,6 +223,15 @@ export function useGameConnection(): UseGameConnectionReturn {
       gameClient.setMaxPlayers(maxPlayers);
     } catch (error) {
       console.error("Failed to set max players:", error);
+      throw error;
+    }
+  }, [gameClient]);
+
+  const updatePlayerName = useCallback(async (playerName: string) => {
+    try {
+      gameClient.updatePlayerName(playerName);
+    } catch (error) {
+      console.error("Failed to update player name:", error);
       throw error;
     }
   }, [gameClient]);
@@ -258,6 +268,7 @@ export function useGameConnection(): UseGameConnectionReturn {
     setTargetScore,
     setRoundTime,
     setMaxPlayers,
+    updatePlayerName,
     sendChatMessage,
   };
 }
