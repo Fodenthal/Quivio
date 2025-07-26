@@ -15,7 +15,6 @@ export default function Home() {
     leaveRoom,
     startGame,
     submitGuess,
-    setTopic,
     setTopics,
     setDifficulty,
     setTargetScore,
@@ -51,7 +50,6 @@ export default function Home() {
       onLeaveGame={leaveRoom}
       onStartGame={startGame}
       onSubmitGuess={submitGuess}
-      onSetTopic={setTopic}
       onSetTopics={setTopics}
       onSetDifficulty={setDifficulty}
       onSetTargetScore={setTargetScore}
