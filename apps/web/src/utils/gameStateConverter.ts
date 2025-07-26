@@ -1,6 +1,6 @@
 "use client";
 
-import { GameState, PlayerData } from "@shared/index";
+import { GameState, PlayerData, GameStatus } from "@shared/index";
 
 // Type for Colyseus MapSchema internal structure
 export interface MapSchemaLike {
@@ -18,8 +18,7 @@ export interface RawRoomState {
   isPrivate?: boolean;
   gamePin?: string;
   roomName?: string;
-  gameStarted?: boolean;
-  gameEnded?: boolean;
+  gameStatus?: string;
   gamePaused?: boolean;
   canStart?: boolean;
   currentRound?: number;
@@ -162,8 +161,7 @@ export function convertColyseusState(state: unknown): GameState | null {
     isPrivate: roomState.isPrivate || false,
     gamePin: roomState.gamePin || "",
     roomName: roomState.roomName || "Trivia Room",
-    gameStarted: roomState.gameStarted || false,
-    gameEnded: roomState.gameEnded || false,
+    gameStatus: (roomState.gameStatus as GameStatus) || GameStatus.WAITING,
     gamePaused: roomState.gamePaused || false,
     canStart: roomState.canStart || false,
     currentRound: roomState.currentRound || 0,

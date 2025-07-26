@@ -6,10 +6,13 @@ export const DifficultySlider: React.FC<{
   onChange: (value: number) => void;
   getDifficultyLabel: (diff: number) => string;
   className?: string;
-}> = ({ value, onChange, getDifficultyLabel, className = "" }) => {
+  disabled?: boolean;
+}> = ({ value, onChange, getDifficultyLabel, className = "", disabled = false }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseInt(e.target.value);
-    onChange(newValue);
+    if (!disabled) {
+      const newValue = parseInt(e.target.value);
+      onChange(newValue);
+    }
   };
 
   const getSliderBackground = (val: number) => {
@@ -105,7 +108,10 @@ export const DifficultySlider: React.FC<{
           max="5"
           value={value}
           onChange={handleChange}
-          className="difficulty-slider absolute inset-0 w-full h-2 bg-transparent rounded-lg"
+          disabled={disabled}
+          className={`difficulty-slider absolute inset-0 w-full h-2 bg-transparent rounded-lg ${
+            disabled ? 'cursor-not-allowed opacity-50' : ''
+          }`}
         />
       </div>
       

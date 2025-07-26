@@ -24,8 +24,7 @@ describe("gameStateConverter", () => {
         isPrivate: false,
         gamePin: "",
         roomName: "Trivia Room",
-        gameStarted: false,
-        gameEnded: false,
+        gameStatus: "waiting",
         gamePaused: false,
         canStart: false,
         currentRound: 0,
@@ -65,8 +64,7 @@ describe("gameStateConverter", () => {
         maxPlayers: 6,
         isPrivate: true,
         gamePin: "ABC12",
-        gameStarted: true,
-        gameEnded: false,
+        gameStatus: "in_progress",
         gamePaused: false,
         canStart: true,
         currentRound: 3,
@@ -99,8 +97,7 @@ describe("gameStateConverter", () => {
         maxPlayers: 6,
         isPrivate: true,
         gamePin: "ABC12",
-        gameStarted: true,
-        gameEnded: false,
+        gameStatus: "in_progress",
         gamePaused: false,
         canStart: true,
         currentRound: 3,
@@ -501,7 +498,7 @@ describe("gameStateConverter", () => {
       it("handles mixed valid and invalid data", () => {
         const rawState: RawRoomState = {
           targetScore: 20,
-          gameStarted: true,
+          gameStatus: "in_progress",
           // Invalid prompt
           currentPrompt: undefined,
           // Valid players
@@ -522,7 +519,7 @@ describe("gameStateConverter", () => {
         const result = convertColyseusState(rawState);
         
         expect(result?.targetScore).toBe(20);
-        expect(result?.gameStarted).toBe(true);
+        expect(result?.gameStatus).toBe("in_progress");
         expect(result?.players.size).toBe(1);
         // Should use default prompt values
         expect(result?.currentPrompt.id).toBe("");

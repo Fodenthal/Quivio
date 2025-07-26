@@ -5,6 +5,9 @@ import { ColyseusTestServer, boot } from "@colyseus/testing";
 import appConfig from "../src/app.config";
 import { TriviaRoomState } from "../src/rooms/schema/TriviaRoomState";
 
+// Import GameStatus
+import { GameStatus } from "@shared/index";
+
 // Helper function to wait for state changes
 const waitForState = (ms: number = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -31,7 +34,7 @@ describe("testing your Colyseus app", () => {
 
     // Test with trivia room's actual state structure
     assert.strictEqual(room.state.players.size, 1, "Should have one player");
-    assert.strictEqual(room.state.gameStarted, false, "Game should not be started initially");
+    assert.strictEqual(room.state.gameStatus, GameStatus.WAITING, "Game should not be started initially");
     assert.strictEqual(room.state.currentRound, 0, "Should be in round 0 initially");
   });
 });

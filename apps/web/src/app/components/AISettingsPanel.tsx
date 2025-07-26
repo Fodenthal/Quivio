@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 
 interface AISettingsPanelProps {
   gameState: GameState;
-  onSetTopic?: (topic: string) => void;
+  isReadOnly?: boolean;
   onSetTopics?: (topics: string[]) => void;
   onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
@@ -17,7 +17,7 @@ interface AISettingsPanelProps {
 
 export function AISettingsPanel({ 
   gameState, 
-  onSetTopic,
+  isReadOnly = false,
   onSetTopics,
   onSetDifficulty,
   onSetTargetScore,
@@ -25,6 +25,7 @@ export function AISettingsPanel({
   onSetMaxPlayers
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
+  const [newTopic, setNewTopic] = useState("");
   
   // Use 5-tier difficulty system directly (1-5)
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
@@ -32,6 +33,28 @@ export function AISettingsPanel({
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
   const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
   const [maxPlayers, setMaxPlayers] = useState(gameState.maxPlayers || 8);
+
+  // Sync internal state with gameState changes for real-time updates
+  useEffect(() => {
+    setTopics(gameState.topics || [gameState.currentTopic || ""]);
+  }, [gameState.topics, gameState.currentTopic]);
+
+  useEffect(() => {
+    const newDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty));
+    setDifficulty(newDifficulty);
+  }, [gameState.currentDifficulty]);
+
+  useEffect(() => {
+    setTargetScore(gameState.targetScore || 10);
+  }, [gameState.targetScore]);
+
+  useEffect(() => {
+    setRoundTime(Math.round((gameState.roundTime || 60000) / 1000));
+  }, [gameState.roundTime]);
+
+  useEffect(() => {
+    setMaxPlayers(gameState.maxPlayers || 8);
+  }, [gameState.maxPlayers]);
 
   // Memoize valid topics calculation for performance
   const validTopics = useMemo(() => 
@@ -49,31 +72,18 @@ export function AISettingsPanel({
   // Apply updates automatically with debounce
   useDebouncedEffect(handleAutoTopicUpdate, [validTopics], 500);
 
-  const handleTopicChange = (index: number, value: string) => {
-    const newTopics = [...topics];
-    newTopics[index] = value;
-    setTopics(newTopics);
-  };
-
-  const handleTopicApply = (index: number) => {
-    const topicToSet = topics[index]?.trim();
-    if (onSetTopic && topicToSet && topicToSet !== gameState.currentTopic) {
-      onSetTopic(topicToSet);
+  const handleAddTopicChip = () => {
+    const trimmed = newTopic.trim();
+    if (trimmed && !topics.includes(trimmed)) {
+      setTopics([...topics, trimmed]);
+      setNewTopic("");
     }
   };
 
-  const handleTopicKeyDown = (index: number, e: React.KeyboardEvent) => {
+  const handleNewTopicKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleTopicApply(index);
+      handleAddTopicChip();
     }
-  };
-
-  const handleTopicBlur = (index: number) => {
-    handleTopicApply(index);
-  };
-
-  const handleAddTopic = () => {
-    setTopics([...topics, ""]);
   };
 
   const handleRemoveTopic = (index: number) => {
@@ -120,95 +130,143 @@ export function AISettingsPanel({
   };
 
   return (
-    <div className="bg-white/10 rounded-lg p-4 border border-white/20 space-y-4">
-      <h4 className="text-md font-semibold text-text-main mb-2">AI Question Settings</h4>
-      {/* Topics Section */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-text-main">Game Topics</label>
-        <div className="space-y-2">
+    <div className="bg-white/10 rounded-2xl shadow-lg p-8 border border-white/20 max-w-xl w-full mx-auto space-y-8">
+      <h2 className="text-2xl font-bold text-text-main mb-4">AI Question Settings</h2>
+      {/* Game Topics Section */}
+      <section>
+        <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
+        <div className="flex flex-wrap gap-2 mb-2">
           {topics.map((topic, index) => (
-            <div key={index} className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={topic}
-                onChange={(e) => handleTopicChange(index, e.target.value)}
-                onKeyDown={(e) => handleTopicKeyDown(index, e)}
-                onBlur={() => handleTopicBlur(index)}
-                placeholder="e.g., Space Exploration, Ancient History..."
-                className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {topics.length > 1 && (
+            <span key={index} className="flex items-center bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium">
+              {topic}
+              {!isReadOnly && (
                 <button
+                  type="button"
                   onClick={() => handleRemoveTopic(index)}
-                  className="px-2 py-2 text-xs font-medium bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="ml-2 text-primary hover:text-red-500 focus:outline-none"
+                  aria-label={`Remove topic ${topic}`}
                 >
-                  −
+                  ×
                 </button>
               )}
-            </div>
+            </span>
           ))}
-          <button
-            onClick={handleAddTopic}
-            className="w-full px-3 py-2 text-sm font-medium bg-white/10 text-text-main border border-white/20 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-          >
-            + Add Another Topic
-          </button>
         </div>
-        <div className="text-xs text-text-secondary">
-          <span className="text-text-secondary/70">
-            Topics update automatically as you type.
-            {validTopics.length > 1 && " Multiple topics will rotate during the game."}
-          </span>
-        </div>
-      </div>
-      {/* Difficulty Section - now below topics */}
-      <div className="space-y-2 mt-4">
-        <label className="block text-sm font-medium text-text-main">Difficulty Level</label>
-        <DifficultySlider
-          value={difficulty}
-          onChange={handleDifficultyChange}
-          getDifficultyLabel={getDifficultyLabel}
-        />
-        <div className="text-xs text-text-secondary">
-          Level: <span className="font-bold text-text-main">{getDifficultyLabel(difficulty)}</span>
-        </div>
-      </div>
-      {/* Target Score, Round Time, Max Players - editable by host, now in a row */}
-      <div className="flex flex-row gap-4 mt-4">
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
+        <div className="flex gap-2 items-center">
           <input
-            type="number"
-            min={1}
-            max={100}
-            value={targetScore}
-            onChange={handleTargetScoreChange}
-            className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+            type="text"
+            value={newTopic}
+            onChange={e => setNewTopic(e.target.value)}
+            onKeyDown={handleNewTopicKeyDown}
+            placeholder="Add a topic..."
+            disabled={isReadOnly}
+            className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
+              isReadOnly 
+                ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                : "bg-white/10 border-white/20 text-text-main"
+            }`}
           />
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleAddTopicChip}
+              className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              + Add
+            </button>
+          )}
         </div>
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-text-main mb-1">Round Time (s)</label>
-          <input
-            type="number"
-            min={10}
-            max={600}
-            value={roundTime}
-            onChange={handleRoundTimeChange}
-            className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+        <div className="text-xs text-text-secondary mt-1">
+          {isReadOnly ? (
+            <span className="text-text-secondary/70 italic">
+              The host is configuring these topics.
+            </span>
+          ) : (
+            <span className="text-text-secondary/70">
+              Topics update automatically as you type.
+              {validTopics.length > 1 && " Multiple topics will rotate during the game."}
+            </span>
+          )}
+        </div>
+      </section>
+      <div className="my-6 border-t border-white/10" />
+      {/* Difficulty Section */}
+      <section>
+        <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
+        <div className="space-y-2">
+          <DifficultySlider
+            value={difficulty}
+            onChange={handleDifficultyChange}
+            getDifficultyLabel={getDifficultyLabel}
+            disabled={isReadOnly}
           />
+          {isReadOnly && (
+            <div className="text-xs text-text-secondary/70 italic mt-1">
+              Host is setting the difficulty level.
+            </div>
+          )}
         </div>
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-text-main mb-1">Max Players</label>
-          <input
-            type="number"
-            min={2}
-            max={20}
-            value={maxPlayers}
-            onChange={handleMaxPlayersChange}
-            className="w-28 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+      </section>
+      <div className="my-6 border-t border-white/10" />
+      {/* Game Settings Section */}
+      <section>
+        <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
+        <div className="flex flex-row gap-6 mt-2">
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={targetScore}
+              onChange={handleTargetScoreChange}
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-text-main mb-1">Round Time (s)</label>
+            <input
+              type="number"
+              min={10}
+              max={600}
+              value={roundTime}
+              onChange={handleRoundTimeChange}
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-text-main mb-1">Max Players</label>
+            <input
+              type="number"
+              min={2}
+              max={20}
+              value={maxPlayers}
+              onChange={handleMaxPlayersChange}
+              disabled={isReadOnly}
+              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                isReadOnly 
+                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-white/20 text-text-main"
+              }`}
+            />
+          </div>
         </div>
-      </div>
+        {isReadOnly && (
+          <div className="text-xs text-text-secondary/70 italic mt-2">
+            Host is configuring the game settings.
+          </div>
+        )}
+      </section>
     </div>
   );
 }

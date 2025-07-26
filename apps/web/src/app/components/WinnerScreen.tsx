@@ -5,17 +5,11 @@ import { PlayerData } from "@shared/index";
 interface WinnerScreenProps {
   winner: PlayerData;
   restartCountdown: number;
-  participatingPlayers: Map<string, boolean>;
-  currentPlayerId: string;
-  onJoinNextGame: () => void;
 }
 
 export function WinnerScreen({ 
   winner, 
-  restartCountdown, 
-  participatingPlayers, 
-  currentPlayerId, 
-  onJoinNextGame 
+  restartCountdown
 }: WinnerScreenProps) {
 
   const getWinnerAvatar = (player: PlayerData) => {
@@ -42,7 +36,7 @@ export function WinnerScreen({
     );
   };
 
-  const hasJoined = participatingPlayers.has(currentPlayerId);
+
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-8 space-y-8">
@@ -68,28 +62,12 @@ export function WinnerScreen({
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-text-main mb-1">
-              {restartCountdown}
-            </div>
-            <div className="text-sm text-text-secondary">
-              seconds until next game
-            </div>
+        <div className="text-center">
+          <div className="text-4xl font-bold text-text-main mb-1">
+            {restartCountdown}
           </div>
-
-          <div className="text-center">
-            <button
-              onClick={onJoinNextGame}
-              disabled={hasJoined}
-              className={`px-8 py-4 rounded-lg font-bold text-xl transition-all duration-300 w-full ${
-                hasJoined
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-primary hover:bg-opacity-90 text-white shadow-lg hover:shadow-xl'
-              }`}
-            >
-              {hasJoined ? 'Waiting for others...' : 'Join Next Game'}
-            </button>
+          <div className="text-sm text-text-secondary">
+            seconds until returning to lobby
           </div>
         </div>
       </div>

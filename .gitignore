@@ -112,3 +112,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# SQLite temporary files
+*.db-wal
+*.db-shm

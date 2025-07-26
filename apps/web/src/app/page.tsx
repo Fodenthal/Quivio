@@ -13,13 +13,13 @@ export default function Home() {
     joinRoom, 
     createRoom,
     leaveRoom,
-    sendPlayerReady,
     startGame,
     submitGuess,
-    joinNextGame,
-    setTopic,
     setTopics,
     setDifficulty,
+    setTargetScore,
+    setRoundTime,
+    setMaxPlayers,
     sendChatMessage
   } = useGameConnection();
 
@@ -48,13 +48,13 @@ export default function Home() {
       currentPlayerId={currentPlayerId}
       // Actions
       onLeaveGame={leaveRoom}
-      onPlayerReady={sendPlayerReady}
       onStartGame={startGame}
       onSubmitGuess={submitGuess}
-      onJoinNextGame={joinNextGame}
-      onSetTopic={setTopic}
       onSetTopics={setTopics}
       onSetDifficulty={setDifficulty}
+      onSetTargetScore={setTargetScore}
+      onSetRoundTime={setRoundTime}
+      onSetMaxPlayers={setMaxPlayers}
       onSendChatMessage={sendChatMessage}
     />
   );

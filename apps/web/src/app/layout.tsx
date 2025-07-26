@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { UserDisplayName } from "./components/UserDisplayName";
+import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -26,10 +26,9 @@ export default function RootLayout({
         ></script>
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
-        <div className="w-full flex justify-end items-center h-16 px-8">
-          <UserDisplayName />
-        </div>
-        {children}
+        <DisplayNameProvider>
+          {children}
+        </DisplayNameProvider>
         <footer className="w-full border-t mt-8 py-4 text-center text-sm text-gray-500 bg-white/80">
           <Link href="/about" className="hover:underline mx-2">About</Link>|
           <Link href="/privacy-policy" className="hover:underline mx-2">Privacy Policy</Link>|

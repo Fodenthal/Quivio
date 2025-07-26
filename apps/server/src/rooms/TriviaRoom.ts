@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { QuestionDatabase } from "../services/QuestionDatabase";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -46,7 +46,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
-  private readonly DEFAULT_TARGET_SCORE = 100;
+  private readonly DEFAULT_TARGET_SCORE = 10;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
   private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
@@ -162,7 +162,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       playerCount: 0,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
-      gameStarted: false,
+      gameStarted: false, // Keep for backwards compatibility with registry
       canStart: false
     });
     
@@ -194,12 +194,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
 
     // If we have enough players and game hasn't started, allow starting
-    if (this.state.players.size >= 2 && !this.state.gameStarted) {
+    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) {
       this.state.canStart = true;
     }
 
     // Resume paused game if we now have enough players
-    if (this.state.players.size >= 2 && this.state.gameStarted && this.state.gamePaused) {
+    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) {
       this.resumeGame();
     }
 
@@ -220,12 +220,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
     
     // If not enough players, pause game
-    if (this.state.players.size < 2 && this.state.gameStarted) {
+    if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) {
       this.pauseGame();
     }
     
     // Update can start status
-    this.state.canStart = this.state.players.size >= 2 && !this.state.gameStarted;
+    this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
     
     // Update room metadata in registry
     this.updateRoomMetadata();
@@ -256,7 +256,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       playerCount: this.state.players.size,
       maxPlayers: this.state.maxPlayers,
       isPrivate: this.state.isPrivate,
-      gameStarted: this.state.gameStarted,
+      gameStarted: this.state.gameStatus === GameStatus.IN_PROGRESS,
       canStart: this.state.canStart
     });
   }
@@ -316,21 +316,27 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle game start request
     this.onMessage(MSG.START_GAME, (client) => {
-      // ✅ Re-evaluate readiness on demand instead of relying on a stale flag
+      console.log(`🎮 START_GAME received from client ${client.sessionId}`);
+      
       if (client.sessionId !== this.state.hostId) {
+        console.log(`🎮 START_GAME rejected: ${client.sessionId} is not host (host is ${this.state.hostId})`);
         return;
       }
       
-      if (this.state.gameStarted) {
+      if (this.state.gameStatus === GameStatus.IN_PROGRESS) {
+        console.log(`🎮 START_GAME rejected: game already in progress`);
         return;
       }
 
-      // Only start if we have at least 2 ready players
-      const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
-      if (readyPlayers.length >= 2) {
+      // Check if we have minimum players (no ready system - presence = readiness)
+      const playerCount = this.state.players.size;
+      if (playerCount >= 2) {
+        console.log(`🎮 Starting game with ${playerCount} players`);
         this.startGame().catch(error => {
-          console.error("Failed to start game:", error);
+          console.error("🎮 Failed to start game:", error);
         });
+      } else {
+        console.log(`🎮 START_GAME rejected: only ${playerCount} players (need 2+)`);
       }
     });
 
@@ -372,7 +378,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Handle join next game (JKLM-style restart system)
     this.onMessage(MSG.JOIN_NEXT_GAME, (client) => {
       // Only allow joining if we're in the game ended state with countdown active
-      if (this.state.gameEnded && this.state.restartCountdown > 0) {
+      if (this.state.gameStatus === GameStatus.GAME_ENDED && this.state.restartCountdown > 0) {
         this.state.addParticipatingPlayer(client.sessionId);
         console.log(`🎮 Player ${client.sessionId} joined next game (${this.state.getParticipatingPlayerCount()} total)`);
       }
@@ -382,7 +388,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private startGameLoop() {
     // Game loop runs every 100ms for better performance vs 50ms
     this.gameLoopTimer = setInterval(() => {
-      if (this.state.gameStarted && !this.state.gamePaused) {
+      if (this.state.gameStatus === GameStatus.IN_PROGRESS && !this.state.gamePaused) {
         this.updateGameState();
       }
     }, this.GAME_LOOP_INTERVAL);
@@ -413,18 +419,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private checkGameStart() {
     const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
-    const canStart = readyPlayers.length >= 2 && !this.state.gameStarted;
+    const canStart = readyPlayers.length >= 2 && this.state.gameStatus === GameStatus.WAITING;
     this.state.canStart = canStart;
   }
 
   private async startGame() {
     console.log(`🎮 Starting game in room ${this.roomId}`);
     
-    this.state.gameStarted = true;
+    this.state.gameStatus = GameStatus.IN_PROGRESS;
     this.state.canStart = false;
     this.state.currentRound = 0;
     this.state.gamePaused = false;
-    this.state.gameEnded = false;
     this.state.winnerId = "";
     
     // Reset all player scores for new game
@@ -771,11 +776,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private handleGuess(playerId: string, guess: string) {
     if (
-      !this.state.gameStarted ||
-      this.state.roundEnded ||
+      !this.state.currentPrompt ||
+      !this.state.currentPrompt.text ||
+      this.state.gameStatus !== GameStatus.IN_PROGRESS ||
       this.state.gamePaused ||
-      typeof guess !== "string" ||
-      !guess.trim()
+      this.state.roundEnded
     ) {
       return;
     }
@@ -930,7 +935,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     } else {
       // Start next round after delay
       setTimeout(async () => {
-        if (this.state.gameStarted && !this.state.gameEnded) {
+        if (this.state.gameStatus === GameStatus.IN_PROGRESS) {
           await this.startNewRound();
         }
       }, 3000); // 3 second delay between rounds
@@ -947,9 +952,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private endGame(winnerId: string) {
-    this.state.gameEnded = true;
+    this.state.gameStatus = GameStatus.GAME_ENDED;
     this.state.winnerId = winnerId;
-    this.state.gameStarted = false;
     this.state.gamePaused = false;
     
     // Reset game state for next game
@@ -985,11 +989,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Update room metadata in registry
     this.updateRoomMetadata();
     
-    // JKLM-style restart system: Start 15-second countdown
+        // Auto-restart system: Start 10-second countdown
     this.state.startRestartCountdown();
     this.startRestartCountdown();
-    
-    console.log(`🏆 Game ended - Winner: ${winnerId} | Starting 15s restart countdown`);
+   
+    console.log(`🏆 Game ended - Winner: ${winnerId} | Starting 10s countdown to lobby`);
   }
 
   private startRestartCountdown() {
@@ -1016,16 +1020,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.restartTimer = undefined;
     }
 
-    const participatingCount = this.state.getParticipatingPlayerCount();
-    console.log(`⏰ Restart countdown complete - ${participatingCount} players want to play again`);
-
-    if (participatingCount >= 2) {
-      // Enough players to start a new game
-      this.restartGame();
-    } else {
-      // Not enough players - return to lobby
-      this.returnToLobby();
-    }
+    console.log(`⏰ Restart countdown complete - automatically returning to lobby`);
+    
+    // Always return to lobby for host to configure and start new game
+    this.returnToLobby();
   }
 
   private restartGame() {
@@ -1065,29 +1063,43 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private returnToLobby() {
-    console.log(`🏠 Returning to lobby - not enough players to restart`);
+    console.log(`🏠 Returning to lobby - keeping all players for new game`);
     
-    // Disconnect all players since not enough want to continue
-    // This provides a clean slate for new players to join
-    for (const [playerId, player] of this.state.players) {
-      console.log(`👋 Disconnecting player: ${player.name} (${playerId}) - insufficient players for restart`);
-      const client = this.clients.find(c => c.sessionId === playerId);
-      if (client) {
-        client.leave(1000, "Not enough players for next game"); // Graceful disconnect with reason
-      }
+    // Keep all players but reset their scores and ready states for new game
+    for (const player of this.state.players.values()) {
+      player.score = 0;
+      player.ready = false; // Reset ready state for lobby
     }
 
     // Clear restart system
     this.state.clearRestartSystem();
     
     // Reset game state to initial lobby state
-    this.state.gameEnded = false;
+    this.state.gameStatus = GameStatus.WAITING;
     this.state.winnerId = "";
-    this.state.gameStarted = false;
     this.state.gamePaused = false;
-    this.state.canStart = false;
+    this.state.canStart = this.state.players.size >= 2; // Can start if enough players
     this.state.currentRound = 0;
-    this.state.hostId = "";
+    
+    // Preserve existing host if they're still in the room, otherwise assign new host
+    if (this.state.hostId && !this.state.players.has(this.state.hostId)) {
+      // Current host is no longer in room, assign new host
+      if (this.state.players.size > 0) {
+        const newHostId = Array.from(this.state.players.keys())[0];
+        this.state.setHost(newHostId);
+        console.log(`🏠 Previous host left, assigned new host: ${newHostId}`);
+      } else {
+        this.state.hostId = "";
+        console.log(`🏠 No players remaining, cleared host`);
+      }
+    } else if (this.state.hostId) {
+      console.log(`🏠 Preserved existing host: ${this.state.hostId}`);
+    } else if (this.state.players.size > 0) {
+      // No host assigned but players exist, assign first player as host
+      const newHostId = Array.from(this.state.players.keys())[0];
+      this.state.setHost(newHostId);
+      console.log(`🏠 No host was assigned, set new host: ${newHostId}`);
+    }
   }
 
   private pauseGame() {
@@ -1101,7 +1113,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private resumeGame() {
-    if (!this.state.gamePaused || !this.state.gameStarted) {
+    if (!this.state.gamePaused || this.state.gameStatus !== GameStatus.IN_PROGRESS) {
       return;
     }
 
