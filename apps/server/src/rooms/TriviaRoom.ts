@@ -2,7 +2,7 @@ import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
 import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
-import { QuestionDatabase } from "../services/QuestionDatabase";
+import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
 
 export interface RoomOptions {
@@ -120,7 +120,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private currentRoundAnswer: string = "";
   private currentAcceptableAnswers: string[] = [];
   private geminiService: GeminiService;
-  private questionDatabase: QuestionDatabase;
+  private questionDatabase: any; // Using any for now since both implementations have the same interface
   private recentQuestions: string[] = []; // Track recent questions to avoid duplicates
 
   onCreate(options: RoomOptions = {}) {
@@ -135,7 +135,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.geminiService = new GeminiService(apiKey);
     
     // Initialize question database
-    this.questionDatabase = QuestionDatabase.getInstance();
+    this.questionDatabase = DatabaseFactory.getInstance();
     
     // Initialize room state
     this.state = new TriviaRoomState();
@@ -496,7 +496,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     console.log(`🔄 Pre-filling ${this.QUESTION_BUFFER_SIZE} questions for buffer...`);
     
     // First, try to fill buffer with cached questions from database
-    const dbQuestions = this.questionDatabase.getQuestions(topic, difficulty, this.QUESTION_BUFFER_SIZE);
+    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, this.QUESTION_BUFFER_SIZE);
     
     for (const cachedQuestion of dbQuestions) {
       if (this.questionBuffer.length >= this.QUESTION_BUFFER_SIZE) break;
@@ -521,7 +521,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     console.log(`✅ Question buffer initialized with ${this.questionBuffer.length} questions (${dbQuestions.length} from cache)`);
     
     // Log database stats
-    const stats = this.questionDatabase.getStats();
+    const stats = await this.questionDatabase.getStats();
     console.log(`📊 Database stats: ${stats.totalQuestions} total questions, ${stats.topicCount} topics, avg usage: ${stats.avgUsagePerQuestion}`);
   }
 
@@ -545,7 +545,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const difficulty = this.state.currentDifficulty || 3;
       
       // First, try to get questions from database
-      const dbQuestions = this.questionDatabase.getQuestions(topic, difficulty, 1);
+      const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 1);
       
       if (dbQuestions.length > 0) {
         // Use cached question from database
@@ -578,7 +578,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       
       // Store the new question in database for future use
-      this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
+      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
       
       // Add to buffer and track recent questions
       this.questionBuffer.push(generatedQuestion);
@@ -631,7 +631,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       console.log(`📤 Using buffered question: "${question.question}" (Remaining in buffer: ${this.questionBuffer.length})`);
       
       // Mark question as used in database
-      this.questionDatabase.markQuestionAsUsed(question.question);
+      await this.questionDatabase.markQuestionAsUsed(question.question);
       
       // Trigger background refill
       this.refillQuestionBuffer();
@@ -650,8 +650,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     console.log("⚠️ Question buffer empty, checking database...");
     
-    const dbQuestions = this.questionDatabase.getQuestions(topic, difficulty, 5);
-    const availableDbQuestions = dbQuestions.filter(q => !this.recentQuestions.includes(q.question));
+    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 5);
+    const availableDbQuestions = dbQuestions.filter((q: any) => !this.recentQuestions.includes(q.question));
     
     if (availableDbQuestions.length > 0) {
       const question = availableDbQuestions[0];
@@ -663,7 +663,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       }
       
       // Mark question as used in database
-      this.questionDatabase.markQuestionAsUsed(question.question);
+      await this.questionDatabase.markQuestionAsUsed(question.question);
       
       // Advance to next topic for next question
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
@@ -690,7 +690,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       
       // Store the new question in database for future use
-      this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
+      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
       
       // Track recent questions
       this.recentQuestions.push(generatedQuestion.question);

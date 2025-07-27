@@ -329,7 +329,7 @@ async function importQuestions(): Promise<void> {
   const db = QuestionDatabase.getInstance();
   
   // Get initial stats
-  const initialStats = db.getStats();
+  const initialStats = await db.getStats();
   console.log(`📊 Database stats before import: ${initialStats.totalQuestions} questions`);
 
   // Process files
@@ -382,11 +382,13 @@ async function importQuestions(): Promise<void> {
   printStats(stats, options);
 
   // Show final database stats
-  const finalStats = db.getStats();
+  const finalStats = await db.getStats();
   console.log(`📊 Database stats after import: ${finalStats.totalQuestions} questions`);
   
   if (!options.dryRun) {
-    const imported = finalStats.totalQuestions - initialStats.totalQuestions;
+    const initialQuestionCount = initialStats.totalQuestions;
+    const finalQuestionCount = finalStats.totalQuestions;
+    const imported = finalQuestionCount - initialQuestionCount;
     console.log(`📈 Net questions added: ${imported}`);
   }
 
