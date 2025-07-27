@@ -453,8 +453,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.currentRound++;
     this.state.roundStartTime = 0; // Don't start timer yet - wait for questions to load
     this.state.roundTimeRemaining = this.state.roundTime;
-    this.state.roundEnded = false;
-    this.state.correctAnswer = "";
     
     // Reset timer tracking for optimized updates
     this.lastTimerValue = this.state.roundTime;
@@ -466,8 +464,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Clear correct guess order for new round (JKLM-style scoring)
     this.state.correctGuessOrder = [];
     
-    // Load new prompt (now async) - this shows the ad placeholder to clients
+    // Load new prompt FIRST - this ensures new question is ready before clearing answer display
     await this.loadNewPrompt();
+    
+    // NOW clear the answer display state - no flash because new question is already loaded
+    this.state.roundEnded = false;
+    this.state.correctAnswer = "";
     
     // NOW start the timer after questions are ready and displayed
     this.state.roundStartTime = Date.now();
