@@ -235,7 +235,7 @@ async def get_context(request: ContextRequest, http_request: Request) -> Context
         if vector_store is None:
             raise HTTPException(
                 status_code=500,
-                detail="Vector store not initialized. Please check environment configuration."
+                detail="Vector store not initialized. Please set OPENAI_API_KEY, SUPABASE_URL, and SUPABASE_ANON_KEY environment variables."
             )
         
         # Get context using vector similarity search
@@ -265,7 +265,7 @@ async def get_context(request: ContextRequest, http_request: Request) -> Context
                 "category_processed": request.category,
                 "language_requested": request.language,
                 "max_length_requested": request.max_context_length,
-                "actual_length": len(placeholder_context)
+                "actual_length": len(context)
             }
         )
         
@@ -286,6 +286,10 @@ async def get_context(request: ContextRequest, http_request: Request) -> Context
         )
         logger.error(f"Validation error [ID: {request_id}]: {str(e)}")
         raise HTTPException(status_code=400, detail=error_response.dict())
+        
+    except HTTPException:
+        # Re-raise HTTPExceptions without wrapping them
+        raise
         
     except Exception as e:
         # Handle unexpected errors
