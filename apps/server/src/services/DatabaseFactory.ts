@@ -37,6 +37,8 @@ export class DatabaseFactory {
         console.log('🔧 Using SQLite database implementation');
         DatabaseFactory.instance = QuestionDatabase.getInstance();
       }
+    } else {
+      console.log('🔧 Reusing existing database instance');
     }
     return DatabaseFactory.instance;
   }

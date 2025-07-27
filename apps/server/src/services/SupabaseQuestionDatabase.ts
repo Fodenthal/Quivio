@@ -62,10 +62,10 @@ export class SupabaseQuestionDatabase {
           topic,
           difficulty,
           question: question.question,
-          correctAnswer: question.correctAnswer,
-          acceptableAnswers: acceptableAnswersJson,
+          correct_answer: question.correctAnswer,
+          acceptable_answers: acceptableAnswersJson,
           category: question.category,
-          usedCount: 0
+          used_count: 0
         })
         .select()
         .single();
@@ -99,7 +99,7 @@ export class SupabaseQuestionDatabase {
         .select('*')
         .eq('topic', topic)
         .eq('difficulty', difficulty)
-        .order('usedCount', { ascending: true })
+        .order('used_count', { ascending: true })
         .limit(limit);
 
       if (error) {
@@ -108,8 +108,8 @@ export class SupabaseQuestionDatabase {
 
       const questions: GeneratedQuestion[] = (data || []).map(row => ({
         question: row.question,
-        correctAnswer: row.correctAnswer,
-        acceptableAnswers: JSON.parse(row.acceptableAnswers),
+        correctAnswer: row.correct_answer,
+        acceptableAnswers: JSON.parse(row.acceptable_answers),
         category: row.category,
         difficulty: row.difficulty
       }));
@@ -133,13 +133,27 @@ export class SupabaseQuestionDatabase {
     if (!this.client) return;
     
     try {
-      const { error } = await this.client
+      // First get the current used_count
+      const { data: currentData, error: selectError } = await this.client
         .from('questions')
-        .update({ usedCount: this.client.rpc('increment_used_count') })
-        .eq('question', questionText);
+        .select('used_count')
+        .eq('question', questionText)
+        .single();
 
-      if (error) {
-        throw error;
+      if (selectError) {
+        throw selectError;
+      }
+
+      if (currentData) {
+        // Update with incremented value
+        const { error: updateError } = await this.client
+          .from('questions')
+          .update({ used_count: (currentData.used_count || 0) + 1 })
+          .eq('question', questionText);
+
+        if (updateError) {
+          throw updateError;
+        }
       }
 
     } catch (error) {
@@ -174,12 +188,12 @@ export class SupabaseQuestionDatabase {
       // Get average usage per question
       const { data: avgData, error: avgError } = await this.client
         .from('questions')
-        .select('usedCount');
+        .select('used_count');
 
       if (avgError) throw avgError;
 
       const avgUsagePerQuestion = avgData && avgData.length > 0 
-        ? avgData.reduce((sum, row) => sum + (row.usedCount || 0), 0) / avgData.length
+        ? avgData.reduce((sum, row) => sum + (row.used_count || 0), 0) / avgData.length
         : 0;
 
       return {
@@ -288,7 +302,7 @@ export class SupabaseQuestionDatabase {
       const { data, error } = await this.client
         .from('questions')
         .select('*')
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) {
@@ -313,8 +327,8 @@ export class SupabaseQuestionDatabase {
       const { data, error } = await this.client
         .from('questions')
         .select('*')
-        .or(`question.ilike.%${searchTerm}%,correctAnswer.ilike.%${searchTerm}%`)
-        .order('createdAt', { ascending: false })
+        .or(`question.ilike.%${searchTerm}%,correct_answer.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) {
