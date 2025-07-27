@@ -10,7 +10,10 @@
     "clean": "rimraf build",
     "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000",
     "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "migrate:sqlite-to-supabase": "tsx migrations/migrate_sqlite_to_supabase.ts",
+    "migrate:status": "tsx migrations/check_migration_status.ts",
+    "migrate:verify": "tsx migrations/verify_setup.ts"
   },
   "author": "",
   "license": "UNLICENSED",
