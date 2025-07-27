@@ -1,8 +1,8 @@
 """
 RAG Service - Data Retrieval Microservice for Trivia Question Generation
 
-This service handles context retrieval using LlamaIndex for various data sources
-including Wikipedia and web search to enhance trivia question quality.
+This service handles context retrieval using vector search on Wikipedia content
+to enhance trivia question quality with semantic similarity matching.
 """
 
 import logging
@@ -16,6 +16,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from vector_store import VectorStore
 
 # Configure structured logging
 logging.basicConfig(
@@ -31,6 +33,14 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Initialize vector store
+try:
+    vector_store = VectorStore()
+    logger.info("Vector store initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize vector store: {e}")
+    vector_store = None
 
 # Add CORS middleware for TypeScript server integration
 app.add_middleware(
@@ -221,38 +231,33 @@ async def get_context(request: ContextRequest, http_request: Request) -> Context
             f"Topic='{normalized_topic}' Category={request.category}"
         )
         
-        # TODO: This will be replaced with actual LlamaIndex implementation in Step 4
-        # For now, return enhanced placeholder response with proper structure
+        # Use vector store to get contextual information
+        if vector_store is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Vector store not initialized. Please check environment configuration."
+            )
         
-        # Simulate different responses based on category
-        source_mapping = {
-            "History": "wikipedia",
-            "Media": "wikipedia", 
-            "News": "web_search",
-            "Sports": "web_search",
-            "General": "wikipedia"
-        }
-        
-        simulated_source = source_mapping.get(request.category, "placeholder")
-        
-        # Generate contextual placeholder content
-        placeholder_context = (
-            f"Enhanced context for '{normalized_topic}' (Category: {request.category}). "
-            f"This information will be retrieved from {simulated_source} using LlamaIndex. "
-            f"Content will be limited to {request.max_context_length} characters and "
-            f"provided in {request.language} language when available."
+        # Get context using vector similarity search
+        context, confidence = vector_store.get_context_for_topic(
+            normalized_topic,
+            max_length=request.max_context_length
         )
         
-        # Respect max_context_length parameter
-        if len(placeholder_context) > request.max_context_length:
-            placeholder_context = placeholder_context[:request.max_context_length-3] + "..."
+        # Determine source based on whether we found content
+        source = "wikipedia" if context else "no_content"
+        
+        # If no context found, provide informative message
+        if not context:
+            context = f"No specific context found for '{normalized_topic}'. This topic may need Wikipedia content ingestion."
+            confidence = 0.0
         
         processing_time = int((time.time() - start_time) * 1000)
         
         response = ContextResponse(
-            context=placeholder_context,
-            source=simulated_source,
-            confidence=0.75,  # Higher confidence for enhanced placeholder
+            context=context,
+            source=source,
+            confidence=confidence,
             request_id=request_id,
             processing_time_ms=processing_time,
             metadata={
