@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import "dotenv/config";
 import Database from 'better-sqlite3';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
