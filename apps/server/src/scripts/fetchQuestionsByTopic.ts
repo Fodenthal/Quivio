@@ -28,7 +28,7 @@ async function fetchQuestions() {
       const questionsForTopic = [];
       for (const difficulty of allDifficulties) {
         // Set a very high limit to fetch all questions for the difficulty level
-        const questions = db.getQuestions(topic, difficulty, 10000);
+        const questions = await db.getQuestions(topic, difficulty, 10000);
         if (questions.length > 0) {
           questionsForTopic.push(...questions);
         }

@@ -2,7 +2,7 @@ import { QuestionDatabase } from '../services/QuestionDatabase';
 
 async function checkTopics() {
   const db = QuestionDatabase.getInstance();
-  const topics = db.getAvailableTopics();
+  const topics = await db.getAvailableTopics();
   
   console.log('📚 Available topics in database:');
   console.log('================================');
