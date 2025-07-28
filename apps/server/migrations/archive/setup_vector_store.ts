@@ -68,7 +68,7 @@ async function setupVectorStore(): Promise<void> {
   entity text NOT NULL,
   section text,
   content text NOT NULL,
-  embedding vector(768),
+  embedding vector(1536),
   content_hash text UNIQUE NOT NULL,
   updated_at timestamptz DEFAULT now()
 );\n`);
@@ -81,7 +81,7 @@ WITH (m = 16, ef_construction = 200);\n`);
     
     console.log('-- Step 4: Create vector search function');
     console.log(`CREATE OR REPLACE FUNCTION vector_search(
-  query_embedding vector(768),
+  query_embedding vector(1536),
   similarity_threshold float DEFAULT 0.12,
   match_count int DEFAULT 5
 )
@@ -138,7 +138,7 @@ $$;\n`);
     // Test vector search function
     try {
       // Create a test embedding (zeros)
-      const testEmbedding = Array(768).fill(0);
+      const testEmbedding = Array(1536).fill(0);
       
       const { data, error } = await client.rpc('vector_search', {
         query_embedding: testEmbedding,

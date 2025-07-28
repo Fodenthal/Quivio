@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { getDatabaseConfig } from '../src/config';
+import { getDatabaseConfig } from '../../src/config';
 
 /**
  * Verify that Supabase is properly configured

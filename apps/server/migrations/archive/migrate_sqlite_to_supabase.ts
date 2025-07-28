@@ -4,7 +4,7 @@ import "dotenv/config";
 import Database from 'better-sqlite3';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { getDatabaseConfig } from '../src/config';
+import { getDatabaseConfig } from '../../src/config';
 
 interface MigrationStats {
   totalQuestions: number;

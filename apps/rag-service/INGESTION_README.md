@@ -18,7 +18,7 @@ The Wikipedia ingestion worker fetches Wikipedia articles, chunks them into 512-
      entity text NOT NULL,
      section text,
      content text NOT NULL,
-     embedding vector(768) NOT NULL,
+     embedding vector(1536) NOT NULL,
      content_hash text UNIQUE NOT NULL,
      updated_at timestamptz DEFAULT now()
    );
@@ -31,7 +31,7 @@ The Wikipedia ingestion worker fetches Wikipedia articles, chunks them into 512-
 
 ### Basic Usage
 ```bash
-# Ingest a single Wikipedia article
+# Ingest a single Wikipedia article (use quotes for titles with spaces)
 python ingest_worker.py "Albert Einstein"
 
 # Ingest with verbose logging
@@ -39,6 +39,9 @@ python ingest_worker.py "Battle of Salamis" --verbose
 
 # Force re-ingestion even if article exists
 python ingest_worker.py "World War II" --force
+
+# Single word titles don't need quotes
+python ingest_worker.py Einstein
 ```
 
 ### Command Line Options

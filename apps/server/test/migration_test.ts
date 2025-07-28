@@ -1,6 +1,6 @@
 import assert from 'assert';
-import { SqliteToSupabaseMigration } from '../migrations/migrate_sqlite_to_supabase';
-import { MigrationStatusChecker } from '../migrations/check_migration_status';
+import { SqliteToSupabaseMigration } from '../migrations/archive/migrate_sqlite_to_supabase';
+import { MigrationStatusChecker } from '../migrations/archive/check_migration_status';
 
 describe('Migration Utilities', () => {
   describe('SqliteToSupabaseMigration', () => {

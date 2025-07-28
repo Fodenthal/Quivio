@@ -390,7 +390,7 @@ class WikipediaIngestionWorker:
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(description="Ingest Wikipedia articles into vector database")
-    parser.add_argument("title", help="Wikipedia article title to ingest")
+    parser.add_argument("title", nargs='+', help="Wikipedia article title to ingest (use quotes for titles with spaces)")
     parser.add_argument("--force", action="store_true", help="Force re-ingestion even if article exists")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     
@@ -399,23 +399,26 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
+    # Join the title parts back together
+    title = ' '.join(args.title)
+    
     try:
         # Initialize worker
         worker = WikipediaIngestionWorker()
         
         # Check if article already exists (unless forcing)
-        if not args.force and worker.check_article_exists(args.title):
-            print(f"✅ Article '{args.title}' already ingested. Use --force to re-ingest.")
+        if not args.force and worker.check_article_exists(title):
+            print(f"✅ Article '{title}' already ingested. Use --force to re-ingest.")
             return 0
         
         # Perform ingestion
-        success = worker.ingest_article(args.title)
+        success = worker.ingest_article(title)
         
         if success:
-            print(f"✅ Successfully ingested Wikipedia article: {args.title}")
+            print(f"✅ Successfully ingested Wikipedia article: {title}")
             return 0
         else:
-            print(f"❌ Failed to ingest Wikipedia article: {args.title}")
+            print(f"❌ Failed to ingest Wikipedia article: {title}")
             return 1
             
     except KeyboardInterrupt:
