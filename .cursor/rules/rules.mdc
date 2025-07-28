@@ -6,16 +6,13 @@ alwaysApply: true
 
 ## Project-wide constraints
 
-## Project‑wide constraints
-- **Run tests, not dev servers** for validation after complex tasks
-  - TypeScript: `pnpm test` (never `pnpm dev`)  
-  - Python: `pytest -q` (never `python main.py`)
-- **Use named exports** in TS (`export const foo`) — *never* `export default`
-- **Throw / raise real exception objects** (JS: `Error`, Py: subclasses of `Exception`) — no bare strings
-- Document **all non‑trivial code paths** with comprehensive JSDoc / docstrings  
-  - `@param`, `@returns`, `@throws` (TS) or `Args`, `Returns`, `Raises` (Py)  
-  - Describe loading / error states for async ops  
-  - Explain conditional rendering or branching rationale
+- Use `pnpm test` after implementing complex tasks (never pnpm dev)
+- **Use named exports** (`export const foo`) not `export default`
+- **Throw `Error` objects** never strings (enables proper stack traces)
+- Document **all non-trivial code paths** with comprehensive JSDoc. Include:
+    - `@param`, `@returns`, `@throws`
+    - Loading/error states for async ops
+    - Conditional rendering rationale
 
 ## TypeScript strictness
 - Enable `strict`, `noImplicitOverride`, `exactOptionalPropertyTypes`

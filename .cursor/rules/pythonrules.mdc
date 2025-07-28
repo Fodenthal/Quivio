@@ -1,0 +1,50 @@
+---
+description: "Python micro‑service constraints"
+globs: ["apps/rag-service/**/*.py"]
+alwaysApply: false
+---
+
+## Python micro‑service strictness
+> Mirrors the spirit of the TS rules; keeps the micro‑service safe, typed, and deterministic.
+
+| Category | Rule |
+|----------|------|
+| **Interpreter** | Target **Python 3.11+** |
+| **Testing** | Use **pytest**; all new modules need matching `tests/` |
+| **Static typing** | Mandatory `mypy --strict` during CI; no `Any` leaks |
+| **Code formatting** | Enforce **black** (`line-length = 100`) + **isort** |
+| **Linting** | ruff --select all |
+| **Imports** | Absolute imports inside package; no implicit relative (`from .foo import *`) |
+| **Type hints** | Full type hints on **all** public / exported functions & class methods |
+| **Docstrings** | Google‑style: `Args`, `Returns`, `Raises`, `Example`; top‑level module docstring required |
+| **Exceptions** | Raise custom subclasses of `Exception`; never bare `ValueError` unless obvious |
+| **Data models** | Use `pydantic.BaseModel` (or `dataclasses.dataclass` with type hints) for structured payloads |
+| **Logging** | Use `logging` std‑lib — never `print()` except in CLIs |
+| **Mutability traps** | No mutable default args (`def fn(x: list = [])` ❌) |
+| **I/O** | Wrap external I/O (HTTP, DB) in retry‑aware helpers; surface `TimeoutError` or `HTTPError` |
+| **Performance** | Prefer asyncio tasks for network concurrency; forbid `time.sleep()` in async fns |
+| **Security** | No plaintext secrets; expect `os.environ`‑injected config |
+
+---
+
+### Example Python docstring ✅
+
+```python
+from typing import List
+
+def chunk_text(text: str, max_tokens: int) -> List[str]:
+    """Split text into token‑bounded chunks.
+
+    Args:
+        text: Raw UTF‑8 string from Wikipedia.
+        max_tokens: Upper limit per chunk (OpenAI ≈ 512).
+
+    Returns:
+        List of chunks, longest first.
+
+    Raises:
+        ValueError: If `max_tokens` < 1.
+    """
+    if max_tokens < 1:
+        raise ValueError("max_tokens must be ≥ 1")
+    ...
