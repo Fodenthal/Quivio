@@ -9,7 +9,8 @@ alwaysApply: false
 
 | Category | Rule |
 |----------|------|
-| **Interpreter** | Target **Python 3.11+** |
+| **.venv** | All commands (pip, python, pytest) must be run from within the activated project .venv | 
+| **Interpreter** | Target **Python 3.9.6** |
 | **Testing** | Use **pytest**; all new modules need matching `tests/` |
 | **Static typing** | Mandatory `mypy --strict` during CI; no `Any` leaks |
 | **Code formatting** | Enforce **black** (`line-length = 100`) + **isort** |
