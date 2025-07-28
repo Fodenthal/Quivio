@@ -36,6 +36,7 @@ class VectorStore:
         if not supabase_url or not supabase_key:
             raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY environment variables are required")
         
+        # Create client with simple configuration
         self.supabase: Client = create_client(supabase_url, supabase_key)
         
         logger.info("Vector store initialized successfully")

@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -36,6 +37,8 @@ app = FastAPI(
 
 # Initialize vector store
 try:
+    # Ensure environment variables are loaded
+    load_dotenv()
     vector_store = VectorStore()
     logger.info("Vector store initialized successfully")
 except Exception as e:

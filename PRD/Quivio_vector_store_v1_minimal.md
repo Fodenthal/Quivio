@@ -139,24 +139,32 @@ async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
 
 ## 7 · Implementation phases
 
-### Phase 1: Database setup
-- [ ] Enable `pgvector` in Supabase
-- [ ] Create `wiki_chunks` table + index
-- [ ] Test basic vector operations
+### Phase 1: Database setup ✅
+- [x] Enable `pgvector` in Supabase
+- [x] Create `wiki_chunks` table + index
+- [x] Test basic vector operations
 
-### Phase 2: rag-service enhancement  
-- [ ] Add embedding dependencies (`sentence-transformers`, `openai`)
-- [ ] Implement `/get-context` endpoint with vector search
+### Phase 2: rag-service enhancement ✅
+- [x] Add embedding dependencies (`openai`, `supabase`, `numpy`)
+- [x] Implement `/get-context` endpoint with vector search
 - [ ] Add Wikipedia ingestion worker
 - [ ] Test end-to-end context retrieval
 
-### Phase 3: GeminiService integration
+### Phase 3: Wikipedia ingestion worker
+- [ ] Create `ingest_worker.py` script for Wikipedia content ingestion
+- [ ] Implement Wikipedia API fetching and HTML parsing
+- [ ] Add content chunking (512 tokens + 64 overlap)
+- [ ] Implement batch embedding (up to 2K tokens/request)
+- [ ] Add content hashing for idempotent writes
+- [ ] Test ingestion with sample Wikipedia articles
+
+### Phase 4: GeminiService integration
 - [ ] Add HTTP client to `apps/server` dependencies  
 - [ ] Enhance `generateQuestion()` with context calls
 - [ ] Add fallback handling for rag-service unavailability
 - [ ] Preserve existing question caching system
 
-### Phase 4: Production readiness
+### Phase 5: Production readiness
 - [ ] Add Redis caching layer
 - [ ] Implement monitoring & alerting
 - [ ] Load test vector retrieval performance
