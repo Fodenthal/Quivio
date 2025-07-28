@@ -15,13 +15,14 @@ import argparse
 import hashlib
 import logging
 import os
+import re
 import sys
 import time
 from typing import List, Optional, Tuple
 
-import html2text
 import requests
 import tiktoken
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from openai import OpenAI
 from supabase import create_client, Client
@@ -115,36 +116,86 @@ class WikipediaIngestionWorker:
     
     def html_to_text(self, html_content: str) -> str:
         """
-        Convert HTML content to clean text using html2text
+        Convert HTML content to clean narrative prose using BeautifulSoup
+        
+        Extracts only the main article body, skips tables/infoboxes, and cleans citations.
+        Handles both traditional Wikipedia HTML and REST API structure.
         
         Args:
             html_content: Raw HTML content
             
         Returns:
-            Clean text content
+            Clean narrative text content
         """
         try:
-            # Configure html2text for clean output
-            h = html2text.HTML2Text()
-            h.ignore_links = True
-            h.ignore_images = True
-            h.ignore_emphasis = False
-            h.body_width = 0  # Don't wrap lines
-            h.unicode_snob = True
+            soup = BeautifulSoup(html_content, 'html.parser')
             
-            text = h.handle(html_content)
+            # Find the main article body - try different selectors
+            main_content = None
             
-            # Clean up the text
-            lines = text.split('\n')
-            cleaned_lines = []
+            # Try traditional Wikipedia structure first
+            main_content = soup.find('div', class_='mw-parser-output')
             
-            for line in lines:
-                line = line.strip()
-                if line and not line.startswith('#'):  # Skip empty lines and markdown headers
-                    cleaned_lines.append(line)
+            # If not found, try REST API structure (body with mw-parser-output class)
+            if not main_content and soup.body and 'mw-parser-output' in soup.body.get('class', []):
+                main_content = soup.body
             
-            clean_text = ' '.join(cleaned_lines)
-            logger.debug(f"Converted HTML to text: {len(clean_text)} characters")
+            # If still not found, try looking for sections directly
+            if not main_content:
+                # Look for the main content section (usually the first substantial section)
+                sections = soup.find_all('section')
+                if sections:
+                    # Find the section with the most text content (likely the main article)
+                    main_section = max(sections, key=lambda s: len(s.get_text().strip()))
+                    if len(main_section.get_text().strip()) > 1000:  # Must have substantial content
+                        main_content = main_section
+            
+            if not main_content:
+                logger.warning("Could not find main article content")
+                return ""
+            
+            # Collect clean text from paragraphs and headings
+            clean_lines = []
+            
+            # Define elements to process
+            content_elements = main_content.find_all(['p', 'h1', 'h2', 'h3', 'h4'])
+            
+            for element in content_elements:
+                # Stop at references/external links
+                if element.name in ['h2', 'h3'] and element.get_text().strip().lower() in [
+                    'references', 'external links', 'see also', 'notes', 'citations'
+                ]:
+                    break
+                
+                # Skip elements with specific classes that contain metadata
+                if element.get('class'):
+                    classes = ' '.join(element.get('class')).lower()
+                    if any(skip_class in classes for skip_class in [
+                        'infobox', 'metadata', 'navbox', 'reflist', 'catlinks', 'ambox',
+                        'shortdescription', 'hatnote', 'navigation-not-searchable'
+                    ]):
+                        continue
+                
+                text = element.get_text().strip()
+                if text:
+                    # Clean citation brackets like [17] or [note 1]
+                    text = re.sub(r'\[\d+\]', '', text)  # Remove [17] style citations
+                    text = re.sub(r'\[note \d+\]', '', text)  # Remove [note 1] style citations
+                    text = re.sub(r'\[[^\]]*\]', '', text)  # Remove any remaining brackets
+                    
+                    # Clean up whitespace
+                    text = re.sub(r'\s+', ' ', text).strip()
+                    
+                    if text and len(text) > 10:  # Only keep substantial text
+                        clean_lines.append(text)
+            
+            # Join lines with proper spacing
+            clean_text = ' '.join(clean_lines)
+            
+            # Final cleanup
+            clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+            
+            logger.debug(f"Converted HTML to clean text: {len(clean_text)} characters")
             return clean_text
             
         except Exception as e:
