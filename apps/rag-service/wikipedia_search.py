@@ -235,16 +235,18 @@ def search_wikipedia_titles(query: str, limit: int = 10) -> List[Dict[str, any]]
     return client.search_titles(query, limit)
 
 
-def find_best_match(query: str, max_results: int = 5) -> Optional[Dict[str, any]]:
+def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bool = True) -> Optional[Dict[str, any]]:
     """
     Find the best matching Wikipedia article for a query
     
     This function attempts to find the most relevant article by looking for
     exact title matches or highest word count as a relevance indicator.
+    Optionally resolves disambiguation pages to more specific articles.
     
     Args:
         query: Search query
         max_results: Number of search results to examine
+        resolve_disambiguation: Whether to resolve disambiguation pages
         
     Returns:
         Best matching result dictionary, or None if no good match found
@@ -261,6 +263,12 @@ def find_best_match(query: str, max_results: int = 5) -> Optional[Dict[str, any]
         for result in results:
             if result['title'].lower() == query_lower:
                 logger.info(f"Found exact title match: '{result['title']}' for query '{query}'")
+                # Check if we need to resolve disambiguation
+                if resolve_disambiguation:
+                    resolved_title = _resolve_with_disambiguation(query, result['title'])
+                    if resolved_title != result['title']:
+                        # Create new result dict with resolved title
+                        return _create_result_for_title(resolved_title)
                 return result
         
         # Strategy 2: Look for title that contains the query as a word (more specific than contains)
@@ -269,15 +277,82 @@ def find_best_match(query: str, max_results: int = 5) -> Optional[Dict[str, any]
             # Check if query appears as a whole word in the title
             if f" {query_lower} " in f" {title_lower} " or title_lower.startswith(f"{query_lower} ") or title_lower.endswith(f" {query_lower}"):
                 logger.info(f"Found title with query as word: '{result['title']}' for query '{query}'")
+                # Check if we need to resolve disambiguation
+                if resolve_disambiguation:
+                    resolved_title = _resolve_with_disambiguation(query, result['title'])
+                    if resolved_title != result['title']:
+                        # Create new result dict with resolved title
+                        return _create_result_for_title(resolved_title)
                 return result
         
         # Strategy 3: Return the first result (highest relevance score from MediaWiki)
         best_result = results[0]
         logger.info(f"Using best search result: '{best_result['title']}' for query '{query}'")
+        
+        # Check if we need to resolve disambiguation
+        if resolve_disambiguation:
+            resolved_title = _resolve_with_disambiguation(query, best_result['title'])
+            if resolved_title != best_result['title']:
+                # Create new result dict with resolved title
+                return _create_result_for_title(resolved_title)
+        
         return best_result
         
     except Exception as e:
         logger.error(f"Error finding best match for '{query}': {e}")
+        return None
+
+
+def _resolve_with_disambiguation(query: str, title: str) -> str:
+    """
+    Helper function to resolve disambiguation if needed
+    
+    Args:
+        query: Original search query
+        title: Wikipedia title to potentially resolve
+        
+    Returns:
+        Resolved title, or original title if no resolution needed/possible
+    """
+    try:
+        from disambiguation import resolve_disambiguation_if_needed
+        return resolve_disambiguation_if_needed(query, title)
+    except ImportError:
+        logger.debug("Disambiguation module not available, skipping resolution")
+        return title
+    except Exception as e:
+        logger.warning(f"Error during disambiguation resolution: {e}")
+        return title
+
+
+def _create_result_for_title(title: str) -> Optional[Dict[str, any]]:
+    """
+    Create a search result dictionary for a given title
+    
+    Args:
+        title: Wikipedia article title
+        
+    Returns:
+        Result dictionary with title and basic metadata, or None if title not found
+    """
+    try:
+        # Search for the specific title to get metadata
+        results = search_wikipedia_titles(title, limit=1)
+        if results and results[0]['title'] == title:
+            return results[0]
+        
+        # If exact match not found, create basic result
+        logger.debug(f"Creating basic result for resolved title: '{title}'")
+        return {
+            'title': title,
+            'snippet': f"Resolved from disambiguation for {title}",
+            'wordcount': 0,
+            'size': 0,
+            'timestamp': ''
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating result for title '{title}': {e}")
         return None
 
 
@@ -293,6 +368,14 @@ if __name__ == "__main__":
             for i, result in enumerate(results, 1):
                 print(f"{i}. {result['title']} ({result['wordcount']} words)")
                 print(f"   {result['snippet'][:100]}...")
+                
+            # Test disambiguation resolution
+            print(f"\nBest match with disambiguation resolution:")
+            best_match = find_best_match(query)
+            if best_match:
+                print(f"→ {best_match['title']}")
+            else:
+                print("→ No match found")
         except Exception as e:
             print(f"Search failed: {e}")
     else:
