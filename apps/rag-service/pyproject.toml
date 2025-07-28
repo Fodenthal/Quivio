@@ -37,6 +37,7 @@ dev-dependencies = [
     "isort>=5.13.0",
     "ruff>=0.2.0",
     "types-requests>=2.31.0",
+    "types-psutil>=5.9.0",
 ]
 
 [tool.black]
@@ -82,6 +83,7 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 show_error_codes = true
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py39"
@@ -135,5 +137,4 @@ ignore = [
     "D418",  # Function is missing a docstring
     "D419",  # Function is missing a docstring
     "E501",  # Line too long (handled by black)
-    "W503",  # Line break before binary operator (handled by black)
 ] 
