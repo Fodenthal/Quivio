@@ -50,6 +50,7 @@
     "@shared": "workspace:*",
     "@supabase/postgrest-js": "^1.21.1",
     "@supabase/supabase-js": "^2.52.1",
+    "axios": "^1.7.0",
     "better-sqlite3": "^12.2.0",
     "colyseus": "^0.16.4",
     "colyseus.js": "^0.16.19",
