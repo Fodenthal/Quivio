@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
+import axios from 'axios';
 
 export interface GeneratedQuestion {
   question: string;
@@ -90,10 +91,31 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
-    const prompt = this.buildPrompt(request);
+    // NEW: Get Wikipedia context via rag-service with timeout
+    let contextualPrompt = this.buildPrompt(request);
     
     try {
-      const result = await this.model.generateContent(prompt);
+      const ragResponse = await axios.post('http://localhost:8001/get-context', {
+        topic: request.topic,
+        category: this.inferCategory(request.topic)
+      }, {
+        timeout: 1000, // 1s timeout for real-time game performance
+        // No retry to avoid compounding delays
+      });
+      
+      if (ragResponse.data.context && ragResponse.data.context.trim()) {
+        contextualPrompt = this.buildContextualPrompt(request, ragResponse.data.context);
+        console.log(`📚 Enhanced question generation for "${request.topic}" with Wikipedia context (${ragResponse.data.context.length} chars)`);
+      }
+    } catch (error) {
+      // Circuit breaker: fail closed with basic prompt
+      console.warn(`⚠️ RAG service unavailable or slow for "${request.topic}", using basic prompt:`, 
+        error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    try {
+      // EXISTING: Generate with Gemini (enhanced with context when available)
+      const result = await this.model.generateContent(contextualPrompt);
       const response = await result.response;
       const text = response.text();
       
@@ -130,6 +152,46 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
     if (request.previousQuestions && request.previousQuestions.length > 0) {
       sections.push(
         `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions**:
+        ${request.previousQuestions.join(", ")}`
+      );
+    }
+
+    return sections.join('\n\n');
+  }
+
+  /**
+   * Build a prompt that includes Wikipedia context for enhanced question generation
+   */
+  private buildContextualPrompt(request: QuestionRequest, context: string): string {
+    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
+    
+    const sections = [
+      // Role and core instructions
+      GeminiService.CORE_INSTRUCTIONS,
+      
+      // Task specification with context
+      `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
+      
+      // Wikipedia context for factual accuracy
+      `**Wikipedia Context for "${request.topic}":**
+      ${context}
+      
+      **Context Usage Instructions:**
+      Use the above Wikipedia context to ensure factual accuracy and discover interesting details for your question. Base your question on specific facts, dates, numbers, or details mentioned in the context when possible.`,
+      
+      // Example for reference
+      `**Example of question style and quality for topic "Harry Potter" with difficulty 3:**
+      ${GeminiService.EXAMPLE_QUESTION}`,
+      
+      // Generation request with schema
+      `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
+      ${GeminiService.QUESTION_SCHEMA}`
+    ];
+
+    // Add previous questions constraint if provided
+    if (request.previousQuestions && request.previousQuestions.length > 0) {
+      sections.push(
+        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions:
         ${request.previousQuestions.join(", ")}`
       );
     }
@@ -182,6 +244,31 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
     if (difficulty <= 3) return "medium";
     if (difficulty <= 4) return "hard";
     return "very hard";
+  }
+
+  /**
+   * Infer the category for rag-service based on topic keywords
+   * Must return one of: 'News', 'History', 'Media', 'Sports', 'General'
+   */
+  private inferCategory(topic: string): string {
+    const topicLower = topic.toLowerCase();
+    
+    // Define category keywords matching rag-service expectations
+    const categoryKeywords: Record<string, string[]> = {
+      'History': ['history', 'president', 'king', 'queen', 'war', 'empire', 'ancient', 'medieval', 'historical'],
+      'Sports': ['sports', 'athlete', 'team', 'game', 'championship', 'olympic', 'football', 'basketball', 'soccer', 'tennis'],
+      'Media': ['film', 'movie', 'actor', 'actress', 'director', 'television', 'tv', 'show', 'series', 'entertainment'],
+      'News': ['news', 'current', 'politics', 'government', 'election', 'policy', 'political']
+    };
+    
+    // Find matching category
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => topicLower.includes(keyword))) {
+        return category;
+      }
+    }
+    
+    return 'General'; // Default fallback for science, technology, people, etc.
   }
 
   // Word tokenizer instance for consistent tokenization
