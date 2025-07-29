@@ -309,9 +309,9 @@ def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bo
     """
     Find the best matching Wikipedia article for a query
     
-    This function attempts to find the most relevant article by looking for
-    exact title matches or highest word count as a relevance indicator.
-    Optionally resolves disambiguation pages to more specific articles.
+    This function attempts to find the most relevant article by first resolving
+    redirects on both the query and search results, then applying selection logic 
+    based on exact matches, word matching, and article importance (word count).
     
     Args:
         query: Search query
@@ -328,11 +328,44 @@ def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bo
             logger.info(f"No search results found for: '{query}'")
             return None
         
-        # Strategy 1: Look for exact title match (case insensitive)
-        query_lower = query.lower().strip()
+        # STRATEGY 1: REDIRECT-FIRST RESOLUTION
+        # First, check if the query itself redirects to something
+        query_canonical = follow_redirect(query.strip())
+        if query_canonical and query_canonical != query.strip():
+            logger.info(f"Query redirect resolved: '{query}' → '{query_canonical}'")
+        else:
+            query_canonical = query.strip()
+        
+        # Resolve redirects for all top results before applying selection logic
+        enriched_results = []
         for result in results:
-            if result['title'].lower() == query_lower:
-                logger.info(f"Found exact title match: '{result['title']}' for query '{query}'")
+            # Try to resolve redirect for this result
+            canonical_title = follow_redirect(result['title'])
+            if canonical_title and canonical_title != result['title']:
+                # Create enriched result with canonical title
+                logger.info(f"Result redirect resolved: '{result['title']}' → '{canonical_title}'")
+                enriched_result = result.copy()
+                enriched_result['title'] = canonical_title
+                enriched_result['original_title'] = result['title']
+                enriched_result['was_redirect'] = True
+                enriched_results.append(enriched_result)
+            else:
+                # No redirect, use original result
+                enriched_result = result.copy()
+                enriched_result['original_title'] = result['title']
+                enriched_result['was_redirect'] = False
+                enriched_results.append(enriched_result)
+        
+        # Now apply selection logic using both original query and canonical query
+        query_lower = query.lower().strip()
+        query_canonical_lower = query_canonical.lower().strip()
+        
+        # Strategy 1: Look for exact match with query canonical title
+        for result in enriched_results:
+            result_title_lower = result['title'].lower()
+            if (result_title_lower == query_lower or 
+                result_title_lower == query_canonical_lower):
+                logger.info(f"Found exact title match: '{result['title']}' for query '{query}' (canonical: '{query_canonical}', was redirect: {result['was_redirect']})")
                 # Check if we need to resolve disambiguation
                 if resolve_disambiguation:
                     resolved_title = _resolve_with_disambiguation(query, result['title'])
@@ -341,12 +374,12 @@ def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bo
                         return _create_result_for_title(resolved_title)
                 return result
         
-        # Strategy 2: Look for title that contains the query as a word (more specific than contains)
-        for result in results:
+        # Strategy 2: Look for title that contains the original query as a word
+        for result in enriched_results:
             title_lower = result['title'].lower()
             # Check if query appears as a whole word in the title
             if f" {query_lower} " in f" {title_lower} " or title_lower.startswith(f"{query_lower} ") or title_lower.endswith(f" {query_lower}"):
-                logger.info(f"Found title with query as word: '{result['title']}' for query '{query}'")
+                logger.info(f"Found title with query as word: '{result['title']}' for query '{query}' (was redirect: {result['was_redirect']})")
                 # Check if we need to resolve disambiguation
                 if resolve_disambiguation:
                     resolved_title = _resolve_with_disambiguation(query, result['title'])
@@ -355,9 +388,10 @@ def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bo
                         return _create_result_for_title(resolved_title)
                 return result
         
-        # Strategy 3: Return the first result (highest relevance score from MediaWiki)
-        best_result = results[0]
-        logger.info(f"Using best search result: '{best_result['title']}' for query '{query}'")
+        # Strategy 3: Return the first result (highest relevance score from MediaWiki) 
+        # but now with redirect resolution applied
+        best_result = enriched_results[0]
+        logger.info(f"Using best search result: '{best_result['title']}' for query '{query}' (canonical: '{query_canonical}', was redirect: {best_result['was_redirect']})")
         
         # Check if we need to resolve disambiguation
         if resolve_disambiguation:
