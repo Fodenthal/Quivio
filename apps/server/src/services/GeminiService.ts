@@ -93,8 +93,12 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
     // NEW: Get Wikipedia context via rag-service with timeout
     let contextualPrompt = this.buildPrompt(request);
+    let ragContextUsed = false;
+    let ragErrorDetails = null;
     
     try {
+      console.log(`🔍 Requesting RAG context for topic: "${request.topic}" (category: ${this.inferCategory(request.topic)})`);
+      
       const ragResponse = await axios.post('http://localhost:8001/get-context', {
         topic: request.topic,
         category: this.inferCategory(request.topic)
@@ -104,22 +108,72 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
       });
       
       if (ragResponse.data.context && ragResponse.data.context.trim()) {
-        contextualPrompt = this.buildContextualPrompt(request, ragResponse.data.context);
-        console.log(`📚 Enhanced question generation for "${request.topic}" with Wikipedia context (${ragResponse.data.context.length} chars)`);
+        const context = ragResponse.data.context;
+        const contextLength = context.length;
+        const confidence = ragResponse.data.confidence || 0;
+        const source = ragResponse.data.source || 'unknown';
+        
+        // Enhanced logging with actual context content
+        console.log(`📚 Enhanced question generation for "${request.topic}":`);
+        console.log(`   📏 Context length: ${contextLength} characters`);
+        console.log(`   🎯 Confidence score: ${confidence.toFixed(3)}`);
+        console.log(`   📖 Source: ${source}`);
+        console.log(`   📄 Context preview: "${context.substring(0, 200)}${contextLength > 200 ? '...' : ''}"`);
+        
+        // Check if this is the fallback message (indicates vector store issues)
+        if (context.includes('No specific context found') || context.includes('may need Wikipedia content ingestion')) {
+          console.log(`   ⚠️  WARNING: Using fallback context - vector store may not be properly configured`);
+          console.log(`   🔧  Check OPENAI_API_KEY, SUPABASE_URL, and SUPABASE_ANON_KEY environment variables`);
+        }
+        
+        contextualPrompt = this.buildContextualPrompt(request, context);
+        ragContextUsed = true;
+      } else {
+        console.log(`⚠️  RAG service returned empty context for "${request.topic}"`);
       }
     } catch (error) {
-      // Circuit breaker: fail closed with basic prompt
-      console.warn(`⚠️ RAG service unavailable or slow for "${request.topic}", using basic prompt:`, 
-        error instanceof Error ? error.message : 'Unknown error');
+      // Enhanced error logging with specific details
+      ragErrorDetails = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Type guard for axios errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        const axiosError = error as any;
+        if (axiosError.code === 'ECONNABORTED') {
+          console.warn(`⚠️  RAG service timeout for "${request.topic}" (1000ms exceeded)`);
+        } else if (axiosError.code === 'ECONNREFUSED') {
+          console.warn(`⚠️  RAG service connection refused for "${request.topic}" - service may not be running`);
+        } else if (axiosError.response) {
+          console.warn(`⚠️  RAG service HTTP error for "${request.topic}": ${axiosError.response.status} - ${axiosError.response.statusText}`);
+        } else {
+          console.warn(`⚠️  RAG service error for "${request.topic}": ${axiosError.message || 'Unknown error'}`);
+        }
+      } else if (error instanceof Error) {
+        console.warn(`⚠️  RAG service error for "${request.topic}": ${error.message}`);
+      } else {
+        console.warn(`⚠️  RAG service unknown error for "${request.topic}": ${ragErrorDetails}`);
+      }
+      
+      console.log(`   🔄 Falling back to basic prompt generation`);
     }
     
     try {
       // EXISTING: Generate with Gemini (enhanced with context when available)
+      const promptType = ragContextUsed ? 'enhanced' : 'basic';
+      console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
+      
       const result = await this.model.generateContent(contextualPrompt);
       const response = await result.response;
       const text = response.text();
       
-      return this.parseResponse(text, request);
+      const generatedQuestion = this.parseResponse(text, request);
+      
+      // Log generation success with context usage info
+      console.log(`✅ Generated question: "${generatedQuestion.question}"`);
+      console.log(`   📝 Answer: "${generatedQuestion.correctAnswer}"`);
+      console.log(`   🏷️  Category: ${generatedQuestion.category}`);
+      console.log(`   📊 Context used: ${ragContextUsed ? 'Yes (Wikipedia)' : 'No (basic prompt)'}`);
+      
+      return generatedQuestion;
     } catch (error) {
       console.error("Error generating question with Gemini:", error);
       throw new Error(`Failed to generate question: ${error instanceof Error ? error.message : 'Unknown error'}`);
