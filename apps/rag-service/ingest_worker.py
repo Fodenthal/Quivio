@@ -27,6 +27,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from supabase import create_client, Client
 
+from background_tasks import get_task_manager, BackgroundTaskManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -73,6 +75,12 @@ class WikipediaIngestionWorker:
         self.chunk_size = 512  # tokens
         self.chunk_overlap = 64  # tokens
         self.max_batch_tokens = 2000  # Max tokens per embedding batch request
+        
+        # Initialize background task manager
+        self.task_manager = get_task_manager()
+        
+        # Store current title for background processing
+        self._current_title = None
         
         logger.info("Wikipedia ingestion worker initialized successfully")
     
@@ -452,15 +460,17 @@ class WikipediaIngestionWorker:
             logger.error(f"Error storing chunks for '{title}': {e}")
             return 0
     
-    def ingest_article_lead_only(self, title: str) -> bool:
+    def ingest_article_lead_only(self, title: str, queue_background: bool = True) -> bool:
         """
         Lead-only ingestion workflow for quick Wikipedia article processing
         
         Extracts and ingests only the lead section (intro + first 2 paragraphs)
-        optimized for sub-1s processing time.
+        optimized for sub-1s processing time. Optionally queues background task
+        for full article ingestion.
         
         Args:
             title: Wikipedia article title
+            queue_background: Whether to queue background full ingestion
             
         Returns:
             True if lead ingestion was successful
@@ -485,13 +495,10 @@ class WikipediaIngestionWorker:
             logger.info(f"Extracted {len(lead_content)} characters of lead content")
             
             # Step 3: Create single chunk from lead content (already ≤512 tokens)
-            chunk_data = {
-                'content': lead_content,
-                'token_count': len(self.tokenizer.encode(lead_content))
-            }
-            chunks = [chunk_data]
+            token_count = len(self.tokenizer.encode(lead_content))
+            chunks = [(lead_content, None)]  # (content, section) tuple format
             
-            logger.info(f"Created lead chunk with {chunk_data['token_count']} tokens")
+            logger.info(f"Created lead chunk with {token_count} tokens")
             
             # Step 4: Store lead chunk in database
             stored_count = self.store_chunks(title, chunks)
@@ -500,6 +507,18 @@ class WikipediaIngestionWorker:
             
             if stored_count > 0:
                 logger.info(f"✅ Successfully ingested lead for '{title}': {stored_count} chunk in {elapsed_time:.1f}s")
+                
+                # Step 5: Queue background task for full ingestion if enabled
+                if queue_background:
+                    try:
+                        # Store title for background processing
+                        self._current_title = title
+                        task_id = self.task_manager.queue_full_ingestion(title, self)
+                        logger.info(f"🔄 Background full ingestion queued for '{title}' [Task ID: {task_id}]")
+                    except Exception as bg_error:
+                        logger.warning(f"Failed to queue background task for '{title}': {bg_error}")
+                        # Don't fail the lead ingestion if background queuing fails
+                
                 return True
             else:
                 logger.error(f"❌ Failed to store lead chunk for '{title}'")
@@ -557,6 +576,65 @@ class WikipediaIngestionWorker:
             logger.error(f"❌ Ingestion failed for '{title}': {e}")
             return False
     
+    def ingest_article_background(self) -> bool:
+        """
+        Background ingestion method for full article processing
+        
+        This method is called by the background task manager to complete
+        full article ingestion after lead-only processing has finished.
+        
+        Returns:
+            True if background ingestion was successful
+        """
+        title = self._current_title
+        if not title:
+            logger.error("No title set for background ingestion")
+            return False
+        
+        try:
+            logger.info(f"🔄 Starting background full ingestion for: {title}")
+            start_time = time.time()
+            
+            # Check if full ingestion already exists (maybe another process did it)
+            result = self.supabase.table('wiki_chunks').select('id').eq('entity', title).limit(5).execute()
+            if result.data and len(result.data) > 1:  # More than just the lead chunk
+                logger.info(f"Full article already ingested for '{title}', skipping background task")
+                return True
+            
+            # Fetch and process the full article
+            html_content = self.fetch_wikipedia_article(title)
+            if not html_content:
+                logger.error(f"Failed to fetch HTML for background ingestion: {title}")
+                return False
+            
+            # Convert to full text (not just lead)
+            text_content = self.html_to_text(html_content)
+            if not text_content.strip():
+                logger.error(f"No text content extracted for background ingestion: {title}")
+                return False
+            
+            # Chunk the full content
+            chunks = self.chunk_text(text_content, title)
+            if not chunks:
+                logger.error(f"Failed to chunk text for background ingestion: {title}")
+                return False
+            
+            # Store chunks (will skip duplicates due to content hashing)
+            stored_count = self.store_chunks(title, chunks)
+            
+            elapsed_time = time.time() - start_time
+            
+            if stored_count >= 0:  # >= 0 because some chunks might be duplicates
+                logger.info(f"✅ Background ingestion completed for '{title}': {stored_count} new chunks in {elapsed_time:.1f}s")
+                return True
+            else:
+                logger.error(f"❌ Background ingestion failed for '{title}': no chunks stored")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Background ingestion failed for '{title}': {e}")
+            return False
+
     def check_article_exists(self, title: str) -> bool:
         """
         Check if an article has already been ingested
@@ -586,22 +664,47 @@ class WikipediaIngestionWorker:
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(description="Ingest Wikipedia articles into vector database")
-    parser.add_argument("title", nargs='+', help="Wikipedia article title to ingest (use quotes for titles with spaces)")
+    parser.add_argument("title", nargs='*', help="Wikipedia article title to ingest (use quotes for titles with spaces)")
     parser.add_argument("--force", action="store_true", help="Force re-ingestion even if article exists")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--lead-only", action="store_true", help="Extract and ingest only the lead section (intro + first 2 paragraphs, ≤512 tokens)")
+    parser.add_argument("--show-tasks", action="store_true", help="Show background task status and exit")
+    parser.add_argument("--no-background", action="store_true", help="Skip background task queuing (lead-only mode only)")
     
     args = parser.parse_args()
     
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
-    # Join the title parts back together
-    title = ' '.join(args.title)
-    
     try:
         # Initialize worker
         worker = WikipediaIngestionWorker()
+        
+        # Handle task status display
+        if args.show_tasks:
+            print("📊 Background Task Status:")
+            stats = worker.task_manager.get_stats()
+            print(f"Total tasks: {stats['total_tasks']}")
+            print(f"Running: {stats['running']}, Pending: {stats['pending']}")
+            print(f"Completed: {stats['completed']}, Failed: {stats['failed']}")
+            
+            if stats['total_tasks'] > 0:
+                print("\nRecent tasks:")
+                tasks = worker.task_manager.get_all_tasks()
+                for task_id, task in list(tasks.items())[-5:]:  # Show last 5 tasks
+                    status_emoji = {"pending": "⏳", "running": "🔄", "completed": "✅", "failed": "❌", "cancelled": "⛔"}
+                    print(f"  {status_emoji.get(task.status.value, '❓')} {task.title} [{task.status.value}]")
+            
+            return 0
+        
+        # Validate title is provided for ingestion commands
+        if not args.title:
+            print("❌ Error: Article title is required for ingestion")
+            print("Use --show-tasks to view background task status")
+            return 1
+        
+        # Join the title parts back together
+        title = ' '.join(args.title)
         
         # Check if article already exists (unless forcing)
         if not args.force and worker.check_article_exists(title):
@@ -610,8 +713,13 @@ def main():
         
         # Perform ingestion (lead-only or full article)
         if args.lead_only:
-            success = worker.ingest_article_lead_only(title)
+            queue_background = not args.no_background
+            success = worker.ingest_article_lead_only(title, queue_background)
             mode_description = "lead section"
+            
+            if success and queue_background:
+                print("🔄 Background full ingestion has been queued")
+                print("   Use --show-tasks to monitor progress")
         else:
             success = worker.ingest_article(title)
             mode_description = "full article"
