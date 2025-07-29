@@ -240,8 +240,9 @@ class TitleResolver:
                 metadata['disambiguation_applied'] = True
                 
                 # Validate the result
-                if self._is_valid_title(title):
-                    return title
+                canonical_title = self._is_valid_title(title)
+                if canonical_title:
+                    return canonical_title
                 else:
                     logger.warning(f"Invalid title returned: '{title}'")
                     return None
@@ -262,8 +263,9 @@ class TitleResolver:
                 title = result['title']
                 metadata['search_results'].append(result)
                 
-                if self._is_valid_title(title):
-                    return title
+                canonical_title = self._is_valid_title(title)
+                if canonical_title:
+                    return canonical_title
                     
         except Exception as e:
             logger.error(f"Primary without disambiguation failed: {e}")
@@ -285,13 +287,15 @@ class TitleResolver:
                 # Look for exact matches first
                 for result in results:
                     if result['title'].lower() == query.lower():
-                        if self._is_valid_title(result['title']):
-                            return result['title']
+                        canonical_title = self._is_valid_title(result['title'])
+                        if canonical_title:
+                            return canonical_title
                 
                 # If no exact match, try the first result
                 first_result = results[0]
-                if self._is_valid_title(first_result['title']):
-                    return first_result['title']
+                canonical_title = self._is_valid_title(first_result['title'])
+                if canonical_title:
+                    return canonical_title
                     
         except Exception as e:
             logger.error(f"Direct title search failed: {e}")
@@ -322,9 +326,10 @@ class TitleResolver:
                         metadata['search_results'].extend(results)
                         
                         first_result = results[0]
-                        if self._is_valid_title(first_result['title']):
+                        canonical_title = self._is_valid_title(first_result['title'])
+                        if canonical_title:
                             logger.info(f"Fuzzy fallback succeeded with variation: '{variation}'")
-                            return first_result['title']
+                            return canonical_title
                             
                 except Exception:
                     continue  # Try next variation
@@ -335,22 +340,28 @@ class TitleResolver:
         
         return None
     
-    def _is_valid_title(self, title: str) -> bool:
+    def _is_valid_title(self, title: str) -> Optional[str]:
         """
         Validate that a title refers to a real, substantial Wikipedia article
+        and resolve any redirects to canonical titles
         
         Args:
             title: Wikipedia article title to validate
             
         Returns:
-            True if the title is valid for ingestion
+            Canonical title if valid, None if invalid
         """
         if not title or not isinstance(title, str):
-            return False
+            return None
         
-        title_lower = title.lower()
+        # First, try to resolve any redirects
+        canonical_title = self._follow_redirect(title)
+        if not canonical_title:
+            return None
         
-        # Skip meta pages and redirects
+        title_lower = canonical_title.lower()
+        
+        # Skip meta pages (but allow redirects now)
         invalid_indicators = [
             'wikipedia:',
             'category:',
@@ -362,22 +373,45 @@ class TitleResolver:
             'file:',
             'media:',
             'special:',
-            'redirect to',
             'see also',
             'disambiguation',
             'list of lists'
         ]
         
         if any(indicator in title_lower for indicator in invalid_indicators):
-            logger.debug(f"Rejecting meta/redirect page: '{title}'")
-            return False
+            logger.debug(f"Rejecting meta page: '{canonical_title}'")
+            return None
         
         # Title should be reasonable length
-        if len(title) < 2 or len(title) > 200:
-            logger.debug(f"Rejecting title with invalid length: '{title}'")
-            return False
+        if len(canonical_title) < 2 or len(canonical_title) > 200:
+            logger.debug(f"Rejecting title with invalid length: '{canonical_title}'")
+            return None
         
-        return True
+        return canonical_title
+    
+    def _follow_redirect(self, title: str) -> Optional[str]:
+        """
+        Follow Wikipedia redirects to get the canonical title
+        
+        Args:
+            title: Wikipedia article title that might be a redirect
+            
+        Returns:
+            Canonical title if redirect exists, None if error
+        """
+        try:
+            from wikipedia_search import follow_redirect
+            canonical_title = follow_redirect(title)
+            if canonical_title and canonical_title != title:
+                logger.info(f"Redirect resolved: '{title}' → '{canonical_title}'")
+                return canonical_title
+            return canonical_title
+        except ImportError:
+            logger.debug("Wikipedia search module not available for redirect resolution")
+            return title
+        except Exception as e:
+            logger.warning(f"Error following redirect for '{title}': {e}")
+            return title
     
     def _get_from_cache(self, query: str) -> Optional[str]:
         """Get result from cache if available and not expired"""

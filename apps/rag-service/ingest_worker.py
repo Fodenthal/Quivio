@@ -9,6 +9,8 @@ Supabase wiki_chunks table with content hashing for idempotent writes.
 Usage:
     python ingest_worker.py "Albert Einstein"
     python ingest_worker.py "Battle of Salamis"
+    python ingest_worker.py "Einstein" --auto-resolve
+    python ingest_worker.py "Jaguar" --auto-resolve --verbose
 """
 
 import argparse
@@ -660,6 +662,80 @@ class WikipediaIngestionWorker:
             logger.error(f"Error checking if article exists: {e}")
             return False
 
+    def resolve_and_ingest(self, topic: str, lead_only: bool = False, queue_background: bool = True) -> bool:
+        """
+        Resolve a fuzzy topic to an exact Wikipedia title and ingest it
+        
+        Args:
+            topic: Fuzzy topic query (e.g., "Einstein", "Jaguar")
+            lead_only: Whether to ingest only the lead section
+            queue_background: Whether to queue full ingestion in background (lead-only mode)
+            
+        Returns:
+            True if ingestion was successful
+        """
+        try:
+            logger.info(f"🔍 Resolving fuzzy topic: '{topic}'")
+            
+            # Import title resolution services
+            try:
+                from title_resolver import resolve_title
+            except ImportError as e:
+                logger.error(f"Title resolution services not available: {e}")
+                logger.info("Falling back to manual title ingestion")
+                return self._ingest_with_fallback(topic, lead_only, queue_background)
+            
+            # Attempt to resolve the topic to an exact title
+            resolved_title = resolve_title(topic)
+            
+            if resolved_title:
+                logger.info(f"✅ Resolved '{topic}' → '{resolved_title}'")
+                
+                # Check if resolved article already exists
+                if self.check_article_exists(resolved_title):
+                    logger.info(f"📚 Article '{resolved_title}' already exists in database")
+                    return True
+                
+                # Ingest the resolved title
+                if lead_only:
+                    return self.ingest_article_lead_only(resolved_title, queue_background)
+                else:
+                    return self.ingest_article(resolved_title)
+            else:
+                logger.warning(f"❌ Could not resolve topic '{topic}' to a Wikipedia title")
+                logger.info("Falling back to manual title ingestion")
+                return self._ingest_with_fallback(topic, lead_only, queue_background)
+                
+        except Exception as e:
+            logger.error(f"Error during title resolution for '{topic}': {e}")
+            logger.info("Falling back to manual title ingestion")
+            return self._ingest_with_fallback(topic, lead_only, queue_background)
+    
+    def _ingest_with_fallback(self, title: str, lead_only: bool, queue_background: bool) -> bool:
+        """
+        Fallback method for manual title ingestion when resolution fails
+        
+        Args:
+            title: Title to ingest (may be fuzzy)
+            lead_only: Whether to ingest only the lead section
+            queue_background: Whether to queue full ingestion in background
+            
+        Returns:
+            True if ingestion was successful
+        """
+        logger.info(f"🔄 Attempting manual ingestion of '{title}'")
+        
+        # Check if article already exists
+        if self.check_article_exists(title):
+            logger.info(f"📚 Article '{title}' already exists in database")
+            return True
+        
+        # Attempt ingestion
+        if lead_only:
+            return self.ingest_article_lead_only(title, queue_background)
+        else:
+            return self.ingest_article(title)
+
 
 def main():
     """Main CLI entry point"""
@@ -670,6 +746,7 @@ def main():
     parser.add_argument("--lead-only", action="store_true", help="Extract and ingest only the lead section (intro + first 2 paragraphs, ≤512 tokens)")
     parser.add_argument("--show-tasks", action="store_true", help="Show background task status and exit")
     parser.add_argument("--no-background", action="store_true", help="Skip background task queuing (lead-only mode only)")
+    parser.add_argument("--auto-resolve", action="store_true", help="Attempt to resolve fuzzy title to an exact Wikipedia title and ingest it")
     
     args = parser.parse_args()
     
@@ -712,24 +789,35 @@ def main():
             return 0
         
         # Perform ingestion (lead-only or full article)
-        if args.lead_only:
-            queue_background = not args.no_background
-            success = worker.ingest_article_lead_only(title, queue_background)
-            mode_description = "lead section"
+        if args.auto_resolve:
+            success = worker.resolve_and_ingest(title, args.lead_only, not args.no_background)
+            mode_description = "lead section" if args.lead_only else "full article"
             
-            if success and queue_background:
-                print("🔄 Background full ingestion has been queued")
-                print("   Use --show-tasks to monitor progress")
+            if success:
+                print(f"✅ Successfully ingested Wikipedia {mode_description}: {title}")
+                return 0
+            else:
+                print(f"❌ Failed to ingest Wikipedia {mode_description}: {title}")
+                return 1
         else:
-            success = worker.ingest_article(title)
-            mode_description = "full article"
-        
-        if success:
-            print(f"✅ Successfully ingested Wikipedia {mode_description}: {title}")
-            return 0
-        else:
-            print(f"❌ Failed to ingest Wikipedia {mode_description}: {title}")
-            return 1
+            if args.lead_only:
+                queue_background = not args.no_background
+                success = worker.ingest_article_lead_only(title, queue_background)
+                mode_description = "lead section"
+                
+                if success and queue_background:
+                    print("🔄 Background full ingestion has been queued")
+                    print("   Use --show-tasks to monitor progress")
+            else:
+                success = worker.ingest_article(title)
+                mode_description = "full article"
+            
+            if success:
+                print(f"✅ Successfully ingested Wikipedia {mode_description}: {title}")
+                return 0
+            else:
+                print(f"❌ Failed to ingest Wikipedia {mode_description}: {title}")
+                return 1
             
     except KeyboardInterrupt:
         print("\n⚠️ Ingestion interrupted by user")

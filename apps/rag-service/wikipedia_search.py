@@ -105,6 +105,62 @@ class MediaWikiSearchClient:
         except requests.exceptions.RequestException as e:
             raise WikipediaSearchError(f"Request failed: {e}")
     
+    def follow_redirect(self, title: str) -> Optional[str]:
+        """
+        Follow Wikipedia redirects to get the canonical title
+        
+        Args:
+            title: Wikipedia article title that might be a redirect
+            
+        Returns:
+            Canonical title if redirect exists, None if not a redirect or error
+        """
+        if not title or not title.strip():
+            return None
+        
+        # Build API parameters for redirect resolution
+        params = {
+            'action': 'query',
+            'format': 'json',
+            'titles': title,
+            'redirects': '1',  # Follow redirects
+            'formatversion': '2'
+        }
+        
+        try:
+            response_data = self._make_request(params)
+            
+            # Check if we have query results
+            if 'query' not in response_data:
+                return None
+            
+            query_data = response_data['query']
+            
+            # Check for redirects
+            if 'redirects' in query_data:
+                redirects = query_data['redirects']
+                if redirects and len(redirects) > 0:
+                    # Get the target of the first redirect
+                    canonical_title = redirects[0].get('to', title)
+                    logger.info(f"Redirect resolved: '{title}' → '{canonical_title}'")
+                    return canonical_title
+            
+            # Check for normalized titles (handles capitalization, etc.)
+            if 'normalized' in query_data:
+                normalized = query_data['normalized']
+                if normalized and len(normalized) > 0:
+                    normalized_title = normalized[0].get('to', title)
+                    if normalized_title != title:
+                        logger.info(f"Title normalized: '{title}' → '{normalized_title}'")
+                        return normalized_title
+            
+            # No redirect found, return original title
+            return title
+            
+        except Exception as e:
+            logger.warning(f"Error following redirect for '{title}': {e}")
+            return None
+
     def search_titles(self, query: str, limit: int = 10) -> List[Dict[str, any]]:
         """
         Search Wikipedia for articles matching the query
@@ -233,6 +289,20 @@ def search_wikipedia_titles(query: str, limit: int = 10) -> List[Dict[str, any]]
     """
     client = get_search_client()
     return client.search_titles(query, limit)
+
+
+def follow_redirect(title: str) -> Optional[str]:
+    """
+    Convenience function to follow Wikipedia redirects
+    
+    Args:
+        title: Wikipedia article title that might be a redirect
+        
+    Returns:
+        Canonical title if redirect exists, original title if not a redirect, None on error
+    """
+    client = get_search_client()
+    return client.follow_redirect(title)
 
 
 def find_best_match(query: str, max_results: int = 5, resolve_disambiguation: bool = True) -> Optional[Dict[str, any]]:
