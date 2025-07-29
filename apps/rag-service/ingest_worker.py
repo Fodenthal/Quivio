@@ -114,6 +114,94 @@ class WikipediaIngestionWorker:
             logger.error(f"Unexpected error fetching article {title}: {e}")
             return None
     
+    def extract_lead_content(self, html_content: str) -> str:
+        """
+        Extract only the lead section (intro + first 2 paragraphs) from Wikipedia HTML
+        
+        This method is optimized for quick extraction of the most relevant content
+        for trivia questions, limiting output to ≤512 tokens.
+        
+        Args:
+            html_content: Raw HTML content from Wikipedia
+            
+        Returns:
+            Clean lead section text (≤512 tokens)
+        """
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Find the main article body using same logic as full parser
+            main_content = None
+            
+            # Try traditional Wikipedia structure first
+            main_content = soup.find('div', class_='mw-parser-output')
+            
+            # If not found, try REST API structure
+            if not main_content and soup.body and 'mw-parser-output' in soup.body.get('class', []):
+                main_content = soup.body
+            
+            # Fallback to sections
+            if not main_content:
+                sections = soup.find_all('section')
+                if sections:
+                    main_section = max(sections, key=lambda s: len(s.get_text().strip()))
+                    if len(main_section.get_text().strip()) > 1000:
+                        main_content = main_section
+            
+            if not main_content:
+                logger.warning("Could not find main article content for lead extraction")
+                return ""
+            
+            # Extract only lead paragraphs (before first h2)
+            lead_lines = []
+            paragraphs = main_content.find_all('p')
+            
+            for p in paragraphs:
+                # Stop if we hit an h2 heading (indicates end of lead section)
+                preceding_h2 = p.find_previous_sibling(['h2'])
+                if preceding_h2:
+                    break
+                
+                # Skip if paragraph is in an infobox or metadata
+                if p.find_parent(['table', 'div'], class_=lambda x: x and any(
+                    cls in ' '.join(x).lower() for cls in ['infobox', 'metadata', 'navbox', 'hatnote']
+                )):
+                    continue
+                
+                text = p.get_text().strip()
+                if text:
+                    # Clean citation brackets and formatting
+                    text = re.sub(r'\[\d+\]', '', text)  # Remove [17] citations
+                    text = re.sub(r'\[note \d+\]', '', text)  # Remove [note 1] citations
+                    text = re.sub(r'\[[^\]]*\]', '', text)  # Remove remaining brackets
+                    text = re.sub(r'\s+', ' ', text).strip()
+                    
+                    if len(text) > 10:  # Only substantial text
+                        lead_lines.append(text)
+                        
+                        # Stop after first 2 meaningful paragraphs
+                        if len(lead_lines) >= 2:
+                            break
+            
+            # Join and clean the lead content
+            lead_text = ' '.join(lead_lines)
+            lead_text = re.sub(r'\s+', ' ', lead_text).strip()
+            
+            # Limit to 512 tokens to ensure quick processing
+            token_count = len(self.tokenizer.encode(lead_text))
+            if token_count > 512:
+                # Truncate to approximately 512 tokens
+                tokens = self.tokenizer.encode(lead_text)[:512]
+                lead_text = self.tokenizer.decode(tokens)
+                logger.info(f"Truncated lead content from {token_count} to ~512 tokens")
+            
+            logger.info(f"Extracted lead content: {len(lead_text)} chars, ~{len(self.tokenizer.encode(lead_text))} tokens")
+            return lead_text
+            
+        except Exception as e:
+            logger.error(f"Error extracting lead content: {e}")
+            return ""
+
     def html_to_text(self, html_content: str) -> str:
         """
         Convert HTML content to clean narrative prose using BeautifulSoup
@@ -364,6 +452,63 @@ class WikipediaIngestionWorker:
             logger.error(f"Error storing chunks for '{title}': {e}")
             return 0
     
+    def ingest_article_lead_only(self, title: str) -> bool:
+        """
+        Lead-only ingestion workflow for quick Wikipedia article processing
+        
+        Extracts and ingests only the lead section (intro + first 2 paragraphs)
+        optimized for sub-1s processing time.
+        
+        Args:
+            title: Wikipedia article title
+            
+        Returns:
+            True if lead ingestion was successful
+        """
+        start_time = time.time()
+        
+        try:
+            logger.info(f"🚀 Starting lead-only ingestion for article: {title}")
+            
+            # Step 1: Fetch article HTML
+            html_content = self.fetch_wikipedia_article(title)
+            if not html_content:
+                logger.error(f"Failed to fetch HTML content for '{title}'")
+                return False
+            
+            # Step 2: Extract lead content only
+            lead_content = self.extract_lead_content(html_content)
+            if not lead_content:
+                logger.error(f"Failed to extract lead content for '{title}'")
+                return False
+            
+            logger.info(f"Extracted {len(lead_content)} characters of lead content")
+            
+            # Step 3: Create single chunk from lead content (already ≤512 tokens)
+            chunk_data = {
+                'content': lead_content,
+                'token_count': len(self.tokenizer.encode(lead_content))
+            }
+            chunks = [chunk_data]
+            
+            logger.info(f"Created lead chunk with {chunk_data['token_count']} tokens")
+            
+            # Step 4: Store lead chunk in database
+            stored_count = self.store_chunks(title, chunks)
+            
+            elapsed_time = time.time() - start_time
+            
+            if stored_count > 0:
+                logger.info(f"✅ Successfully ingested lead for '{title}': {stored_count} chunk in {elapsed_time:.1f}s")
+                return True
+            else:
+                logger.error(f"❌ Failed to store lead chunk for '{title}'")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Lead ingestion failed for '{title}': {e}")
+            return False
+
     def ingest_article(self, title: str) -> bool:
         """
         Complete ingestion pipeline for a Wikipedia article
@@ -444,6 +589,7 @@ def main():
     parser.add_argument("title", nargs='+', help="Wikipedia article title to ingest (use quotes for titles with spaces)")
     parser.add_argument("--force", action="store_true", help="Force re-ingestion even if article exists")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--lead-only", action="store_true", help="Extract and ingest only the lead section (intro + first 2 paragraphs, ≤512 tokens)")
     
     args = parser.parse_args()
     
@@ -462,14 +608,19 @@ def main():
             print(f"✅ Article '{title}' already ingested. Use --force to re-ingest.")
             return 0
         
-        # Perform ingestion
-        success = worker.ingest_article(title)
+        # Perform ingestion (lead-only or full article)
+        if args.lead_only:
+            success = worker.ingest_article_lead_only(title)
+            mode_description = "lead section"
+        else:
+            success = worker.ingest_article(title)
+            mode_description = "full article"
         
         if success:
-            print(f"✅ Successfully ingested Wikipedia article: {title}")
+            print(f"✅ Successfully ingested Wikipedia {mode_description}: {title}")
             return 0
         else:
-            print(f"❌ Failed to ingest Wikipedia article: {title}")
+            print(f"❌ Failed to ingest Wikipedia {mode_description}: {title}")
             return 1
             
     except KeyboardInterrupt:
