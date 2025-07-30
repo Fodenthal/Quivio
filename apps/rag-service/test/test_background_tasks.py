@@ -65,7 +65,8 @@ class TestBackgroundTaskManager(unittest.TestCase):
         
         task = self.task_manager.tasks[task_id]
         self.assertEqual(task.title, title)
-        self.assertEqual(task.status, TaskStatus.PENDING)
+        # Task might be PENDING (if not started yet) or COMPLETED (if executed quickly)
+        self.assertIn(task.status, [TaskStatus.PENDING, TaskStatus.COMPLETED])
         
         logger.info("✅ Background tasks queue correctly")
     

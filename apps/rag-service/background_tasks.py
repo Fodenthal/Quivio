@@ -107,15 +107,13 @@ class BackgroundTaskManager:
     def _schedule_task(self, task_id: str, task_func: Callable, *args) -> None:
         """Schedule a task for execution"""
         try:
-            # Submit to thread pool executor
-            future = self.executor.submit(self._run_task_with_error_handling, task_id, task_func, *args)
-            
-            # Keep track of the future for monitoring
+            # Set status to PENDING before submitting to executor
             with self._lock:
-                # We can't directly store asyncio.Task here since we're using ThreadPoolExecutor
-                # Instead, we'll track the task in our tasks dict
                 if task_id in self.tasks:
                     self.tasks[task_id].status = TaskStatus.PENDING
+            
+            # Submit to thread pool executor
+            future = self.executor.submit(self._run_task_with_error_handling, task_id, task_func, *args)
                     
         except Exception as e:
             logger.error(f"Failed to schedule task {task_id}: {e}")
