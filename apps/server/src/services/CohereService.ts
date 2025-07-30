@@ -34,6 +34,13 @@ export class CohereService {
    * @returns Promise<string | null> - Context paragraphs or null if not found
    */
   async getWikiContext(topic: string): Promise<string | null> {
+    // TEMPORARILY DISABLED: Return null to prevent placeholder context from degrading question quality
+    // This will cause GeminiService to fall back to basic prompt generation
+    console.log(`🔍 CohereService temporarily disabled - skipping Wiki context retrieval for "${topic}"`);
+    return null;
+    
+    // Original implementation commented out until proper Weaviate integration is ready
+    /*
     if (!this.cohereClient) {
       console.log('🔍 CohereService disabled - skipping Wiki context retrieval');
       return null;
@@ -60,6 +67,7 @@ export class CohereService {
       console.error(`❌ Error retrieving Wiki context for "${topic}":`, error);
       return null;
     }
+    */
   }
 
   /**
