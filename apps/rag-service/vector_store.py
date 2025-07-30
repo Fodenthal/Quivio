@@ -257,8 +257,15 @@ class VectorStore:
             content = chunk["content"]
             similarity = chunk["similarity"]
 
-            # Stop if adding this chunk would exceed max_length
+            # Check if adding this chunk would exceed max_length
             if total_length + len(content) > max_length:
+                # Truncate the chunk to fit within max_length
+                remaining_space = max_length - total_length
+                if remaining_space > 100:  # Only add if we have at least 100 chars of space
+                    truncated_content = content[:remaining_space] + "..."
+                    context_parts.append(truncated_content)
+                    total_length += len(truncated_content)
+                    confidence_scores.append(similarity)
                 break
 
             context_parts.append(content)
