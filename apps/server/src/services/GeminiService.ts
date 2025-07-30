@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
 import axios from 'axios';
+import { CohereService } from './CohereService';
 
 export interface GeneratedQuestion {
   question: string;
@@ -24,6 +25,7 @@ export interface QuestionRequest {
 export class GeminiService {
   private genAI: GoogleGenerativeAI;
   private model: any;
+  private cohereService: CohereService;
 
   // JSON Schema for the expected response format
   private static readonly QUESTION_SCHEMA = `{
@@ -83,6 +85,9 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
         responseMimeType: "application/json",
       }
     });
+    
+    // Initialize CohereService for Wiki context retrieval
+    this.cohereService = new CohereService();
   }
 
   /**
@@ -91,67 +96,44 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
-    // NEW: Get Wikipedia context via rag-service with timeout
+    // NEW: Get Wikipedia context via CohereService
     let contextualPrompt = this.buildPrompt(request);
-    let ragContextUsed = false;
-    let ragErrorDetails = null;
+    let cohereContextUsed = false;
+    let cohereErrorDetails = null;
     
     try {
-      console.log(`🔍 Requesting RAG context for topic: "${request.topic}" (category: ${this.inferCategory(request.topic)})`);
+      console.log(`🔍 Requesting Cohere Wiki context for topic: "${request.topic}" (category: ${this.inferCategory(request.topic)})`);
       
-      const ragServiceUrl = process.env.RAG_SERVICE_URL || 'http://localhost:8001';
-      const ragResponse = await axios.post(`${ragServiceUrl}/get-context`, {
-        topic: request.topic,
-        category: this.inferCategory(request.topic)
-      }, {
-        timeout: 2000, // 2s timeout for reliable RAG performance while maintaining game responsiveness
-        // No retry to avoid compounding delays
-      });
+      // Get Wiki context from CohereService
+      const context = await this.cohereService.getWikiContext(request.topic);
       
-      if (ragResponse.data.context && ragResponse.data.context.trim()) {
-        const context = ragResponse.data.context;
+      if (context && context.trim()) {
         const contextLength = context.length;
-        const confidence = ragResponse.data.confidence || 0;
-        const source = ragResponse.data.source || 'unknown';
         
         // Enhanced logging with actual context content
         console.log(`📚 Enhanced question generation for "${request.topic}":`);
         console.log(`   📏 Context length: ${contextLength} characters`);
-        console.log(`   🎯 Confidence score: ${confidence.toFixed(3)}`);
-        console.log(`   📖 Source: ${source}`);
+        console.log(`   📖 Source: Cohere Wiki-Weaviate`);
         console.log(`   📄 Context preview: "${context.substring(0, 200)}${contextLength > 200 ? '...' : ''}"`);
         
-        // Check if this is the fallback message (indicates vector store issues)
-        if (context.includes('No specific context found') || context.includes('may need Wikipedia content ingestion')) {
-          console.log(`   ⚠️  WARNING: Using fallback context - vector store may not be properly configured`);
-          console.log(`   🔧  Check OPENAI_API_KEY, SUPABASE_URL, and SUPABASE_ANON_KEY environment variables`);
+        // Check if this is the placeholder context (indicates Weaviate not fully integrated yet)
+        if (context.includes('placeholder context until Weaviate integration')) {
+          console.log(`   ⚠️  WARNING: Using placeholder context - Weaviate integration pending in Phase 2`);
         }
         
         contextualPrompt = this.buildContextualPrompt(request, context);
-        ragContextUsed = true;
+        cohereContextUsed = true;
       } else {
-        console.log(`⚠️  RAG service returned empty context for "${request.topic}"`);
+        console.log(`⚠️  CohereService returned empty context for "${request.topic}"`);
       }
     } catch (error) {
       // Enhanced error logging with specific details
-      ragErrorDetails = error instanceof Error ? error.message : 'Unknown error';
+      cohereErrorDetails = error instanceof Error ? error.message : 'Unknown error';
       
-      // Type guard for axios errors
-      if (error && typeof error === 'object' && 'code' in error) {
-        const axiosError = error as any;
-        if (axiosError.code === 'ECONNABORTED') {
-          console.warn(`⚠️  RAG service timeout for "${request.topic}" (2000ms exceeded)`);
-        } else if (axiosError.code === 'ECONNREFUSED') {
-          console.warn(`⚠️  RAG service connection refused for "${request.topic}" - service may not be running`);
-        } else if (axiosError.response) {
-          console.warn(`⚠️  RAG service HTTP error for "${request.topic}": ${axiosError.response.status} - ${axiosError.response.statusText}`);
-        } else {
-          console.warn(`⚠️  RAG service error for "${request.topic}": ${axiosError.message || 'Unknown error'}`);
-        }
-      } else if (error instanceof Error) {
-        console.warn(`⚠️  RAG service error for "${request.topic}": ${error.message}`);
+      if (error instanceof Error) {
+        console.warn(`⚠️  CohereService error for "${request.topic}": ${error.message}`);
       } else {
-        console.warn(`⚠️  RAG service unknown error for "${request.topic}": ${ragErrorDetails}`);
+        console.warn(`⚠️  CohereService unknown error for "${request.topic}": ${cohereErrorDetails}`);
       }
       
       console.log(`   🔄 Falling back to basic prompt generation`);
@@ -159,7 +141,7 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
     
     try {
       // EXISTING: Generate with Gemini (enhanced with context when available)
-      const promptType = ragContextUsed ? 'enhanced' : 'basic';
+      const promptType = cohereContextUsed ? 'enhanced' : 'basic';
       console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
       
       const result = await this.model.generateContent(contextualPrompt);
@@ -172,7 +154,7 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
       console.log(`✅ Generated question: "${generatedQuestion.question}"`);
       console.log(`   📝 Answer: "${generatedQuestion.correctAnswer}"`);
       console.log(`   🏷️  Category: ${generatedQuestion.category}`);
-      console.log(`   📊 Context used: ${ragContextUsed ? 'Yes (Wikipedia)' : 'No (basic prompt)'}`);
+      console.log(`   📊 Context used: ${cohereContextUsed ? 'Yes (Cohere Wiki)' : 'No (basic prompt)'}`);
       
       return generatedQuestion;
     } catch (error) {

@@ -6,6 +6,7 @@ import { CohereClient } from 'cohere-ai';
  */
 export class CohereService {
   private cohereClient: CohereClient | null = null;
+  private weaviateClient: any = null;
 
   constructor() {
     const apiKey = process.env.COHERE_API_KEY;
@@ -17,6 +18,14 @@ export class CohereService {
     this.cohereClient = new CohereClient({
       token: apiKey,
     });
+
+    // Initialize Weaviate client for Wiki search (optional for now)
+    try {
+      // We'll implement this in a later step when we have proper Weaviate setup
+      console.log('🔍 Weaviate integration will be implemented in Phase 2');
+    } catch (error) {
+      console.warn('⚠️ Weaviate client initialization failed:', error);
+    }
   }
 
   /**
@@ -30,43 +39,22 @@ export class CohereService {
       return null;
     }
 
+    if (!topic || topic.trim() === '') {
+      console.log('🔍 Empty topic provided - skipping Wiki context retrieval');
+      return null;
+    }
+
     try {
       console.log(`🔍 Retrieving Wiki context for topic: "${topic}"`);
       
-      // Step 1: Generate embedding for the topic
-      const embedResponse = await this.cohereClient.embed({
-        texts: [topic],
-        model: 'embed-english-v3.0',
-        inputType: 'search_document',
-      });
-
-      // Handle the response properly based on the API structure
-      let embeddings: number[][] = [];
-      if (Array.isArray(embedResponse.embeddings)) {
-        embeddings = embedResponse.embeddings;
-      } else if (embedResponse.embeddings && typeof embedResponse.embeddings === 'object') {
-        // Handle the case where embeddings might be in a different format
-        const embedObj = embedResponse.embeddings as any;
-        if (embedObj.float && Array.isArray(embedObj.float)) {
-          embeddings = embedObj.float;
-        }
-      }
-
-      if (!embeddings || embeddings.length === 0) {
-        console.warn(`⚠️ Failed to generate embedding for topic: "${topic}"`);
-        return null;
-      }
-
-      const embedding = embeddings[0];
-
-      // For now, return a simple context based on the topic
-      // TODO: Implement Weaviate search when we have proper configuration
-      const mockContext = `Context about ${topic}: This topic relates to various aspects and historical information. For now, this is placeholder context until Weaviate integration is fully configured.`;
+      // For now, return a placeholder context until Weaviate is properly integrated
+      // This will be replaced with actual Wiki-Weaviate search in Phase 2
+      const placeholderContext = `Context about ${topic}: This topic relates to various aspects and historical information. For now, this is placeholder context until Weaviate integration is fully configured.`;
       
-      console.log(`✅ Retrieved mock context for "${topic}" (${mockContext.length} chars)`);
+      console.log(`✅ Retrieved placeholder context for "${topic}" (${placeholderContext.length} chars)`);
       console.log(`📝 Note: Weaviate integration pending - using placeholder context`);
       
-      return mockContext;
+      return placeholderContext;
 
     } catch (error) {
       console.error(`❌ Error retrieving Wiki context for "${topic}":`, error);
