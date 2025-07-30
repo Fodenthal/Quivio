@@ -99,7 +99,8 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
     try {
       console.log(`🔍 Requesting RAG context for topic: "${request.topic}" (category: ${this.inferCategory(request.topic)})`);
       
-      const ragResponse = await axios.post('http://localhost:8001/get-context', {
+      const ragServiceUrl = process.env.RAG_SERVICE_URL || 'http://localhost:8001';
+      const ragResponse = await axios.post(`${ragServiceUrl}/get-context`, {
         topic: request.topic,
         category: this.inferCategory(request.topic)
       }, {
