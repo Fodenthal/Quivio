@@ -10,6 +10,7 @@
     "clean": "rimraf build",
     "test": "mocha -r tsx test/**_test.ts --exit --timeout 15000",
     "test:trivia": "mocha -r tsx test/TriviaRoom_test.ts --exit --timeout 15000",
+    "test:cohere": "npx tsx test_cohere_connectivity.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "migrate:sqlite-to-supabase": "tsx migrations/migrate_sqlite_to_supabase.ts",
     "migrate:status": "tsx migrations/check_migration_status.ts",
@@ -52,11 +53,13 @@
     "@supabase/supabase-js": "^2.52.1",
     "axios": "^1.7.0",
     "better-sqlite3": "^12.2.0",
+    "cohere-ai": "^7.18.0",
     "colyseus": "^0.16.4",
     "colyseus.js": "^0.16.19",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "natural": "^8.1.0",
-    "stopword": "^3.1.5"
+    "stopword": "^3.1.5",
+    "weaviate-client": "^3.8.0"
   }
 }
