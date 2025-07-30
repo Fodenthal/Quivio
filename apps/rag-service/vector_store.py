@@ -8,6 +8,7 @@ using OpenAI embeddings and Supabase pgvector.
 import hashlib
 import logging
 import os
+import time
 from typing import Dict, List, Optional, Tuple
 
 from openai import OpenAI
@@ -42,11 +43,52 @@ class VectorStore:
         # Create client with simple configuration
         self.supabase: Client = create_client(supabase_url, supabase_key)
 
-        logger.info("Vector store initialized successfully")
+        # Initialize embedding cache with TTL
+        self._embedding_cache: Dict[str, Tuple[List[float], float]] = {}
+        self._cache_ttl = 3600  # 1 hour TTL for embeddings
+        self._cache_hits = 0
+        self._cache_misses = 0
+
+        logger.info("Vector store initialized successfully with embedding cache")
+
+    def _get_cache_key(self, text: str) -> str:
+        """Generate a cache key for the given text"""
+        return hashlib.sha256(text.encode()).hexdigest()
+
+    def _is_cache_valid(self, timestamp: float) -> bool:
+        """Check if a cached item is still valid based on TTL"""
+        return time.time() - timestamp < self._cache_ttl
+
+    def _clean_expired_cache(self) -> None:
+        """Remove expired entries from the cache"""
+        current_time = time.time()
+        expired_keys = [
+            key for key, (_, timestamp) in self._embedding_cache.items()
+            if current_time - timestamp >= self._cache_ttl
+        ]
+        for key in expired_keys:
+            del self._embedding_cache[key]
+        
+        if expired_keys:
+            logger.debug(f"Cleaned {len(expired_keys)} expired cache entries")
+
+    def get_cache_stats(self) -> Dict[str, int]:
+        """Get cache performance statistics"""
+        self._clean_expired_cache()
+        total_requests = self._cache_hits + self._cache_misses
+        hit_rate = (self._cache_hits / total_requests * 100) if total_requests > 0 else 0
+        
+        return {
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_rate_percent": round(hit_rate, 2),
+            "cache_size": len(self._embedding_cache)
+        }
 
     def generate_embedding(self, text: str) -> List[float]:
         """
         Generate embedding for text using OpenAI's text-embedding-3-small model
+        Uses caching to avoid repeated API calls for the same text
 
         Args:
             text: Text to embed
@@ -54,6 +96,29 @@ class VectorStore:
         Returns:
             List of floats representing the embedding vector
         """
+        # Clean expired cache entries periodically
+        if len(self._embedding_cache) > 100:  # Clean when cache gets large
+            self._clean_expired_cache()
+
+        # Generate cache key for the text
+        cache_key = self._get_cache_key(text)
+        current_time = time.time()
+
+        # Check if we have a valid cached embedding
+        if cache_key in self._embedding_cache:
+            cached_embedding, timestamp = self._embedding_cache[cache_key]
+            if self._is_cache_valid(timestamp):
+                self._cache_hits += 1
+                logger.debug(f"Cache HIT: Using cached embedding for text (length: {len(text)} chars)")
+                return cached_embedding
+            else:
+                # Remove expired entry
+                del self._embedding_cache[cache_key]
+
+        # Cache miss - generate new embedding
+        self._cache_misses += 1
+        logger.debug(f"Cache MISS: Generating new embedding for text (length: {len(text)} chars)")
+        
         try:
             response = self.openai_client.embeddings.create(
                 model="text-embedding-3-small",
@@ -62,7 +127,11 @@ class VectorStore:
             )
 
             embedding = response.data[0].embedding
-            logger.debug(f"Generated embedding for text (length: {len(text)} chars)")
+            
+            # Cache the new embedding
+            self._embedding_cache[cache_key] = (embedding, current_time)
+            
+            logger.debug(f"Generated and cached embedding for text (length: {len(text)} chars)")
             return embedding
 
         except Exception as e:

@@ -210,6 +210,29 @@ async def health_check() -> Dict[str, Any]:
             "message": "psutil not available for system monitoring",
         }
 
+    # Add embedding cache statistics
+    try:
+        vector_store_instance = get_vector_store()
+        if vector_store_instance:
+            cache_stats = vector_store_instance.get_cache_stats()
+            health_status["checks"]["embedding_cache"] = {
+                "status": "pass",
+                "cache_hits": cache_stats["cache_hits"],
+                "cache_misses": cache_stats["cache_misses"],
+                "hit_rate_percent": cache_stats["hit_rate_percent"],
+                "cache_size": cache_stats["cache_size"]
+            }
+        else:
+            health_status["checks"]["embedding_cache"] = {
+                "status": "skip",
+                "message": "Vector store not available"
+            }
+    except Exception as e:
+        health_status["checks"]["embedding_cache"] = {
+            "status": "fail",
+            "message": f"Cache statistics error: {e!s}"
+        }
+
     health_status["response_time_ms"] = int((time.time() - start_time) * 1000)
 
     return health_status
