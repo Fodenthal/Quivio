@@ -79,5 +79,5 @@ This solution involves two distinct services communicating over a local network 
 
 *   **Atomic Step 8: Update Final Prompt Construction**
     *   **What:** Create a new `buildPrompt` method in `GeminiService.ts` that takes the context string returned from the Python service and injects it into a master prompt that instructs the LLM to generate a question based on the provided context.
-    *   **Why:** To ensure the LLM effectively uses the high-quality context for question generation.
+    *   **Why:** To ensure the LLM effectively uses the high-quality context for question generation. 
     
