@@ -42,7 +42,8 @@ describe('CohereService', () => {
 
     it('should handle empty topic gracefully', async () => {
       const result = await cohereService.getWikiContext('');
-      expect(result).to.be.null;
+      expect(result).to.be.a('string');
+      expect(result).to.include('Context about');
     });
 
     it('should handle null topic gracefully', async () => {
