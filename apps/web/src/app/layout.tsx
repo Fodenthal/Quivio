@@ -4,7 +4,6 @@ import "./globals.css";
 import Link from "next/link";
 import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
-import { ThemeToggle } from "./components/ThemeToggle";
 
 const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
