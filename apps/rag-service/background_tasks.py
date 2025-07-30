@@ -271,7 +271,8 @@ class BackgroundTaskManager:
         self._shutdown = True
         
         if wait:
-            self.executor.shutdown(wait=True, timeout=timeout)
+            # Note: timeout parameter not supported in Python 3.9 ThreadPoolExecutor
+            self.executor.shutdown(wait=True)
         else:
             self.executor.shutdown(wait=False)
         

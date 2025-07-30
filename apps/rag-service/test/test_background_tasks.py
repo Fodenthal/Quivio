@@ -220,7 +220,7 @@ class TestBackgroundTaskManager(unittest.TestCase):
         initial_count = len(self.task_manager.tasks)
         
         # Trigger cleanup (simulate old tasks)
-        removed_count = self.task_manager.cleanup_old_tasks(max_age_hours=0)
+        removed_count = self.task_manager.cleanup_completed_tasks(max_age_hours=0)
         
         # Verify cleanup occurred
         self.assertGreaterEqual(removed_count, 0)
