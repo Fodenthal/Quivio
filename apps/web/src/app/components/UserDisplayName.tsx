@@ -36,9 +36,11 @@ export const UserDisplayName: React.FC = () => {
 
   return (
     <div className="flex items-center">
-      <div className="flex items-center bg-white/80 border border-primary/30 shadow-md rounded-full px-4 py-2 space-x-2">
-        <span className="text-primary text-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+      <div className="flex items-center bg-light-background-elevated dark:bg-dark-background-elevated border border-light-border-primary dark:border-dark-border-primary shadow-light dark:shadow-cursor rounded-full px-4 py-2 gap-3 hover:border-light-border-hover dark:hover:border-dark-border-hover transition-all duration-200">
+        <span className="text-light-accent-primary dark:text-dark-accent-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
         </span>
         <input
           id="display-name-input"
@@ -48,7 +50,7 @@ export const UserDisplayName: React.FC = () => {
           onBlur={handleBlur}
           maxLength={16}
           placeholder="Display name"
-          className="bg-transparent border-none outline-none font-semibold text-black text-base w-32 focus:ring-0 px-0"
+          className="bg-transparent border-none outline-none font-medium text-light-text-primary dark:text-dark-text-primary text-sm w-32 focus:ring-0 px-0 placeholder-light-text-tertiary dark:placeholder-dark-text-tertiary"
           style={{ minWidth: 80 }}
         />
       </div>

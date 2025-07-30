@@ -71,7 +71,7 @@ export function ChatWindow({
 
   if (messages.length === 0) {
     return (
-      <div className={`${height} bg-black/20 rounded-lg p-4 flex items-center justify-center`}>
+      <div className={`${height} bg-gray-50 dark:bg-black/20 rounded-lg p-4 flex items-center justify-center border border-gray-300 dark:border-transparent`}>
         <div className="text-center text-text-secondary">
           <p className="text-sm">No messages yet</p>
           <p className="text-xs mt-1">Start the conversation!</p>
@@ -84,7 +84,7 @@ export function ChatWindow({
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${height} bg-black/20 rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent`}
+      className={`${height} bg-gray-50 dark:bg-black/20 rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent border border-gray-300 dark:border-transparent`}
     >
       <div className="p-2 space-y-1">
         {messages

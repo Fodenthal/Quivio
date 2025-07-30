@@ -130,14 +130,14 @@ export function AISettingsPanel({
   };
 
   return (
-    <div className="bg-white/10 rounded-2xl shadow-lg p-8 border border-white/20 max-w-xl w-full mx-auto space-y-8">
-      <h2 className="text-2xl font-bold text-text-main mb-4">AI Question Settings</h2>
+    <div className="bg-white/10 rounded-2xl shadow-lg p-8 border border-gray-300 dark:border-white/20 max-w-xl w-full mx-auto space-y-8">
+      <h2 className="text-2xl font-bold text-text-main mb-4">Game Settings</h2>
       {/* Game Topics Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
         <div className="flex flex-wrap gap-2 mb-2">
           {topics.map((topic, index) => (
-            <span key={index} className="flex items-center bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium">
+            <span key={index} className="flex items-center bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium border border-primary/30 dark:border-primary/50">
               {topic}
               {!isReadOnly && (
                 <button
@@ -162,15 +162,15 @@ export function AISettingsPanel({
             disabled={isReadOnly}
             className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
               isReadOnly 
-                ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                : "bg-white/10 border-white/20 text-text-main"
+                ? "bg-white/5 border-gray-300 dark:border-white/10 text-text-secondary cursor-not-allowed" 
+                : "bg-white/10 border-gray-300 dark:border-white/20 text-text-main"
             }`}
           />
           {!isReadOnly && (
             <button
               type="button"
               onClick={handleAddTopicChip}
-              className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-3 py-2 text-sm font-medium bg-primary text-gray-900 dark:text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary border border-primary/70 dark:border-primary/50"
             >
               + Add
             </button>
@@ -189,7 +189,7 @@ export function AISettingsPanel({
           )}
         </div>
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-6 border-t border-gray-300 dark:border-white/10" />
       {/* Difficulty Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
@@ -207,7 +207,7 @@ export function AISettingsPanel({
           )}
         </div>
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-6 border-t border-gray-300 dark:border-white/10" />
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
@@ -223,8 +223,8 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
+                  ? "bg-white/5 border-gray-300 dark:border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-gray-300 dark:border-white/20 text-text-main"
               }`}
             />
           </div>
@@ -239,8 +239,8 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
+                  ? "bg-white/5 border-gray-300 dark:border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-gray-300 dark:border-white/20 text-text-main"
               }`}
             />
           </div>
@@ -255,8 +255,8 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
+                  ? "bg-white/5 border-gray-300 dark:border-white/10 text-text-secondary cursor-not-allowed" 
+                  : "bg-white/10 border-gray-300 dark:border-white/20 text-text-main"
               }`}
             />
           </div>

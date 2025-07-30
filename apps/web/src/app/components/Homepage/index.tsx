@@ -6,6 +6,7 @@ import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
 import { TrendingTopics } from "../TrendingTopics";
 import { UserDisplayName } from "../UserDisplayName";
+import { ThemeToggle } from "../ThemeToggle";
 import { useDisplayName } from "../../../contexts/DisplayNameContext";
 
 export interface HomepageProps {
@@ -57,26 +58,33 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
 
   return (
     <div className="min-h-screen">
-      {/* Header styled like GameLayout, with Quivio and UserDisplayName */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header with Cursor-style design */}
+      <header className="header-cursor">
+        <div className="container-cursor">
           <div className="flex items-center justify-between h-20">
-            <h1 className="text-3xl font-bold text-primary">Quivio</h1>
-            <UserDisplayName />
+            <div className="flex flex-col">
+              <h1 className="heading-cursor-lg text-light-accent-primary dark:text-dark-accent-primary">Quivio</h1>
+              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm font-medium">Limitless Trivia</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <UserDisplayName />
+            </div>
           </div>
         </div>
       </header>
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col gap-8">
+      
+      {/* Main Content with equal spacing */}
+      <main className="container-cursor py-12 lg:py-16">
+        <div className="space-y-12">
           {/* Main Row: Active Rooms (left) and Create/Join Room panels (right) */}
-          <div className="flex flex-col lg:flex-row h-[600px] gap-4">
-            {/* Left: Active Rooms - takes remaining space */}
-            <div className="flex-1 h-full">
+          <div className="grid lg:grid-cols-3 gap-8 h-[500px]">
+            {/* Left: Active Rooms - takes 2/3 space */}
+            <div className="lg:col-span-2 h-full">
               <ActiveRoomsList onJoinRoom={onJoinRoom} />
             </div>
-            {/* Right: Create and Join Room panels stacked - fixed width */}
-            <div className="w-80 h-full flex flex-col gap-4">
+            {/* Right: Create and Join Room panels stacked - 1/3 width */}
+            <div className="h-full flex flex-col gap-6">
               {/* Create Room Panel */}
               <div className="flex-1">
                 <CreateRoomPanel
@@ -103,8 +111,9 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
               </div>
             </div>
           </div>
-          {/* Bottom: Trending Topics, full width */}
-          <div>
+          
+          {/* Trending Topics, full width with much more spacing */}
+          <div className="pt-52">
             <TrendingTopics />
           </div>
         </div>

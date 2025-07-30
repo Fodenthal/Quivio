@@ -32,63 +32,88 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-4 border border-white/20 hover:border-white/30 transition-all duration-300 h-full flex flex-col">
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-text-main">
+    <div className="card p-6 h-full flex flex-col animate-cursor-in">
+      <div className="text-center mb-6">
+        <h2 className="heading-cursor text-xl">
           Start a new room
         </h2>
+        <p className="text-cursor-secondary text-sm mt-2">
+          Create a trivia room and invite friends
+        </p>
       </div>
       
-      <div className="flex-grow flex flex-col justify-center space-y-4">
+      <div className="flex-grow flex flex-col justify-center space-y-6">
         {/* Room Name Input */}
         <div className="space-y-2">
+          <label htmlFor="room-name" className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
+            Room Name
+          </label>
           <input
+            id="room-name"
             type="text"
             value={roomName}
             onChange={(e) => onRoomNameChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Room name"
-            className="w-full px-3 py-2 text-center text-sm bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:border-primary/50 transition-all duration-300"
+            placeholder="Enter room name..."
+            className="input"
           />
         </div>
         
         {/* Public/Private Toggle */}
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => onPrivateToggle(false)}
-            className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
-              !isPrivate
-                ? "bg-primary text-white"
-                : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
-            }`}
-          >
-            Public
-          </button>
-          <button
-            onClick={() => onPrivateToggle(true)}
-            className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
-              isPrivate
-                ? "bg-primary text-white"
-                : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
-            }`}
-          >
-            Private
-          </button>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
+            Room Type
+          </label>
+          <div className="flex items-center gap-2 p-1 bg-light-background-tertiary dark:bg-dark-background-tertiary rounded-lg border border-light-border-primary dark:border-dark-border-primary">
+            <button
+              onClick={() => onPrivateToggle(false)}
+              className={`flex-1 px-4 py-3 rounded-md font-semibold transition-all duration-200 ${
+                !isPrivate
+                  ? "bg-light-accent-primary dark:bg-dark-accent-primary text-white shadow-light dark:shadow-cursor transform scale-105 ring-2 ring-light-accent-primary/30 dark:ring-dark-accent-primary/30"
+                  : "text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary hover:bg-light-background-hover dark:hover:bg-dark-background-hover"
+              }`}
+            >
+              Public
+            </button>
+            <button
+              onClick={() => onPrivateToggle(true)}
+              className={`flex-1 px-4 py-3 rounded-md font-semibold transition-all duration-200 ${
+                isPrivate
+                  ? "bg-light-accent-primary dark:bg-dark-accent-primary text-white shadow-light dark:shadow-cursor transform scale-105 ring-2 ring-light-accent-primary/30 dark:ring-dark-accent-primary/30"
+                  : "text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary hover:bg-light-background-hover dark:hover:bg-dark-background-hover"
+              }`}
+            >
+              Private
+            </button>
+          </div>
+          <p className="text-xs text-light-text-tertiary dark:text-dark-text-tertiary text-center">
+            {!isPrivate 
+              ? "Anyone can join with the room code" 
+              : "Only invited players can join"
+            }
+          </p>
         </div>
         
         {/* Create Room Button */}
         <button
           onClick={onCreateRoom}
           disabled={isCreating || !roomName.trim() || !displayName.trim()}
-          className="w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-opacity-90 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="btn-primary w-full py-3 text-base font-semibold"
         >
-          {isCreating ? "Creating..." : "Create Room"}
+          {isCreating ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Creating...
+            </div>
+          ) : (
+            "Create Room"
+          )}
         </button>
         
         {/* Error Display */}
         {error && (
-          <div className="p-2 bg-red-500/20 border border-red-500/40 rounded-lg">
-            <p className="text-red-400 text-xs text-center">{error}</p>
+          <div className="p-4 bg-error/10 border border-error/20 rounded-lg animate-cursor-in">
+            <p className="text-error text-sm text-center">{error}</p>
           </div>
         )}
       </div>

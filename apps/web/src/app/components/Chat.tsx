@@ -30,9 +30,9 @@ export function Chat({
   return (
     <div className="h-[600px] flex flex-col">
       {/* Chat Header */}
-      <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-white/20">
-        <h3 className="text-xl font-bold text-text-main">Chat</h3>
-        <div className="text-sm text-text-secondary">
+      <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-border-primary">
+        <h3 className="heading-cursor text-xl">Chat</h3>
+        <div className="text-sm text-cursor-secondary">
           {validMessages.length > 0 ? `${validMessages.length} messages` : "No messages"}
         </div>
       </div>
@@ -47,7 +47,7 @@ export function Chat({
       </div>
 
       {/* Chat Input - fixed at bottom */}
-      <div className="flex-shrink-0 pt-4 border-t border-white/20">
+      <div className="flex-shrink-0 pt-4 border-t border-border-primary">
         <ChatInput
           onSendMessage={onSendMessage}
           disabled={disabled}

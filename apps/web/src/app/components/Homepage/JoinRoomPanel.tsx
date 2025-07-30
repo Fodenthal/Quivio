@@ -30,36 +30,54 @@ export const JoinRoomPanel: React.FC<JoinRoomPanelProps> = ({
   const isFormValid = displayName.trim() && gamePin.trim();
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-4 border border-white/20 hover:border-white/30 transition-all duration-300 h-full flex flex-col">
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-text-main">
+    <div className="card p-6 h-full flex flex-col animate-cursor-in">
+      <div className="text-center mb-6">
+        <h2 className="heading-cursor text-xl">
           Join a room
         </h2>
+        <p className="text-cursor-secondary text-sm mt-2">
+          Enter a room code to join an existing game
+        </p>
       </div>
-      <div className="flex-grow flex flex-col justify-center space-y-4">
+      
+      <div className="flex-grow flex flex-col justify-center space-y-6">
         {/* Game PIN Input */}
         <div className="space-y-2">
+          <label htmlFor="game-pin" className="text-sm font-medium text-text-secondary">
+            Room Code
+          </label>
           <input
+            id="game-pin"
             type="text"
             value={gamePin}
             onChange={(e) => onGamePinChange(e.target.value.toUpperCase())}
             onKeyDown={handleKeyDown}
-            placeholder="Room code"
-            className="w-full px-3 py-2 text-center text-sm bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 focus:border-green-500/50 transition-all duration-300 font-mono tracking-wider"
+            placeholder="Enter room code..."
+            className="input"
+            maxLength={6}
           />
         </div>
+        
         {/* Join Room Button */}
         <button
           onClick={onJoinRoom}
           disabled={isJoining || !isFormValid}
-          className="w-full px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-opacity-90 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="btn-primary w-full py-3 text-base font-semibold"
         >
-          {isJoining ? "Joining..." : "Join Room"}
+          {isJoining ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Joining...
+            </div>
+          ) : (
+            "Join Room"
+          )}
         </button>
+        
         {/* Error Display */}
         {error && (
-          <div className="p-2 bg-red-500/20 border border-red-500/40 rounded-lg">
-            <p className="text-red-400 text-xs text-center">{error}</p>
+          <div className="p-4 bg-error/10 border border-error/20 rounded-lg animate-cursor-in">
+            <p className="text-error text-sm text-center">{error}</p>
           </div>
         )}
       </div>

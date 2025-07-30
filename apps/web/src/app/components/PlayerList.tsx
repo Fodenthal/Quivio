@@ -35,11 +35,11 @@ const PlayerListComponent = memo(function PlayerListInner({
 
     return (
       <div className="relative">
-        <div className={`w-12 h-12 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+        <div className={`w-12 h-12 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-cursor`}>
           {firstLetter}
         </div>
         {/* Score positioned at bottom-left corner of avatar */}
-        <div className="absolute -bottom-2.5 -left-2 w-7 h-6 flex items-center justify-center text-sm font-bold text-white bg-black/70 rounded border border-white/20">
+        <div className="absolute -bottom-2.5 -left-2 w-7 h-6 flex items-center justify-center text-sm font-bold text-white bg-gray-800 dark:bg-background-secondary/90 rounded border border-gray-600 dark:border-border-primary">
           {player.score}
         </div>
       </div>
@@ -74,8 +74,8 @@ const PlayerListComponent = memo(function PlayerListInner({
   }, [gameState.playerIncorrectGuesses]);
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
-      <h3 className="text-2xl font-bold text-text-main mb-4">Players</h3>
+    <div className="card p-6 animate-cursor-in">
+      <h3 className="heading-cursor text-2xl mb-6">Players</h3>
       <div className="space-y-4">
         {playersArray.map((player, index) => {
           const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
@@ -84,16 +84,16 @@ const PlayerListComponent = memo(function PlayerListInner({
           return (
             <div
               key={`${player.id}-${index}`}
-              className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-75 ${
+              className={`flex items-center gap-4 p-4 rounded-lg transition-all duration-200 ${
                 hasCorrectAnswer 
-                  ? "bg-pink-500/20 shadow-lg" 
-                  : "bg-black/20"
+                  ? "bg-success/20 border border-success/30 shadow-cursor-lg" 
+                  : "bg-background-tertiary border border-border-primary"
               }`}
             >
               {getPlayerAvatar(player)}
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-text-main">{player.name}</div>
-                <div className="text-sm text-text-secondary h-5 overflow-hidden">
+                <div className="font-semibold text-text-primary">{player.name}</div>
+                <div className="text-sm text-cursor-secondary h-5 overflow-hidden">
                   {incorrectGuess && (
                     <span className="block truncate">{incorrectGuess}</span>
                   )}
@@ -103,9 +103,9 @@ const PlayerListComponent = memo(function PlayerListInner({
               {showParticipationStatus && (
                 <div className="text-sm font-medium flex-shrink-0">
                   {participatingPlayers.has(player.id) ? (
-                    <span className="text-green-400">Joined!</span>
+                    <span className="text-success">Joined!</span>
                   ) : (
-                    <span className="text-text-secondary">...</span>
+                    <span className="text-cursor-secondary">...</span>
                   )}
                 </div>
               )}

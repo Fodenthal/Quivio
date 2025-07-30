@@ -7,8 +7,6 @@ interface TrendingTopic {
   topic: string;
   popularity: number;
   category: string;
-  trending: "rising" | "falling";
-  change: number; // Percentage change
 }
 
 export const TrendingTopics = () => {
@@ -19,7 +17,6 @@ export const TrendingTopics = () => {
     const sampleTopics = [
       { topic: "Ancient civilizations and their mysterious disappearances", category: "History", popularity: 1247 },
       { topic: "The science behind climate change and global warming", category: "Science", popularity: 892 },
-      { topic: "Lebron james dih", category: "Entertainment", popularity: 1156 },
       { topic: "Space exploration and the search for extraterrestrial life", category: "Science", popularity: 734 },
       { topic: "World cuisines and their traditional cooking methods", category: "Food", popularity: 623 },
       { topic: "Renaissance art and its revolutionary techniques", category: "Art", popularity: 445 },
@@ -67,37 +64,52 @@ export const TrendingTopics = () => {
       { topic: "Alternative medicine and holistic healing", category: "Health", popularity: 345 }
     ];
 
-    // Shuffle and return a subset with trend data
+    // Shuffle and return only 24 topics
     return sampleTopics
       .sort(() => Math.random() - 0.5)
-      .slice(0, 48)
+      .slice(0, 24)
       .map((topic, index) => ({
         id: `topic-${index}`,
-        ...topic,
-        trending: Math.random() > 0.5 ? "rising" : "falling" as "rising" | "falling",
-        change: Math.round((Math.random() * 30 - 15) * 100) / 100 // Random change between -15% to +15%
+        ...topic
       }));
   };
 
-  // Get trend display properties
-  const getTrendDisplay = (trending: "rising" | "falling"): { 
-    color: string; 
-    arrow: string; 
-    changeColor: string;
-  } => {
-    if (trending === "rising") {
-      return { 
-        color: "text-green-400", 
-        arrow: "↑", 
-        changeColor: "text-green-400" 
-      };
-    } else {
-      return { 
-        color: "text-red-400", 
-        arrow: "↓", 
-        changeColor: "text-red-400" 
-      };
-    }
+  // Get category color
+  const getCategoryColor = (category: string): string => {
+    const colors = {
+      'Science': 'text-blue-600 dark:text-blue-400',
+      'Technology': 'text-purple-600 dark:text-purple-400',
+      'History': 'text-amber-600 dark:text-amber-400',
+      'Art': 'text-pink-600 dark:text-pink-400',
+      'Sports': 'text-green-600 dark:text-green-400',
+      'Music': 'text-indigo-600 dark:text-indigo-400',
+      'Food': 'text-orange-600 dark:text-orange-400',
+      'Nature': 'text-emerald-600 dark:text-emerald-400',
+      'Psychology': 'text-violet-600 dark:text-violet-400',
+      'Literature': 'text-rose-600 dark:text-rose-400',
+      'Fashion': 'text-fuchsia-600 dark:text-fuchsia-400',
+      'Medicine': 'text-cyan-600 dark:text-cyan-400',
+      'Gaming': 'text-lime-600 dark:text-lime-400',
+      'Environment': 'text-teal-600 dark:text-teal-400',
+      'Mythology': 'text-yellow-600 dark:text-yellow-400',
+      'Economics': 'text-slate-600 dark:text-slate-400',
+      'Geography': 'text-stone-600 dark:text-stone-400',
+      'Culture': 'text-red-600 dark:text-red-400',
+      'Innovation': 'text-sky-600 dark:text-sky-400',
+      'Language': 'text-zinc-600 dark:text-zinc-400',
+      'Entertainment': 'text-pink-600 dark:text-pink-400',
+      'Agriculture': 'text-green-600 dark:text-green-400',
+      'Transportation': 'text-blue-600 dark:text-blue-400',
+      'Philosophy': 'text-purple-600 dark:text-purple-400',
+      'Weather': 'text-cyan-600 dark:text-cyan-400',
+      'Health': 'text-emerald-600 dark:text-emerald-400',
+      'Astronomy': 'text-indigo-600 dark:text-indigo-400',
+      'Education': 'text-blue-600 dark:text-blue-400',
+      'Crafts': 'text-amber-600 dark:text-amber-400',
+      'Urban': 'text-slate-600 dark:text-slate-400'
+    };
+    
+    return colors[category as keyof typeof colors] || 'text-gray-600 dark:text-gray-400';
   };
 
   // Initialize topics on mount
@@ -106,44 +118,43 @@ export const TrendingTopics = () => {
   }, []);
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-4 border border-white/20">
-      <h2 className="text-lg font-bold text-text-main mb-3 text-center">
+    <div className="card p-6 animate-cursor-in">
+      <h2 className="heading-cursor text-xl mb-6 text-center">
         Trending Topics
       </h2>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {topics.map((topic, index) => {
-          const { color, arrow, changeColor } = getTrendDisplay(topic.trending);
+          const categoryColor = getCategoryColor(topic.category);
           
           return (
             <div
               key={topic.id}
-              className="bg-white/5 rounded-lg p-2 hover:bg-white/10 transition-all duration-200 cursor-pointer border border-white/10"
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-light-background-elevated to-light-background-hover dark:from-dark-background-elevated dark:to-dark-background-hover border border-light-border-primary dark:border-dark-border-primary hover:border-light-border-hover dark:hover:border-dark-border-hover p-4 transition-all duration-300 cursor-pointer hover:shadow-cursor-lg hover:scale-105"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-text-secondary text-xs font-mono font-medium">
+              {/* Topic number */}
+              <div className="absolute top-3 right-3">
+                <span className="text-xs font-mono font-bold text-light-text-tertiary dark:text-dark-text-tertiary">
                   #{index + 1}
                 </span>
-                <div className="flex items-center gap-1">
-                  <span className={`text-xs font-bold ${color}`}>
-                    {arrow}
-                  </span>
-                  <span className={`text-xs font-medium ${changeColor}`}>
-                    {topic.change > 0 ? `+${topic.change}` : topic.change}%
-                  </span>
-                </div>
               </div>
               
-              <p className="text-text-main text-xs font-medium leading-tight mb-1 line-clamp-2">
-                {topic.topic}
-              </p>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-secondary">
+              {/* Category badge */}
+              <div className="mb-3">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${categoryColor} bg-opacity-10 border border-current border-opacity-20`}>
                   {topic.category}
                 </span>
-                <span className="text-xs text-text-secondary">
-                  {topic.popularity.toLocaleString()}
+              </div>
+              
+              {/* Topic title */}
+              <h3 className="text-cursor text-sm font-semibold leading-tight mb-3 line-clamp-3 group-hover:text-light-accent-primary dark:group-hover:text-dark-accent-primary transition-colors duration-200">
+                {topic.topic}
+              </h3>
+              
+              {/* Popularity */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-cursor-secondary">
+                  {topic.popularity.toLocaleString()} views
                 </span>
               </div>
             </div>

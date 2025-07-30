@@ -54,7 +54,7 @@ export function WinnerScreen({
               won the game!
             </h2>
           </div>
-          <div className="bg-black/20 border border-white/20 rounded-xl px-4 py-3 shadow-inner">
+          <div className="bg-gray-100 dark:bg-black/20 border border-gray-300 dark:border-white/20 rounded-xl px-4 py-3 shadow-inner">
             <div className="text-text-secondary text-sm font-medium mb-1">Final Score</div>
             <div className="text-2xl font-bold text-green-400">
               {winner.score} points

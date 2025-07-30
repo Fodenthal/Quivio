@@ -107,8 +107,6 @@ export const GameView = memo(function GameView({
     return "text-3xl";
   }, [gameState.currentPrompt?.text]);
 
-
-
   const phase = getGamePhase;
 
   // Random encouraging messages for round-ended feedback
@@ -120,8 +118,6 @@ export const GameView = memo(function GameView({
     "Learning with every round!",
     "Stay focused, victory awaits!"
   ], []);
-
-
 
   // Find who got the answer first
   const firstCorrectPlayer = useMemo(() => {
@@ -137,8 +133,6 @@ export const GameView = memo(function GameView({
     const firstCorrectPlayerId = correctGuesses[0][0];
     return gameState.players.get(firstCorrectPlayerId);
   }, [gameState.roundEnded, gameState.roundGuesses, gameState.players]);
-
-
 
   // Select a random encouraging message based on current round
   const selectedEncouragingMessage = useMemo(() => {
@@ -219,7 +213,7 @@ export const GameView = memo(function GameView({
   return (
     <div className="flex gap-6 h-full min-h-[600px]">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
+      <div className="relative flex-1 card p-8 space-y-6 h-full min-h-[600px] flex flex-col animate-cursor-in">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -265,26 +259,26 @@ export const GameView = memo(function GameView({
                 
                 {/* Start Game Button and Status Messages - Host Only */}
                 {isHost && (
-                  <div className="mt-auto pt-6 border-t border-white/20">
+                  <div className="mt-auto pt-6 border-t border-border-primary">
                     <button
                       onClick={onStartGame}
                       disabled={!canStartGame}
-                      className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
+                      className={`w-full py-4 px-8 rounded-lg font-bold text-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 focus:ring-offset-background ${
                         canStartGame
-                          ? "bg-primary hover:bg-opacity-90 text-white focus:ring-primary"
-                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          ? "btn-primary"
+                          : "bg-background-tertiary text-text-muted cursor-not-allowed"
                       }`}
                     >
                       Start Game
                     </button>
-                    <div className="mt-4 space-y-1 text-center">
+                    <div className="mt-4 space-y-2 text-center">
                       {!hasMinPlayers && (
-                        <p className="text-yellow-300 text-sm">
+                        <p className="text-warning text-sm">
                           Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start.
                         </p>
                       )}
                       {!hasTopics && (
-                        <p className="text-yellow-300 text-sm">
+                        <p className="text-warning text-sm">
                           Please set at least one topic to start the game.
                         </p>
                       )}
@@ -299,16 +293,16 @@ export const GameView = memo(function GameView({
         {/* Existing game content - only show when not in lobby and not ended */}
         {gameState.gameStatus !== GameStatus.WAITING && phase !== "ended" && (
           <>
-            <div className="flex items-center justify-between pb-4 border-b border-white/20">
-              <h2 className="text-3xl font-bold text-text-main">
+            <div className="flex items-center justify-between pb-4 border-b border-border-primary">
+              <h2 className="heading-cursor text-3xl">
                 Round {gameState.currentRound}
               </h2>
               {/* Only show timer if not loading/AD */}
               {phase !== "loading" && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg font-medium text-text-secondary">Time:</span>
+                <div className="flex-cursor">
+                  <span className="text-lg font-medium text-cursor-secondary">Time:</span>
                   <span className={`text-2xl font-bold ${
-                    timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
+                    timerDisplay.isUrgent ? 'text-error' : 'text-text-primary'
                   }`}>
                     {timerDisplay.time}
                   </span>
@@ -319,28 +313,28 @@ export const GameView = memo(function GameView({
             {/* Question Display Panel or Ad Placeholder */}
             {phase === "loading" ? (
               // Ad placeholder during question generation
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-background-tertiary rounded-xl p-8 text-center h-[420px] flex flex-col justify-center">
                 <div className="flex-grow flex flex-col justify-center">
-                  <h2 className="text-8xl font-bold text-text-main tracking-wider">
+                  <h2 className="text-8xl font-bold text-text-primary tracking-wider">
                     AD
                   </h2>
-                  <p className="text-lg text-text-secondary mt-4">
+                  <p className="text-lg text-cursor-secondary mt-4">
                     Questions are loading...
                   </p>
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-background-tertiary rounded-xl p-8 text-center h-[420px] flex flex-col justify-center">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
-                    <div className="text-lg text-text-main font-medium mb-1">
+                    <div className="text-lg text-text-primary font-medium mb-1">
                       The answer was
                     </div>
-                    <h2 className="text-4xl font-bold text-text-main leading-relaxed">
+                    <h2 className="text-4xl font-bold text-text-primary leading-relaxed">
                       {gameState.correctAnswer}
                     </h2>
-                    <div className="text-lg text-text-secondary font-medium mt-4">
+                    <div className="text-lg text-cursor-secondary font-medium mt-4">
                       {firstCorrectPlayer ? (
                         <span>{firstCorrectPlayer.name} found it first.</span>
                       ) : (
@@ -353,12 +347,12 @@ export const GameView = memo(function GameView({
                   // Normal question display during round
                   <>
                     <div className="mb-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
+                      <span className="badge-primary text-base font-medium px-4 py-2">
                         {gameState.currentPrompt.category || "General"}
                       </span>
                     </div>
                     <div className="flex-grow flex flex-col justify-center">
-                      <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                      <h3 className={`${promptFontSize} font-semibold text-text-primary leading-relaxed`}>
                         {gameState.currentPrompt.text}
                       </h3>
                     </div>
@@ -368,20 +362,20 @@ export const GameView = memo(function GameView({
             )}
 
             {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-              <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
+              <div className="bg-background-tertiary rounded-xl p-6 h-[92px] flex flex-col justify-center">
                 {phase === "round-ended" ? (
                   <div className="text-center">
                     {(() => {
                       const playerGuess = getPlayerGuess;
                       if (playerGuess && playerGuess.isCorrect) {
                         return (
-                          <p className="text-xl font-medium text-green-300">
+                          <p className="text-xl font-medium text-success">
                             &quot;{playerGuess.guess}&quot; is correct!
                           </p>
                         );
                       } else {
                         return (
-                          <p className="text-xl font-medium text-text-main">
+                          <p className="text-xl font-medium text-text-primary">
                             {selectedEncouragingMessage}
                           </p>
                         );
@@ -396,13 +390,13 @@ export const GameView = memo(function GameView({
 
                       if (playerGuess.isCorrect) {
                         return (
-                          <p className="text-xl font-medium text-green-300">
+                          <p className="text-xl font-medium text-success">
                             &quot;{playerGuess.guess}&quot; is correct!
                           </p>
                         );
                       } else {
                         return (
-                          <p className="text-xl font-medium text-red-300">
+                          <p className="text-xl font-medium text-error">
                             Incorrect. Keep trying!
                           </p>
                         );
@@ -419,7 +413,7 @@ export const GameView = memo(function GameView({
                       onKeyDown={handleGuessKeyDown}
                       placeholder="Enter your answer and press Enter..."
                       disabled={isSubmitting || phase === "paused"}
-                      className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                      className="input text-lg"
                       autoComplete="off"
                       maxLength={100}
                     />
@@ -443,7 +437,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel */}
       <div 
         ref={chatContainerRef}
-        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[600px] flex flex-col"
+        className="w-80 card p-6 h-full min-h-[600px] flex flex-col"
       >
         <Chat
           messages={chatMessages}

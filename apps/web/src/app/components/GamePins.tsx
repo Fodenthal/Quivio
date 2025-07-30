@@ -43,7 +43,7 @@ export function GamePins({ gamePin, className = "" }: GamePinsProps) {
   }
 
   return (
-    <div className={`bg-black/20 p-2 rounded-md border border-white/20 ${className}`}>
+    <div className={`bg-gray-50 dark:bg-black/20 p-2 rounded-md border border-gray-300 dark:border-white/20 ${className}`}>
       <div className="flex items-center space-x-2">
         <span className="text-lg font-mono text-text-main tracking-wider">
           {gamePin}
