@@ -103,7 +103,7 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
         topic: request.topic,
         category: this.inferCategory(request.topic)
       }, {
-        timeout: 1000, // 1s timeout for real-time game performance
+        timeout: 2000, // 2s timeout for reliable RAG performance while maintaining game responsiveness
         // No retry to avoid compounding delays
       });
       
@@ -139,7 +139,7 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
       if (error && typeof error === 'object' && 'code' in error) {
         const axiosError = error as any;
         if (axiosError.code === 'ECONNABORTED') {
-          console.warn(`⚠️  RAG service timeout for "${request.topic}" (1000ms exceeded)`);
+          console.warn(`⚠️  RAG service timeout for "${request.topic}" (2000ms exceeded)`);
         } else if (axiosError.code === 'ECONNREFUSED') {
           console.warn(`⚠️  RAG service connection refused for "${request.topic}" - service may not be running`);
         } else if (axiosError.response) {
