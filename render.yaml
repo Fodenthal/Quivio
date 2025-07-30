@@ -1,0 +1,42 @@
+services:
+  # Existing Colyseus server
+  - type: web
+    name: quivio-server
+    env: node
+    plan: starter
+    buildCommand: cd apps/server && npm install && npm run build
+    startCommand: cd apps/server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RAG_SERVICE_URL
+        value: https://quivio-rag-service.onrender.com
+
+  # New RAG service
+  - type: web
+    name: quivio-rag-service
+    env: docker
+    plan: starter
+    dockerfilePath: ./apps/rag-service/Dockerfile
+    dockerContext: ./apps/rag-service
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: PYTHONPATH
+        value: /app
+      - key: PORT
+        value: 8001 
