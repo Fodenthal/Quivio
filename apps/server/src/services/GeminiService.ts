@@ -80,9 +80,14 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
     
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
+      tools: [
+        { googleSearch: {} } as any
+      ],
       generationConfig: {
-        responseMimeType: "application/json",
+        temperature: 0.4,
+        topP:        0.9,
+        maxOutputTokens: 512
       }
     });
     
