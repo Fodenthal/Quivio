@@ -68,9 +68,12 @@ export class GeminiService {
 5. **Acceptable answers:** Include exhaustive common variants—abbreviations, nicknames, alternative spellings, formal names, punctuation variants (e.g., "GSW", "Golden State Warriors", "Wardell Curry Sr.").
 6. **Diverse phrasing:** Across calls, vary structure (who/what/where/when/how many/records/dates/puzzle). Avoid repeating the same template every time (see prior questions below).
 7. **Category:** Use the broadest sensible label (e.g., Sports for athlete facts unless clearly Film, History, etc.).
+8. **Factual accuracy:** If you are not fully certain of a fact, date, statistic, or current information, use the google_search tool with a brief, specific query before returning the JSON. This ensures questions are accurate and up-to-date.
 
 ### Self-Check Before Returning
-Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.`;
+Validate rules 1–8 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
+
+**IMPORTANT: Output ONLY the raw JSON object - no code fences. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
 
 
   constructor(apiKey: string) {
