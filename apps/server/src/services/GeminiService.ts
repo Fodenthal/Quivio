@@ -72,7 +72,7 @@ export class GeminiService {
 ### Self-Check Before Returning
 Validate rules 1–8 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
 
-**IMPORTANT: Output ONLY the raw JSON object - no code fences. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
+**IMPORTANT: Output ONLY the raw JSON object. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
 
 
   constructor(apiKey: string) {
@@ -147,10 +147,24 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
           tools: [{ googleSearch: {} }],
           temperature: 0.4,
           topP: 0.9,
-          maxOutputTokens: 512
+          maxOutputTokens: 2048
         }
       });
-      const text = response.text;
+      
+      // Extract text from new SDK response structure
+      const candidate = response.candidates?.[0];
+      if (!candidate?.content?.parts?.[0]?.text) {
+        console.error('❌ Invalid response structure:', {
+          hasCandidates: !!response.candidates?.length,
+          hasContent: !!candidate?.content,
+          hasParts: !!candidate?.content?.parts?.length,
+          hasText: !!candidate?.content?.parts?.[0]?.text
+        });
+        throw new Error('Invalid response structure from Gemini API');
+      }
+      
+      const text = candidate.content.parts[0].text;
+      console.log('✅ Successfully extracted response text');
       
       const generatedQuestion = this.parseResponse(text, request);
       
@@ -245,7 +259,16 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
    */
   private parseResponse(response: string, request: QuestionRequest): GeneratedQuestion {
     try {
-      const parsed = JSON.parse(response);
+      // Clean up markdown wrapper if present (new SDK often wraps JSON in code blocks)
+      let cleanResponse = response.trim();
+      if (cleanResponse.startsWith('```json') && cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.slice(7, -3).trim(); // Remove ```json and ending ```
+      } else if (cleanResponse.startsWith('```') && cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.slice(3, -3).trim(); // Remove generic ``` wrappers
+      }
+      
+      console.log('🧹 Cleaned response for parsing:', cleanResponse.substring(0, 100) + '...');
+      const parsed = JSON.parse(cleanResponse);
       
       // Validate required fields
       if (!parsed.question || !parsed.correctAnswer || !parsed.acceptableAnswers) {
