@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
 import axios from 'axios';
@@ -23,8 +23,7 @@ export interface QuestionRequest {
  * Handles question generation with multiple acceptable answer variants
  */
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private ai: GoogleGenAI;
   private cohereService: CohereService;
 
   // JSON Schema for the expected response format
@@ -81,18 +80,7 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       throw new Error("Gemini API key is required");
     }
     
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
-      tools: [
-        { googleSearch: {} } as any
-      ],
-      generationConfig: {
-        temperature: 0.4,
-        topP:        0.9,
-        maxOutputTokens: 512
-      }
-    });
+    this.ai = new GoogleGenAI({apiKey: apiKey});
     
     // Initialize CohereService for Wiki context retrieval
     this.cohereService = new CohereService();
@@ -152,9 +140,17 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       const promptType = cohereContextUsed ? 'enhanced' : 'basic';
       console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
       
-      const result = await this.model.generateContent(contextualPrompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: contextualPrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          temperature: 0.4,
+          topP: 0.9,
+          maxOutputTokens: 512
+        }
+      });
+      const text = response.text;
       
       const generatedQuestion = this.parseResponse(text, request);
       

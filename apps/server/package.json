@@ -48,7 +48,7 @@
     "@colyseus/playground": "^0.16.4",
     "@colyseus/schema": "^3.0.42",
     "@colyseus/tools": "^0.16.12",
-    "@google/generative-ai": "^0.21.0",
+    "@google/genai": "^1.12.0",
     "@shared": "workspace:*",
     "@supabase/postgrest-js": "^1.21.1",
     "@supabase/supabase-js": "^2.52.1",
