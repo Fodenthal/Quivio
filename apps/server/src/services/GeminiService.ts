@@ -44,15 +44,6 @@ export class GeminiService {
     },
     "required": ["question", "correctAnswer", "acceptableAnswers", "category"]
   }`;
-  
-
-  // Example question to demonstrate expected format and quality
-  private static readonly EXAMPLE_QUESTION = `{
-    "question": "What is the name of Harry Potter's pet owl?",
-    "correctAnswer": "Hedwig",
-    "acceptableAnswers": ["Hedwig", "hedwig"],
-    "category": "Literature"
-  }`;
 
   // Core instructions for question generation
   private static readonly CORE_INSTRUCTIONS = `
@@ -138,10 +129,6 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
       console.log(`   🔧 Prompt length: ${contextualPrompt.length} characters`);
       
-      // Log API configuration for debugging
-      console.log(`   ⚙️  API config: model=gemini-2.5-flash-lite, temp=0.4, topP=0.9, maxTokens=2048`);
-      console.log(`   🔍 Google Search tool: enabled for factual verification`);
-      
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash-lite',
         contents: contextualPrompt,
@@ -217,10 +204,6 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       // Task specification
       `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
       
-      // Example for reference
-      `**Example of question style and quality for topic "Harry Potter" with difficulty 3:**
-      ${GeminiService.EXAMPLE_QUESTION}`,
-      
       // Generation request with schema
       `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
       ${GeminiService.QUESTION_SCHEMA}`
@@ -260,17 +243,6 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       
       // Task specification with context
       `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
-      
-      // Wikipedia context for factual accuracy
-      `**Wikipedia Context for "${request.topic}":**
-      ${context}
-      
-      **Context Usage Instructions:**
-      Use the above Wikipedia context to ensure factual accuracy and discover interesting details for your question. Base your question on specific facts, dates, numbers, or details mentioned in the context when possible.`,
-      
-      // Example for reference
-      `**Example of question style and quality for topic "Harry Potter" with difficulty 3:**
-      ${GeminiService.EXAMPLE_QUESTION}`,
       
       // Generation request with schema
       `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
