@@ -92,6 +92,12 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
+    // Log the start of question generation with request details
+    console.log(`🚀 Starting question generation for topic: "${request.topic}"`);
+    console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
+    console.log(`   🏷️  Inferred category: ${this.inferCategory(request.topic)}`);
+    console.log(`   📝 Previous questions count: ${request.previousQuestions?.length || 0}`);
+    
     // NEW: Get Wikipedia context via CohereService
     let contextualPrompt = this.buildPrompt(request);
     let cohereContextUsed = false;
@@ -105,22 +111,15 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       
       if (context && context.trim()) {
         const contextLength = context.length;
-        
-        // Enhanced logging with actual context content
-        console.log(`📚 Enhanced question generation for "${request.topic}":`);
-        console.log(`   📏 Context length: ${contextLength} characters`);
-        console.log(`   📖 Source: Cohere Wiki-Weaviate`);
-        console.log(`   📄 Context preview: "${context.substring(0, 200)}${contextLength > 200 ? '...' : ''}"`);
-        
-        // Check if this is the placeholder context (indicates Weaviate not fully integrated yet)
-        if (context.includes('placeholder context until Weaviate integration')) {
-          console.log(`   ⚠️  WARNING: Using placeholder context - Weaviate integration pending in Phase 2`);
-        }
+        console.log(`   ✅ Received Wiki context (${contextLength} characters)`);
+        console.log(`   📄 Context preview: "${context.substring(0, 100)}..."`);
         
         contextualPrompt = this.buildContextualPrompt(request, context);
         cohereContextUsed = true;
+        console.log(`   🔧 Built contextual prompt with Wiki data`);
       } else {
         console.log(`⚠️  CohereService returned empty context for "${request.topic}"`);
+        console.log(`   🔄 Will use basic prompt without context`);
       }
     } catch (error) {
       // Enhanced error logging with specific details
@@ -128,28 +127,36 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       
       if (error instanceof Error) {
         console.warn(`⚠️  CohereService error for "${request.topic}": ${error.message}`);
-      } else {
-        console.warn(`⚠️  CohereService unknown error for "${request.topic}": ${cohereErrorDetails}`);
       }
-      
+
       console.log(`   🔄 Falling back to basic prompt generation`);
     }
     
     try {
-      // EXISTING: Generate with Gemini (enhanced with context when available)
+      // Log prompt type and generation start
       const promptType = cohereContextUsed ? 'enhanced' : 'basic';
       console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
+      console.log(`   🔧 Prompt length: ${contextualPrompt.length} characters`);
+      
+      // Log API configuration for debugging
+      console.log(`   ⚙️  API config: model=gemini-2.5-flash-lite, temp=0.4, topP=0.9, maxTokens=2048`);
+      console.log(`   🔍 Google Search tool: enabled for factual verification`);
       
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash-lite',
         contents: contextualPrompt,
         config: {
           tools: [{ googleSearch: {} }],
           temperature: 0.4,
           topP: 0.9,
-          maxOutputTokens: 2048
+          maxOutputTokens: 2048,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
         }
       });
+      
+      console.log(`   ✅ Received response from Gemini API`);
       
       // Extract text from new SDK response structure
       const candidate = response.candidates?.[0];
@@ -164,19 +171,32 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       }
       
       const text = candidate.content.parts[0].text;
-      console.log('✅ Successfully extracted response text');
+      console.log(`   📄 Raw response length: ${text.length} characters`);
+      console.log(`   📝 Response preview: "${text.substring(0, 100)}..."`);
       
+      // Parse and validate the response
+      console.log(`🔍 Parsing and validating response...`);
       const generatedQuestion = this.parseResponse(text, request);
       
-      // Log generation success with context usage info
-      console.log(`✅ Generated question: "${generatedQuestion.question}"`);
-      console.log(`   📝 Answer: "${generatedQuestion.correctAnswer}"`);
+      // Log generation success with comprehensive details
+      console.log(`✅ Successfully generated question!`);
+      console.log(`   ❓ Question: "${generatedQuestion.question}"`);
+      console.log(`   ✅ Correct answer: "${generatedQuestion.correctAnswer}"`);
+      console.log(`   📋 Acceptable answers (${generatedQuestion.acceptableAnswers.length}): [${generatedQuestion.acceptableAnswers.join(', ')}]`);
       console.log(`   🏷️  Category: ${generatedQuestion.category}`);
-      console.log(`   📊 Context used: ${cohereContextUsed ? 'Yes (Cohere Wiki)' : 'No (basic prompt)'}`);
+      console.log(`   📊 Difficulty: ${generatedQuestion.difficulty}/5`);
+      console.log(`   🔍 Context used: ${cohereContextUsed ? 'Yes (Cohere Wiki)' : 'No (basic prompt)'}`);
+      
+      // Log question quality metrics
+      const questionTokens = GeminiService.tokenizer.tokenize(generatedQuestion.question) || [];
+      console.log(`   📏 Question length: ${questionTokens.length} tokens (target: ≤65)`);
+      console.log(`   🎯 Question quality: ${questionTokens.length <= 65 ? '✅ Within token limit' : '⚠️ Exceeds token limit'}`);
       
       return generatedQuestion;
     } catch (error) {
-      console.error("Error generating question with Gemini:", error);
+      console.error("❌ Error generating question with Gemini:", error);
+      console.error(`   🔍 Error details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`   📊 Request context: topic="${request.topic}", difficulty=${request.difficulty}, contextUsed=${cohereContextUsed}`);
       throw new Error(`Failed to generate question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -185,7 +205,10 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
    * Build the prompt for Gemini API based on the request parameters
    */
   private buildPrompt(request: QuestionRequest): string {
+    console.log(`🔧 Building basic prompt for topic: "${request.topic}"`);
+    
     const difficultyDescription = this.getDifficultyDescription(request.difficulty);
+    console.log(`   📊 Difficulty description: ${difficultyDescription}`);
     
     const sections = [
       // Role and core instructions
@@ -205,20 +228,31 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
 
     // Add previous questions constraint if provided
     if (request.previousQuestions && request.previousQuestions.length > 0) {
+      console.log(`   📝 Adding ${request.previousQuestions.length} previous questions to avoid duplicates`);
       sections.push(
         `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions**:
         ${request.previousQuestions.join(", ")}`
       );
+    } else {
+      console.log(`   ℹ️  No previous questions provided for duplicate avoidance`);
     }
 
-    return sections.join('\n\n');
+    const finalPrompt = sections.join('\n\n');
+    console.log(`   📏 Final prompt length: ${finalPrompt.length} characters`);
+    console.log(`   📋 Prompt sections: Core instructions, Task spec, Example, Schema, ${request.previousQuestions?.length ? 'Previous questions' : 'No previous questions'}`);
+    
+    return finalPrompt;
   }
 
   /**
    * Build a prompt that includes Wikipedia context for enhanced question generation
    */
   private buildContextualPrompt(request: QuestionRequest, context: string): string {
+    console.log(`🔧 Building contextual prompt with Wiki data for topic: "${request.topic}"`);
+    
     const difficultyDescription = this.getDifficultyDescription(request.difficulty);
+    console.log(`   📊 Difficulty description: ${difficultyDescription}`);
+    console.log(`   📄 Wiki context length: ${context.length} characters`);
     
     const sections = [
       // Role and core instructions
@@ -245,56 +279,100 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
 
     // Add previous questions constraint if provided
     if (request.previousQuestions && request.previousQuestions.length > 0) {
+      console.log(`   📝 Adding ${request.previousQuestions.length} previous questions to avoid duplicates`);
       sections.push(
         `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions:
         ${request.previousQuestions.join(", ")}`
       );
+    } else {
+      console.log(`   ℹ️  No previous questions provided for duplicate avoidance`);
     }
 
-    return sections.join('\n\n');
+    const finalPrompt = sections.join('\n\n');
+    console.log(`   📏 Final contextual prompt length: ${finalPrompt.length} characters`);
+    console.log(`   📋 Prompt sections: Core instructions, Task spec, Wiki context, Context usage, Example, Schema, ${request.previousQuestions?.length ? 'Previous questions' : 'No previous questions'}`);
+    console.log(`   🔍 Context integration: Wiki data embedded with usage instructions`);
+    
+    return finalPrompt;
   }
 
   /**
    * Parse the Gemini API response into a structured question object
    */
   private parseResponse(response: string, request: QuestionRequest): GeneratedQuestion {
+    console.log(`🔍 Starting response parsing...`);
+    console.log(`   📄 Raw response length: ${response.length} characters`);
+    
     try {
       // Clean up markdown wrapper if present (new SDK often wraps JSON in code blocks)
       let cleanResponse = response.trim();
+      console.log(`   🧹 Cleaning response format...`);
+      
       if (cleanResponse.startsWith('```json') && cleanResponse.endsWith('```')) {
         cleanResponse = cleanResponse.slice(7, -3).trim(); // Remove ```json and ending ```
+        console.log(`   ✅ Removed JSON code block wrapper`);
       } else if (cleanResponse.startsWith('```') && cleanResponse.endsWith('```')) {
         cleanResponse = cleanResponse.slice(3, -3).trim(); // Remove generic ``` wrappers
+        console.log(`   ✅ Removed generic code block wrapper`);
+      } else {
+        console.log(`   ℹ️  No code block wrapper detected`);
       }
       
-      console.log('🧹 Cleaned response for parsing:', cleanResponse.substring(0, 100) + '...');
+      console.log(`   📝 Cleaned response preview: "${cleanResponse.substring(0, 100)}..."`);
+      
+      // Parse JSON
+      console.log(`   🔍 Attempting JSON parsing...`);
       const parsed = JSON.parse(cleanResponse);
+      console.log(`   ✅ JSON parsed successfully`);
       
       // Validate required fields
-      if (!parsed.question || !parsed.correctAnswer || !parsed.acceptableAnswers) {
-        throw new Error("Missing required fields in API response");
+      console.log(`   🔍 Validating required fields...`);
+      const requiredFields = ['question', 'correctAnswer', 'acceptableAnswers'];
+      const missingFields = requiredFields.filter(field => !parsed[field]);
+      
+      if (missingFields.length > 0) {
+        console.error(`   ❌ Missing required fields: ${missingFields.join(', ')}`);
+        throw new Error(`Missing required fields in API response: ${missingFields.join(', ')}`);
       }
+      console.log(`   ✅ All required fields present`);
 
       // Ensure acceptableAnswers is an array and includes the correct answer
+      console.log(`   🔍 Processing acceptable answers...`);
       let acceptableAnswers = Array.isArray(parsed.acceptableAnswers) ? parsed.acceptableAnswers : [parsed.correctAnswer];
+      console.log(`   📋 Initial acceptable answers: [${acceptableAnswers.join(', ')}]`);
       
       // Add the correct answer to acceptable answers if not already included
-      if (!acceptableAnswers.some((ans: string) => ans.toLowerCase() === parsed.correctAnswer.toLowerCase())) {
+      const correctAnswerLower = parsed.correctAnswer.toLowerCase();
+      const hasCorrectAnswer = acceptableAnswers.some((ans: string) => ans.toLowerCase() === correctAnswerLower);
+      
+      if (!hasCorrectAnswer) {
+        console.log(`   ➕ Adding correct answer to acceptable answers list`);
         acceptableAnswers.unshift(parsed.correctAnswer);
+      } else {
+        console.log(`   ✅ Correct answer already in acceptable answers`);
       }
 
       // Normalize all acceptable answers for consistent matching
+      console.log(`   🔧 Normalizing acceptable answers...`);
       acceptableAnswers = acceptableAnswers.map((ans: string) => ans.trim());
+      console.log(`   📋 Final acceptable answers (${acceptableAnswers.length}): [${acceptableAnswers.join(', ')}]`);
 
-      return {
+      const result = {
         question: parsed.question.trim(),
         correctAnswer: parsed.correctAnswer.trim(),
         acceptableAnswers,
         category: parsed.category || "General",
         difficulty: request.difficulty
       };
+      
+      console.log(`   ✅ Successfully parsed and validated question structure`);
+      console.log(`   📊 Final question stats: category="${result.category}", difficulty=${result.difficulty}`);
+      
+      return result;
     } catch (error) {
-      console.error("Failed to parse Gemini response:", response);
+      console.error("❌ Failed to parse Gemini response");
+      console.error(`   📄 Response that failed to parse: "${response}"`);
+      console.error(`   🔍 Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw new Error(`Failed to parse question response: ${error instanceof Error ? error.message : 'Invalid JSON'}`);
     }
   }
@@ -315,7 +393,10 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
    * Must return one of: 'News', 'History', 'Media', 'Sports', 'General'
    */
   private inferCategory(topic: string): string {
+    console.log(`🏷️  Inferring category for topic: "${topic}"`);
+    
     const topicLower = topic.toLowerCase();
+    console.log(`   🔍 Analyzing topic keywords: "${topicLower}"`);
     
     // Define category keywords matching rag-service expectations
     const categoryKeywords: Record<string, string[]> = {
@@ -327,11 +408,14 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
     
     // Find matching category
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
-      if (keywords.some(keyword => topicLower.includes(keyword))) {
+      const matchingKeywords = keywords.filter(keyword => topicLower.includes(keyword));
+      if (matchingKeywords.length > 0) {
+        console.log(`   ✅ Matched category "${category}" with keywords: [${matchingKeywords.join(', ')}]`);
         return category;
       }
     }
     
+    console.log(`   ℹ️  No specific category match found, using "General" as default`);
     return 'General'; // Default fallback for science, technology, people, etc.
   }
 
