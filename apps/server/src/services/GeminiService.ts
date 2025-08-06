@@ -83,10 +83,15 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
-    // Log the start of question generation with request details
+    const startTime = Date.now();
     console.log(`🚀 Starting question generation for topic: "${request.topic}"`);
     console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
-    console.log(`   🏷️  Inferred category: ${this.inferCategory(request.topic)}`);
+    
+    // Time category inference
+    const categoryStartTime = Date.now();
+    const category = this.inferCategory(request.topic);
+    const categoryTime = Date.now() - categoryStartTime;
+    console.log(`   🏷️  Inferred category: ${category} (${categoryTime}ms)`);
     console.log(`   📝 Previous questions count: ${request.previousQuestions?.length || 0}`);
     
     // NEW: Get Wikipedia context via CohereService
@@ -124,11 +129,16 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
     }
     
     try {
-      // Log prompt type and generation start
+      // Time prompt building
+      const promptStartTime = Date.now();
+      console.log(`   🔍 Prompt building completed (${promptStartTime}ms)`);
       const promptType = cohereContextUsed ? 'enhanced' : 'basic';
       console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
       console.log(`   🔧 Prompt length: ${contextualPrompt.length} characters`);
       
+      // Time API call
+      const apiStartTime = Date.now();
+      console.log(`   🔍 API call started (${apiStartTime}ms)`);
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: contextualPrompt,
@@ -143,8 +153,8 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
           }
         }
       });
-      
-      console.log(`   ✅ Received response from Gemini API`);
+      const apiTime = Date.now() - apiStartTime;
+      console.log(`   ✅ Received response from Gemini API (${apiTime}ms)`);
       
       // Extract text from new SDK response structure
       const candidate = response.candidates?.[0];
@@ -164,8 +174,7 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       
       // Parse and validate the response
       console.log(`🔍 Parsing and validating response...`);
-      const generatedQuestion = this.parseResponse(text, request);
-      
+      const generatedQuestion = this.parseResponse(text, request);      
       // Log generation success with comprehensive details
       console.log(`✅ Successfully generated question!`);
       console.log(`   ❓ Question: "${generatedQuestion.question}"`);

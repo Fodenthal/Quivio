@@ -26,14 +26,7 @@ export class SupabaseQuestionDatabase {
         throw new Error('Supabase configuration not found');
       }
 
-      // Use serviceRoleKey for server operations to bypass RLS restrictions
-      const authKey = config.supabase.serviceRoleKey || config.supabase.anonKey;
-      
-      if (!config.supabase.serviceRoleKey) {
-        console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set - using anonKey (may cause RLS issues)');
-      }
-
-      this.client = createClient(config.supabase.url, authKey, {
+      this.client = createClient(config.supabase.url, config.supabase.anonKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false
