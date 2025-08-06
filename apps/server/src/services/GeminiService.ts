@@ -74,11 +74,10 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
   /**
    * Stage 1: Gather factual context using Google Search
    * @param topic - The topic to research
-   * @param category - The inferred category for context
    * @returns Promise<string> - Concise factual summary (1-2 sentences)
    */
-  private async gatherFacts(topic: string, category: string): Promise<string> {
-    console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}" (category: ${category})`);
+  private async gatherFacts(topic: string): Promise<string> {
+    console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
     
     const factGatheringPrompt = `
 You are Quivio's master trivia researcher. Your job is to gather accurate, specific facts about "${topic}" that would be suitable for creating trivia questions.
@@ -88,7 +87,6 @@ Use the Google Search tool if needed to find current, accurate information. Retu
 Focus on facts that would make good trivia questions - dates, numbers, names, locations, achievements, or other specific details that can be tested.
 
 Topic to research: "${topic}"
-Category context: ${category}
 
 Return only the factual summary - no extra formatting or explanations.`;
 
@@ -101,7 +99,7 @@ Return only the factual summary - no extra formatting or explanations.`;
           temperature: 0.3,
           topP: 0.9,
           topK: 20,
-          maxOutputTokens: 512,
+          maxOutputTokens: 60,
           thinkingConfig: {
             thinkingBudget: 128
           }
@@ -115,7 +113,7 @@ Return only the factual summary - no extra formatting or explanations.`;
       }
 
       const facts = candidate.content.parts[0].text.trim();
-      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts.substring(0, 100)}..."`);
+      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts}..."`);
       return facts;
     } catch (error) {
       console.warn(`⚠️  Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -147,8 +145,8 @@ Return only the factual summary - no extra formatting or explanations.`;
 
     // Add facts if available
     if (facts && facts.trim()) {
-      sections.push(`**Context facts to use**: ${facts}`);
-      sections.push(`Use these facts to create your question. Focus on specific, verifiable details from this context.`);
+      sections.push(`**Context facts**: ${facts}`);
+      sections.push(`Use these facts if you believe they help make the best questions ever. If you don't think they are relevant, ignore them.`);
     }
 
     // Add schema and previous questions
@@ -205,14 +203,9 @@ Return only the factual summary - no extra formatting or explanations.`;
     console.log(`🚀 Starting two-stage question generation for topic: "${request.topic}"`);
     console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
     
-    // Infer category
-    const category = this.inferCategory(request.topic);
-    console.log(`   🏷️  Inferred category: ${category}`);
-    console.log(`   📝 Previous questions count: ${request.previousQuestions?.length || 0}`);
-    
     try {
       // Stage 1: Gather facts (may return empty string if fails)
-      const facts = await this.gatherFacts(request.topic, category);
+      const facts = await this.gatherFacts(request.topic);
       
       // Stage 2: Format question (deterministic)
       const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
@@ -332,37 +325,6 @@ Return only the factual summary - no extra formatting or explanations.`;
     if (difficulty <= 3) return "medium";
     if (difficulty <= 4) return "hard";
     return "very hard";
-  }
-
-  /**
-   * Infer the category for rag-service based on topic keywords
-   * Must return one of: 'News', 'History', 'Media', 'Sports', 'General'
-   */
-  private inferCategory(topic: string): string {
-    console.log(`🏷️  Inferring category for topic: "${topic}"`);
-    
-    const topicLower = topic.toLowerCase();
-    console.log(`   🔍 Analyzing topic keywords: "${topicLower}"`);
-    
-    // Define category keywords matching rag-service expectations
-    const categoryKeywords: Record<string, string[]> = {
-      'History': ['history', 'president', 'king', 'queen', 'war', 'empire', 'ancient', 'medieval', 'historical'],
-      'Sports': ['sports', 'athlete', 'team', 'game', 'championship', 'olympic', 'football', 'basketball', 'soccer', 'tennis'],
-      'Media': ['film', 'movie', 'actor', 'actress', 'director', 'television', 'tv', 'show', 'series', 'entertainment'],
-      'News': ['news', 'current', 'politics', 'government', 'election', 'policy', 'political']
-    };
-    
-    // Find matching category
-    for (const [category, keywords] of Object.entries(categoryKeywords)) {
-      const matchingKeywords = keywords.filter(keyword => topicLower.includes(keyword));
-      if (matchingKeywords.length > 0) {
-        console.log(`   ✅ Matched category "${category}" with keywords: [${matchingKeywords.join(', ')}]`);
-        return category;
-      }
-    }
-    
-    console.log(`   ℹ️  No specific category match found, using "General" as default`);
-    return 'General'; // Default fallback for science, technology, people, etc.
   }
 
   // Word tokenizer instance for consistent tokenization
