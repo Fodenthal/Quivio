@@ -55,10 +55,9 @@ export class GeminiService {
 5. **Acceptable answers:** Include exhaustive common variants—abbreviations, nicknames, alternative spellings, formal names, punctuation variants (e.g., "GSW", "Golden State Warriors", "Wardell Curry Sr.").
 6. **Diverse phrasing:** Across calls, vary structure (who/what/where/when/how many/records/dates/puzzle). Avoid repeating the same template every time (see prior questions below).
 7. **Category:** Use the broadest sensible label (e.g., Sports for athlete facts unless clearly Film, History, etc.).
-8. **Factual accuracy:** If you are not fully certain of a fact, date, statistic, or current information, use the google_search tool with a brief, specific query before returning the JSON. This ensures questions are accurate and up-to-date.
 
 ### Self-Check Before Returning
-Validate rules 1–8 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
+Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
 
 **IMPORTANT: Output ONLY the raw JSON object. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
 
@@ -96,10 +95,10 @@ Return only the factual summary - no extra formatting or explanations.`;
         contents: factGatheringPrompt,
         config: {
           tools: [{ googleSearch: {} }],
-          temperature: 0.3,
-          topP: 0.9,
-          topK: 20,
-          maxOutputTokens: 60,
+          temperature: 0,
+          topP: 1.0,
+          topK: 1.0,
+          maxOutputTokens: 256,
           thinkingConfig: {
             thinkingBudget: 128
           }
@@ -108,7 +107,7 @@ Return only the factual summary - no extra formatting or explanations.`;
 
       const candidate = response.candidates?.[0];
       if (!candidate?.content?.parts?.[0]?.text) {
-        console.warn(`⚠️  Stage 1 failed: Invalid response structure`);
+        console.warn("Raw Stage 1 response:", JSON.stringify(response, null, 2));
         return ''; // Empty facts - Stage 2 will proceed without context
       }
 
@@ -168,9 +167,9 @@ Return only the factual summary - no extra formatting or explanations.`;
         contents: prompt,
         config: {
           // No tools - pure formatting
-          temperature: 0,
-          topP: 0,
-          topK: 1,
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
           maxOutputTokens: 1024,
           thinkingConfig: {
             thinkingBudget: 64
