@@ -1,8 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
-import axios from 'axios';
-import { CohereService } from './CohereService';
 
 export interface GeneratedQuestion {
   question: string;
@@ -24,7 +22,6 @@ export interface QuestionRequest {
  */
 export class GeminiService {
   private ai: GoogleGenAI;
-  private cohereService: CohereService;
 
   // JSON Schema for the expected response format
   private static readonly QUESTION_SCHEMA = `{
@@ -72,117 +69,162 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
     }
     
     this.ai = new GoogleGenAI({apiKey: apiKey});
-    
-    // Initialize CohereService for Wiki context retrieval
-    this.cohereService = new CohereService();
   }
 
   /**
-   * Generate a trivia question based on topic and difficulty
+   * Stage 1: Gather factual context using Google Search
+   * @param topic - The topic to research
+   * @param category - The inferred category for context
+   * @returns Promise<string> - Concise factual summary (1-2 sentences)
+   */
+  private async gatherFacts(topic: string, category: string): Promise<string> {
+    console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}" (category: ${category})`);
+    
+    const factGatheringPrompt = `
+You are Quivio's master trivia researcher. Your job is to gather accurate, specific facts about "${topic}" that would be suitable for creating trivia questions.
+
+Use the Google Search tool if needed to find current, accurate information. Return a concise factual summary in 1-2 sentences that covers the most important, verifiable facts about this topic.
+
+Focus on facts that would make good trivia questions - dates, numbers, names, locations, achievements, or other specific details that can be tested.
+
+Topic to research: "${topic}"
+Category context: ${category}
+
+Return only the factual summary - no extra formatting or explanations.`;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: factGatheringPrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          temperature: 0.3,
+          topP: 0.9,
+          topK: 20,
+          maxOutputTokens: 512,
+          thinkingConfig: {
+            thinkingBudget: 128
+          }
+        }
+      });
+
+      const candidate = response.candidates?.[0];
+      if (!candidate?.content?.parts?.[0]?.text) {
+        console.warn(`⚠️  Stage 1 failed: Invalid response structure`);
+        return ''; // Empty facts - Stage 2 will proceed without context
+      }
+
+      const facts = candidate.content.parts[0].text.trim();
+      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts.substring(0, 100)}..."`);
+      return facts;
+    } catch (error) {
+      console.warn(`⚠️  Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.log(`   🔄 Proceeding to Stage 2 without additional context`);
+      return ''; // Empty facts - Stage 2 will proceed without context
+    }
+  }
+
+  /**
+   * Stage 2: Format facts into structured JSON question
+   * @param topic - The original topic
+   * @param facts - Facts gathered from Stage 1 (may be empty)
+   * @param request - The original question request
+   * @returns Promise<GeneratedQuestion> - The formatted question
+   */
+  private async formatQuestion(topic: string, facts: string, request: QuestionRequest): Promise<GeneratedQuestion> {
+    console.log(`🎯 Stage 2: Formatting question for topic: "${topic}"`);
+    console.log(`   📄 Using facts: ${facts ? `"${facts.substring(0, 100)}..."` : 'None (basic prompt)'}`);
+    
+    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
+    
+    const sections = [
+      // Core instructions
+      GeminiService.CORE_INSTRUCTIONS,
+      
+      // Task specification
+      `Your task is to generate a single, specific, factual trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
+    ];
+
+    // Add facts if available
+    if (facts && facts.trim()) {
+      sections.push(`**Context facts to use**: ${facts}`);
+      sections.push(`Use these facts to create your question. Focus on specific, verifiable details from this context.`);
+    }
+
+    // Add schema and previous questions
+    sections.push(`Now, generate a JSON object for the topic "${topic}" that conforms to this JSON schema:\n${GeminiService.QUESTION_SCHEMA}`);
+
+    if (request.previousQuestions && request.previousQuestions.length > 0) {
+      console.log(`   📝 Avoiding ${request.previousQuestions.length} previous questions`);
+      sections.push(
+        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates as in these prior questions:\n${request.previousQuestions.join(", ")}`
+      );
+    }
+
+    const prompt = sections.join('\n\n');
+    console.log(`   📏 Stage 2 prompt length: ${prompt.length} characters`);
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          // No tools - pure formatting
+          temperature: 0,
+          topP: 0,
+          topK: 1,
+          maxOutputTokens: 1024,
+          thinkingConfig: {
+            thinkingBudget: 64
+          }
+        }
+      });
+      
+      const candidate = response.candidates?.[0];
+      if (!candidate?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid response structure from Stage 2');
+      }
+      
+      const text = candidate.content.parts[0].text;
+      console.log(`   📄 Stage 2 response length: ${text.length} characters`);
+      
+      return this.parseResponse(text, request);
+    } catch (error) {
+      console.error(`❌ Stage 2 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to format question: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate a trivia question using two-stage approach
    * @param request - The question generation request
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
     const startTime = Date.now();
-    console.log(`🚀 Starting question generation for topic: "${request.topic}"`);
+    console.log(`🚀 Starting two-stage question generation for topic: "${request.topic}"`);
     console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
     
-    // Time category inference
-    const categoryStartTime = Date.now();
+    // Infer category
     const category = this.inferCategory(request.topic);
-    const categoryTime = Date.now() - categoryStartTime;
-    console.log(`   🏷️  Inferred category: ${category} (${categoryTime}ms)`);
+    console.log(`   🏷️  Inferred category: ${category}`);
     console.log(`   📝 Previous questions count: ${request.previousQuestions?.length || 0}`);
     
-    // NEW: Get Wikipedia context via CohereService
-    let contextualPrompt = this.buildPrompt(request);
-    let cohereContextUsed = false;
-    let cohereErrorDetails = null;
-    
     try {
-      console.log(`🔍 Requesting Cohere Wiki context for topic: "${request.topic}" (category: ${this.inferCategory(request.topic)})`);
+      // Stage 1: Gather facts (may return empty string if fails)
+      const facts = await this.gatherFacts(request.topic, category);
       
-      // Get Wiki context from CohereService
-      const context = await this.cohereService.getWikiContext(request.topic);
+      // Stage 2: Format question (deterministic)
+      const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
       
-      if (context && context.trim()) {
-        const contextLength = context.length;
-        console.log(`   ✅ Received Wiki context (${contextLength} characters)`);
-        console.log(`   📄 Context preview: "${context.substring(0, 100)}..."`);
-        
-        contextualPrompt = this.buildContextualPrompt(request, context);
-        cohereContextUsed = true;
-        console.log(`   🔧 Built contextual prompt with Wiki data`);
-      } else {
-        console.log(`⚠️  CohereService returned empty context for "${request.topic}"`);
-        console.log(`   🔄 Will use basic prompt without context`);
-      }
-    } catch (error) {
-      // Enhanced error logging with specific details
-      cohereErrorDetails = error instanceof Error ? error.message : 'Unknown error';
-      
-      if (error instanceof Error) {
-        console.warn(`⚠️  CohereService error for "${request.topic}": ${error.message}`);
-      }
-
-      console.log(`   🔄 Falling back to basic prompt generation`);
-    }
-    
-    try {
-      // Time prompt building
-      const promptStartTime = Date.now();
-      console.log(`   🔍 Prompt building completed (${promptStartTime}ms)`);
-      const promptType = cohereContextUsed ? 'enhanced' : 'basic';
-      console.log(`🤖 Generating question with ${promptType} prompt for "${request.topic}"`);
-      console.log(`   🔧 Prompt length: ${contextualPrompt.length} characters`);
-      
-      // Time API call
-      const apiStartTime = Date.now();
-      console.log(`   🔍 API call started (${apiStartTime}ms)`);
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: contextualPrompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          temperature: 0,
-          topP: 0.9,
-          topK: 40,
-          maxOutputTokens: 1024,
-          thinkingConfig: {
-            thinkingBudget: 256
-          }
-        }
-      });
-      const apiTime = Date.now() - apiStartTime;
-      console.log(`   ✅ Received response from Gemini API (${apiTime}ms)`);
-      
-      // Extract text from new SDK response structure
-      const candidate = response.candidates?.[0];
-      if (!candidate?.content?.parts?.[0]?.text) {
-        console.error('❌ Invalid response structure:', {
-          hasCandidates: !!response.candidates?.length,
-          hasContent: !!candidate?.content,
-          hasParts: !!candidate?.content?.parts?.length,
-          hasText: !!candidate?.content?.parts?.[0]?.text
-        });
-        throw new Error('Invalid response structure from Gemini API');
-      }
-      
-      const text = candidate.content.parts[0].text;
-      console.log(`   📄 Raw response length: ${text.length} characters`);
-      console.log(`   📝 Response preview: "${text.substring(0, 100)}..."`);
-      
-      // Parse and validate the response
-      console.log(`🔍 Parsing and validating response...`);
-      const generatedQuestion = this.parseResponse(text, request);      
-      // Log generation success with comprehensive details
-      console.log(`✅ Successfully generated question!`);
+      // Log success
+      const totalTime = Date.now() - startTime;
+      console.log(`✅ Two-stage generation completed in ${totalTime}ms`);
       console.log(`   ❓ Question: "${generatedQuestion.question}"`);
       console.log(`   ✅ Correct answer: "${generatedQuestion.correctAnswer}"`);
       console.log(`   📋 Acceptable answers (${generatedQuestion.acceptableAnswers.length}): [${generatedQuestion.acceptableAnswers.join(', ')}]`);
       console.log(`   🏷️  Category: ${generatedQuestion.category}`);
       console.log(`   📊 Difficulty: ${generatedQuestion.difficulty}/5`);
-      console.log(`   🔍 Context used: ${cohereContextUsed ? 'Yes (Cohere Wiki)' : 'No (basic prompt)'}`);
       
       // Log question quality metrics
       const questionTokens = GeminiService.tokenizer.tokenize(generatedQuestion.question) || [];
@@ -191,92 +233,14 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       
       return generatedQuestion;
     } catch (error) {
-      console.error("❌ Error generating question with Gemini:", error);
+      console.error("❌ Error in two-stage question generation:", error);
       console.error(`   🔍 Error details: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      console.error(`   📊 Request context: topic="${request.topic}", difficulty=${request.difficulty}, contextUsed=${cohereContextUsed}`);
+      console.error(`   📊 Request context: topic="${request.topic}", difficulty=${request.difficulty}`);
       throw new Error(`Failed to generate question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  /**
-   * Build the prompt for Gemini API based on the request parameters
-   */
-  private buildPrompt(request: QuestionRequest): string {
-    console.log(`🔧 Building basic prompt for topic: "${request.topic}"`);
-    
-    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
-    console.log(`   📊 Difficulty description: ${difficultyDescription}`);
-    
-    const sections = [
-      // Role and core instructions
-      GeminiService.CORE_INSTRUCTIONS,
-      
-      // Task specification
-      `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
-      
-      // Generation request with schema
-      `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
-      ${GeminiService.QUESTION_SCHEMA}`
-    ];
 
-    // Add previous questions constraint if provided
-    if (request.previousQuestions && request.previousQuestions.length > 0) {
-      console.log(`   📝 Adding ${request.previousQuestions.length} previous questions to avoid duplicates`);
-      sections.push(
-        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions**:
-        ${request.previousQuestions.join(", ")}`
-      );
-    } else {
-      console.log(`   ℹ️  No previous questions provided for duplicate avoidance`);
-    }
-
-    const finalPrompt = sections.join('\n\n');
-    console.log(`   📏 Final prompt length: ${finalPrompt.length} characters`);
-    console.log(`   📋 Prompt sections: Core instructions, Task spec, Example, Schema, ${request.previousQuestions?.length ? 'Previous questions' : 'No previous questions'}`);
-    
-    return finalPrompt;
-  }
-
-  /**
-   * Build a prompt that includes Wikipedia context for enhanced question generation
-   */
-  private buildContextualPrompt(request: QuestionRequest, context: string): string {
-    console.log(`🔧 Building contextual prompt with Wiki data for topic: "${request.topic}"`);
-    
-    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
-    console.log(`   📊 Difficulty description: ${difficultyDescription}`);
-    console.log(`   📄 Wiki context length: ${context.length} characters`);
-    
-    const sections = [
-      // Role and core instructions
-      GeminiService.CORE_INSTRUCTIONS,
-      
-      // Task specification with context
-      `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
-      
-      // Generation request with schema
-      `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
-      ${GeminiService.QUESTION_SCHEMA}`
-    ];
-
-    // Add previous questions constraint if provided
-    if (request.previousQuestions && request.previousQuestions.length > 0) {
-      console.log(`   📝 Adding ${request.previousQuestions.length} previous questions to avoid duplicates`);
-      sections.push(
-        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions:
-        ${request.previousQuestions.join(", ")}`
-      );
-    } else {
-      console.log(`   ℹ️  No previous questions provided for duplicate avoidance`);
-    }
-
-    const finalPrompt = sections.join('\n\n');
-    console.log(`   📏 Final contextual prompt length: ${finalPrompt.length} characters`);
-    console.log(`   📋 Prompt sections: Core instructions, Task spec, Wiki context, Context usage, Example, Schema, ${request.previousQuestions?.length ? 'Previous questions' : 'No previous questions'}`);
-    console.log(`   🔍 Context integration: Wiki data embedded with usage instructions`);
-    
-    return finalPrompt;
-  }
 
   /**
    * Parse the Gemini API response into a structured question object
