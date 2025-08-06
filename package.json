@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-        "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter web dev\"",
+    "dev": "concurrently \"pnpm --filter @getmoney/server dev\" \"pnpm --filter quivio dev\"",
     "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=web dev",
     "server": "pnpm --filter=@getmoney/server start",
     "web": "pnpm --filter=web dev",

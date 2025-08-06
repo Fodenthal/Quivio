@@ -141,9 +141,14 @@ export const GameView = memo(function GameView({
 
 
   // Select a random encouraging message based on current round
+  // Freeze the message during answer display to prevent flash when currentRound increments
   const selectedEncouragingMessage = useMemo(() => {
     if (phase !== "round-ended") return "";
-    const index = gameState.currentRound % encouragingMessages.length;
+    
+    // Use the round that just ended (currentRound - 1) to get the stable encouraging message
+    // This prevents the message from changing when currentRound increments in startNewRound()
+    const roundForMessage = Math.max(0, gameState.currentRound - 1);
+    const index = roundForMessage % encouragingMessages.length;
     return encouragingMessages[index];
   }, [gameState.currentRound, encouragingMessages, phase]);
 

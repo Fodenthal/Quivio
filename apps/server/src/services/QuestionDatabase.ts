@@ -75,7 +75,7 @@ export class QuestionDatabase {
   /**
    * Store a newly generated question in the database
    */
-  public storeQuestion(topic: string, difficulty: number, question: GeneratedQuestion): boolean {
+  public async storeQuestion(topic: string, difficulty: number, question: GeneratedQuestion): Promise<boolean> {
     if (!this.db) return false;
     
     try {
@@ -112,7 +112,7 @@ export class QuestionDatabase {
   /**
    * Retrieve questions from database for a specific topic and difficulty
    */
-  public getQuestions(topic: string, difficulty: number, limit: number = 10): GeneratedQuestion[] {
+  public async getQuestions(topic: string, difficulty: number, limit: number = 10): Promise<GeneratedQuestion[]> {
     if (!this.db) return [];
     
     try {
@@ -149,7 +149,7 @@ export class QuestionDatabase {
   /**
    * Mark a question as used (increment usage count)
    */
-  public markQuestionAsUsed(questionText: string): void {
+  public async markQuestionAsUsed(questionText: string): Promise<void> {
     if (!this.db) return;
     
     try {
@@ -170,7 +170,7 @@ export class QuestionDatabase {
   /**
    * Get database statistics
    */
-  public getStats(): { totalQuestions: number; topicCount: number; avgUsagePerQuestion: number } {
+  public async getStats(): Promise<{ totalQuestions: number; topicCount: number; avgUsagePerQuestion: number }> {
     if (!this.db) return { totalQuestions: 0, topicCount: 0, avgUsagePerQuestion: 0 };
     
     try {
@@ -210,7 +210,7 @@ export class QuestionDatabase {
   /**
    * Check if we have enough questions for a topic/difficulty combination
    */
-  public hasEnoughQuestions(topic: string, difficulty: number, minRequired: number = 5): boolean {
+  public async hasEnoughQuestions(topic: string, difficulty: number, minRequired: number = 5): Promise<boolean> {
     if (!this.db) return false;
     
     try {
@@ -234,7 +234,7 @@ export class QuestionDatabase {
   /**
    * Get a list of all unique topic/difficulty combinations in the database
    */
-  public getAvailableTopics(): Array<{ topic: string; difficulty: number; count: number }> {
+  public async getAvailableTopics(): Promise<Array<{ topic: string; difficulty: number; count: number }>> {
     if (!this.db) return [];
     
     try {
@@ -259,7 +259,7 @@ export class QuestionDatabase {
   /**
    * Get all questions for debugging/admin purposes
    */
-  public getAllQuestions(limit: number = 100): StoredQuestion[] {
+  public async getAllQuestions(limit: number = 100): Promise<StoredQuestion[]> {
     if (!this.db) return [];
     
     try {
@@ -283,7 +283,7 @@ export class QuestionDatabase {
   /**
    * Search questions by text
    */
-  public searchQuestions(searchTerm: string, limit: number = 50): StoredQuestion[] {
+  public async searchQuestions(searchTerm: string, limit: number = 50): Promise<StoredQuestion[]> {
     if (!this.db) return [];
     
     try {

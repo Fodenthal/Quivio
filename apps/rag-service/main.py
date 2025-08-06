@@ -1,8 +1,8 @@
 """
 RAG Service - Data Retrieval Microservice for Trivia Question Generation
 
-This service handles context retrieval using LlamaIndex for various data sources
-including Wikipedia and web search to enhance trivia question quality.
+This service handles context retrieval using vector search on Wikipedia content
+to enhance trivia question quality with semantic similarity matching.
 """
 
 import logging
@@ -13,14 +13,17 @@ from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from vector_store import VectorStore
+
 # Configure structured logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("rag-service")
 
@@ -29,8 +32,25 @@ app = FastAPI(
     description="Data retrieval service for enhanced trivia question generation",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
+
+# Initialize vector store lazily
+vector_store: Optional[VectorStore] = None
+
+def get_vector_store() -> Optional[VectorStore]:
+    """Get or initialize the vector store"""
+    global vector_store
+    if vector_store is None:
+        try:
+            # Ensure environment variables are loaded
+            load_dotenv()
+            vector_store = VectorStore()
+            logger.info("Vector store initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize vector store: {e}")
+            vector_store = None
+    return vector_store
 
 # Add CORS middleware for TypeScript server integration
 app.add_middleware(
@@ -41,53 +61,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ContextRequest(BaseModel):
     """Enhanced request model with validation and optional parameters"""
+
     topic: str = Field(
-        min_length=1, 
-        max_length=200, 
+        min_length=1,
+        max_length=200,
         description="The topic to get context for",
-        example="The Irish Civil War"
+        examples=["The Irish Civil War"],
     )
     category: Literal["News", "History", "Media", "Sports", "General"] = Field(
         description="Category to determine the best data source",
-        example="History"
+        examples=["History"],
     )
     max_context_length: Optional[int] = Field(
-        default=1000, 
+        default=1000,
         ge=100,
-        le=5000, 
-        description="Maximum characters in context response"
+        le=5000,
+        description="Maximum characters in context response",
     )
     language: Optional[str] = Field(
-        default="en", 
+        default="en",
         min_length=2,
         max_length=5,
-        description="Language preference for context retrieval"
+        description="Language preference for context retrieval",
     )
+
 
 class ContextResponse(BaseModel):
     """Enhanced response model with metadata and tracing"""
+
     context: str = Field(description="The retrieved context information")
     source: str = Field(description="Data source used for context retrieval")
-    confidence: float = Field(
-        ge=0.0, 
-        le=1.0, 
-        description="Confidence score for context relevance"
-    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence score for context relevance")
     request_id: str = Field(description="Unique identifier for request tracing")
     processing_time_ms: int = Field(description="Processing time in milliseconds")
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional metadata about the context retrieval"
+        description="Additional metadata about the context retrieval",
     )
+
 
 class ErrorResponse(BaseModel):
     """Standardized error response format"""
+
     error: str = Field(description="Error message")
     request_id: str = Field(description="Request identifier for debugging")
     timestamp: str = Field(description="ISO timestamp when error occurred")
     endpoint: str = Field(description="API endpoint where error occurred")
+
 
 def generate_request_id() -> str:
     """Generate a unique request ID for tracing"""
@@ -95,164 +118,204 @@ def generate_request_id() -> str:
     unique_part = str(uuid.uuid4())[:8]
     return f"req_{timestamp}_{unique_part}"
 
+
 def normalize_topic(topic: str) -> str:
     """Normalize topic string for processing"""
     return topic.strip().title()
 
+
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(request: Request, call_next: Any) -> Any:
     """Middleware for request logging and timing"""
     start_time = time.time()
     request_id = generate_request_id()
-    
+
     # Store request_id in request state for use in endpoints
     request.state.request_id = request_id
-    
+
     logger.info(f"Request started: {request.method} {request.url.path} [ID: {request_id}]")
-    
+
     try:
         response = await call_next(request)
         process_time = int((time.time() - start_time) * 1000)
-        
+
         logger.info(
             f"Request completed: {request.method} {request.url.path} "
-            f"[ID: {request_id}] Status: {response.status_code} Time: {process_time}ms"
+            f"[ID: {request_id}] Status: {response.status_code} Time: {process_time}ms",
         )
-        
+
         # Add request ID to response headers for debugging
         response.headers["X-Request-ID"] = request_id
-        
+
         return response
     except Exception as e:
         process_time = int((time.time() - start_time) * 1000)
         logger.error(
             f"Request failed: {request.method} {request.url.path} "
-            f"[ID: {request_id}] Error: {str(e)} Time: {process_time}ms"
+            f"[ID: {request_id}] Error: {e!s} Time: {process_time}ms",
         )
         raise
 
+
 @app.get("/")
-async def root():
+async def root() -> Dict[str, str]:
     """Basic health check endpoint"""
     return {
         "status": "RAG Service is running",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
+
 @app.get("/health")
-async def health_check():
+async def health_check() -> Dict[str, Any]:
     """Comprehensive health check for monitoring and dependency validation"""
     start_time = time.time()
-    
-    health_status = {
+
+    health_status: Dict[str, Any] = {
         "status": "healthy",
-        "service": "rag-service", 
+        "service": "rag-service",
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "checks": {}
+        "checks": {},
     }
-    
+
     # Test LlamaIndex imports
     try:
-        from llama_index.core import Document
-        from llama_index.readers.wikipedia import WikipediaReader
-        from llama_index.readers.web import SimpleWebPageReader
+
         health_status["checks"]["llamaindex_imports"] = {
             "status": "pass",
-            "message": "All LlamaIndex components available"
+            "message": "All LlamaIndex components available",
         }
     except Exception as e:
         health_status["status"] = "unhealthy"
         health_status["checks"]["llamaindex_imports"] = {
             "status": "fail",
-            "message": f"LlamaIndex import error: {str(e)}"
+            "message": f"LlamaIndex import error: {e!s}",
         }
-    
+
     # Basic memory and performance check
     try:
         import psutil
+
         memory_usage = psutil.virtual_memory().percent
         health_status["checks"]["system_resources"] = {
             "status": "pass" if memory_usage < 90 else "warn",
-            "memory_usage_percent": memory_usage
+            "memory_usage_percent": memory_usage,
         }
     except ImportError:
         health_status["checks"]["system_resources"] = {
             "status": "skip",
-            "message": "psutil not available for system monitoring"
+            "message": "psutil not available for system monitoring",
         }
-    
+
+    # Add embedding cache statistics
+    try:
+        vector_store_instance = get_vector_store()
+        if vector_store_instance:
+            cache_stats = vector_store_instance.get_cache_stats()
+            health_status["checks"]["embedding_cache"] = {
+                "status": "pass",
+                "cache_hits": cache_stats["cache_hits"],
+                "cache_misses": cache_stats["cache_misses"],
+                "hit_rate_percent": cache_stats["hit_rate_percent"],
+                "cache_size": cache_stats["cache_size"]
+            }
+        else:
+            health_status["checks"]["embedding_cache"] = {
+                "status": "skip",
+                "message": "Vector store not available"
+            }
+    except Exception as e:
+        health_status["checks"]["embedding_cache"] = {
+            "status": "fail",
+            "message": f"Cache statistics error: {e!s}"
+        }
+
     health_status["response_time_ms"] = int((time.time() - start_time) * 1000)
-    
+
     return health_status
 
-@app.post("/get-context", response_model=ContextResponse, responses={
-    400: {"model": ErrorResponse, "description": "Bad Request - Invalid input"},
-    422: {"model": ErrorResponse, "description": "Validation Error"},
-    500: {"model": ErrorResponse, "description": "Internal Server Error"}
-})
+
+@app.post(
+    "/get-context",
+    response_model=ContextResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Bad Request - Invalid input"},
+        422: {"model": ErrorResponse, "description": "Validation Error"},
+        500: {"model": ErrorResponse, "description": "Internal Server Error"},
+    },
+)
 async def get_context(request: ContextRequest, http_request: Request) -> ContextResponse:
     """
     Get relevant context for a topic to enhance question generation
-    
+
     This endpoint will use LlamaIndex to retrieve contextually relevant information
     from various sources (Wikipedia, web search) based on the topic category.
-    
+
     Args:
         request: Contains topic, category, and optional parameters
-        
+
     Returns:
         ContextResponse with retrieved context, source info, and metadata
-        
+
     Raises:
         HTTPException: For validation errors or processing failures
     """
     start_time = time.time()
-    request_id = getattr(http_request.state, 'request_id', generate_request_id())
-    
+    request_id = getattr(http_request.state, "request_id", generate_request_id())
+
     try:
         # Input validation and normalization
         normalized_topic = normalize_topic(request.topic)
-        
+
         logger.info(
             f"Processing context request [ID: {request_id}]: "
-            f"Topic='{normalized_topic}' Category={request.category}"
+            f"Topic='{normalized_topic}' Category={request.category}",
         )
-        
-        # TODO: This will be replaced with actual LlamaIndex implementation in Step 4
-        # For now, return enhanced placeholder response with proper structure
-        
-        # Simulate different responses based on category
-        source_mapping = {
-            "History": "wikipedia",
-            "Media": "wikipedia", 
-            "News": "web_search",
-            "Sports": "web_search",
-            "General": "wikipedia"
-        }
-        
-        simulated_source = source_mapping.get(request.category, "placeholder")
-        
-        # Generate contextual placeholder content
-        placeholder_context = (
-            f"Enhanced context for '{normalized_topic}' (Category: {request.category}). "
-            f"This information will be retrieved from {simulated_source} using LlamaIndex. "
-            f"Content will be limited to {request.max_context_length} characters and "
-            f"provided in {request.language} language when available."
+
+        # Use vector store to get contextual information
+        vector_store_instance = get_vector_store()
+        if vector_store_instance is None:
+            # Return no content response when vector store is unavailable
+            return ContextResponse(
+                context=f"No specific context found for '{normalized_topic}'. Vector store is unavailable.",
+                source="no_content",
+                confidence=0.0,
+                request_id=request_id,
+                processing_time_ms=int((time.time() - start_time) * 1000),
+                metadata={
+                    "topic_normalized": normalized_topic,
+                    "category_processed": request.category,
+                    "language_requested": request.language or "en",
+                    "max_length_requested": request.max_context_length or 1000,
+                    "actual_length": 0,
+                    "error": "vector_store_unavailable"
+                }
+            )
+
+        # Get context using vector similarity search
+        max_length = request.max_context_length or 1000  # Use default if None
+        context, confidence = vector_store_instance.get_context_for_topic(
+            normalized_topic,
+            max_length=max_length,
         )
-        
-        # Respect max_context_length parameter
-        if len(placeholder_context) > request.max_context_length:
-            placeholder_context = placeholder_context[:request.max_context_length-3] + "..."
-        
+
+        # Determine source based on whether we found content
+        source = "wikipedia" if context else "no_content"
+
+        # If no context found, provide informative message
+        if not context:
+            context = f"No specific context found for '{normalized_topic}'. This topic may need Wikipedia content ingestion."
+            confidence = 0.0
+
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         response = ContextResponse(
-            context=placeholder_context,
-            source=simulated_source,
-            confidence=0.75,  # Higher confidence for enhanced placeholder
+            context=context,
+            source=source,
+            confidence=confidence,
             request_id=request_id,
             processing_time_ms=processing_time,
             metadata={
@@ -260,59 +323,58 @@ async def get_context(request: ContextRequest, http_request: Request) -> Context
                 "category_processed": request.category,
                 "language_requested": request.language,
                 "max_length_requested": request.max_context_length,
-                "actual_length": len(placeholder_context)
-            }
+                "actual_length": len(context),
+            },
         )
-        
+
         logger.info(
             f"Context request completed [ID: {request_id}]: "
-            f"Source={response.source} Length={len(response.context)} Time={processing_time}ms"
+            f"Source={response.source} Length={len(response.context)} Time={processing_time}ms",
         )
-        
+
         return response
-        
+
     except ValueError as e:
         # Handle validation-related errors
         error_response = ErrorResponse(
-            error=f"Validation error: {str(e)}",
+            error=f"Validation error: {e!s}",
             request_id=request_id,
             timestamp=datetime.utcnow().isoformat() + "Z",
-            endpoint="/get-context"
+            endpoint="/get-context",
         )
-        logger.error(f"Validation error [ID: {request_id}]: {str(e)}")
+        logger.error(f"Validation error [ID: {request_id}]: {e!s}")
         raise HTTPException(status_code=400, detail=error_response.dict())
-        
+
+    except HTTPException:
+        # Re-raise HTTPExceptions without wrapping them
+        raise
+
     except Exception as e:
         # Handle unexpected errors
         processing_time = int((time.time() - start_time) * 1000)
         error_response = ErrorResponse(
-            error=f"Internal processing error: {str(e)}",
+            error=f"Internal processing error: {e!s}",
             request_id=request_id,
             timestamp=datetime.utcnow().isoformat() + "Z",
-            endpoint="/get-context"
+            endpoint="/get-context",
         )
-        
+
         logger.error(
-            f"Internal error [ID: {request_id}]: {str(e)} Time={processing_time}ms\n"
-            f"Traceback: {traceback.format_exc()}"
+            f"Internal error [ID: {request_id}]: {e!s} Time={processing_time}ms\n"
+            f"Traceback: {traceback.format_exc()}",
         )
         raise HTTPException(status_code=500, detail=error_response.dict())
 
+
 if __name__ == "__main__":
     print("🚀 Starting RAG Service...")
-    print("📡 Service will be available at: http://localhost:8001")  
+    print("📡 Service will be available at: http://localhost:8001")
     print("📖 API docs available at: http://localhost:8001/docs")
     print("🔍 Health check available at: http://localhost:8001/health")
     print("💡 Example request:")
-    print('   curl -X POST http://localhost:8001/get-context \\')
+    print("   curl -X POST http://localhost:8001/get-context \\")
     print('     -H "Content-Type: application/json" \\')
     print('     -d \'{"topic": "World War II", "category": "History"}\'')
     print()
-    
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8001,
-        reload=True,
-        log_level="info"
-    ) 
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True, log_level="info")

@@ -335,8 +335,8 @@ export class GameClient {
    * Set the round time in seconds (host only)
    */
   setRoundTime(seconds: number): void {
-    if (seconds < 10 || seconds > 600) {
-      throw new Error("Round time must be between 10 and 600 seconds");
+    if (seconds < 15 || seconds > 600) {
+      throw new Error("Round time must be between 15 and 600 seconds");
     }
     // Convert seconds to milliseconds for server
     this.updateSettings({ roundTime: seconds * 1000 });

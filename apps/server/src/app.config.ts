@@ -9,12 +9,16 @@ import cors from "cors"; // Add this import
 import { TriviaRoom } from "./rooms/TriviaRoom";
 import { GamePinRegistry } from "./services/GamePinRegistry";
 import { QuestionDatabase } from "./services/QuestionDatabase";
+import { DatabaseFactory } from "./services/DatabaseFactory";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export default config({
 
     initializeGameServer: (gameServer) => {
+        // Reset database factory to ensure correct database is used
+        DatabaseFactory.resetInstance();
+        
         /**
          * Define your room handlers:
          */
@@ -137,11 +141,11 @@ export default config({
          */
         if (isDevelopment) {
             // Database stats and topic overview
-            app.get('/debug/questions/stats', (req, res) => {
+            app.get('/debug/questions/stats', async (req, res) => {
                 try {
-                    const db = QuestionDatabase.getInstance();
-                    const stats = db.getStats();
-                    const topics = db.getAvailableTopics();
+                    const db = DatabaseFactory.getInstance();
+                    const stats = await db.getStats();
+                    const topics = await db.getAvailableTopics();
                     
                     res.json({
                         success: true,
@@ -157,11 +161,11 @@ export default config({
             });
 
             // Get all questions (limited)
-            app.get('/debug/questions/all', (req, res) => {
+            app.get('/debug/questions/all', async (req, res) => {
                 try {
-                    const db = QuestionDatabase.getInstance();
+                    const db = DatabaseFactory.getInstance();
                     const limit = parseInt(req.query.limit as string) || 100;
-                    const questions = db.getAllQuestions(limit);
+                    const questions = await db.getAllQuestions(limit);
                     
                     res.json({
                         success: true,
@@ -177,9 +181,9 @@ export default config({
             });
 
             // Search questions by text
-            app.get('/debug/questions/search', (req, res) => {
+            app.get('/debug/questions/search', async (req, res) => {
                 try {
-                    const db = QuestionDatabase.getInstance();
+                    const db = DatabaseFactory.getInstance();
                     const searchTerm = req.query.q as string;
                     const limit = parseInt(req.query.limit as string) || 50;
                     
@@ -190,7 +194,7 @@ export default config({
                         });
                     }
                     
-                    const questions = db.searchQuestions(searchTerm, limit);
+                    const questions = await db.searchQuestions(searchTerm, limit);
                     
                     res.json({
                         success: true,
@@ -207,13 +211,13 @@ export default config({
             });
 
             // Get questions by topic and difficulty
-            app.get('/debug/questions/topic/:topic/difficulty/:difficulty', (req, res) => {
+            app.get('/debug/questions/topic/:topic/difficulty/:difficulty', async (req, res) => {
                 try {
-                    const db = QuestionDatabase.getInstance();
+                    const db = DatabaseFactory.getInstance();
                     const { topic, difficulty } = req.params;
                     const limit = parseInt(req.query.limit as string) || 20;
                     
-                    const questions = db.getQuestions(topic, parseInt(difficulty), limit);
+                    const questions = await db.getQuestions(topic, parseInt(difficulty), limit);
                     
                     res.json({
                         success: true,

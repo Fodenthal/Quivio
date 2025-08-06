@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
 
@@ -21,8 +21,7 @@ export interface QuestionRequest {
  * Handles question generation with multiple acceptable answer variants
  */
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private ai: GoogleGenAI;
 
   // JSON Schema for the expected response format
   private static readonly QUESTION_SCHEMA = `{
@@ -42,15 +41,6 @@ export class GeminiService {
     },
     "required": ["question", "correctAnswer", "acceptableAnswers", "category"]
   }`;
-  
-
-  // Example question to demonstrate expected format and quality
-  private static readonly EXAMPLE_QUESTION = `{
-    "question": "What is the name of Harry Potter's pet owl?",
-    "correctAnswer": "Hedwig",
-    "acceptableAnswers": ["Hedwig", "hedwig"],
-    "category": "Literature"
-  }`;
 
   // Core instructions for question generation
   private static readonly CORE_INSTRUCTIONS = `
@@ -67,7 +57,9 @@ export class GeminiService {
 7. **Category:** Use the broadest sensible label (e.g., Sports for athlete facts unless clearly Film, History, etc.).
 
 ### Self-Check Before Returning
-Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.`;
+Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
+
+**IMPORTANT: Output ONLY the raw JSON object. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
 
 
   constructor(apiKey: string) {
@@ -75,100 +67,250 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
       throw new Error("Gemini API key is required");
     }
     
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    });
+    this.ai = new GoogleGenAI({apiKey: apiKey});
   }
 
   /**
-   * Generate a trivia question based on topic and difficulty
+   * Stage 1: Gather factual context using Google Search
+   * @param topic - The topic to research
+   * @returns Promise<string> - Concise factual summary (1-2 sentences)
+   */
+  private async gatherFacts(topic: string): Promise<string> {
+    console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
+    
+    const factGatheringPrompt = `
+You are Quivio's master trivia researcher. Your job is to gather accurate, specific facts about "${topic}" that would be suitable for creating trivia questions.
+
+Use the Google Search tool if needed to find current, accurate information. Return a concise factual summary in 1-2 sentences that covers the most important, verifiable facts about this topic.
+
+Focus on facts that would make good trivia questions - dates, numbers, names, locations, achievements, or other specific details that can be tested.
+
+Topic to research: "${topic}"
+
+Return only the factual summary - no extra formatting or explanations.`;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: factGatheringPrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          temperature: 0,
+          topP: 1.0,
+          topK: 1.0,
+          maxOutputTokens: 256,
+          thinkingConfig: {
+            thinkingBudget: 128
+          }
+        }
+      });
+
+      const candidate = response.candidates?.[0];
+      if (!candidate?.content?.parts?.[0]?.text) {
+        console.warn("Raw Stage 1 response:", JSON.stringify(response, null, 2));
+        return ''; // Empty facts - Stage 2 will proceed without context
+      }
+
+      const facts = candidate.content.parts[0].text.trim();
+      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts}..."`);
+      return facts;
+    } catch (error) {
+      console.warn(`⚠️  Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.log(`   🔄 Proceeding to Stage 2 without additional context`);
+      return ''; // Empty facts - Stage 2 will proceed without context
+    }
+  }
+
+  /**
+   * Stage 2: Format facts into structured JSON question
+   * @param topic - The original topic
+   * @param facts - Facts gathered from Stage 1 (may be empty)
+   * @param request - The original question request
+   * @returns Promise<GeneratedQuestion> - The formatted question
+   */
+  private async formatQuestion(topic: string, facts: string, request: QuestionRequest): Promise<GeneratedQuestion> {
+    console.log(`🎯 Stage 2: Formatting question for topic: "${topic}"`);
+    console.log(`   📄 Using facts: ${facts ? `"${facts.substring(0, 100)}..."` : 'None (basic prompt)'}`);
+    
+    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
+    
+    const sections = [
+      // Core instructions
+      GeminiService.CORE_INSTRUCTIONS,
+      
+      // Task specification
+      `Your task is to generate a single, specific, factual trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
+    ];
+
+    // Add facts if available
+    if (facts && facts.trim()) {
+      sections.push(`**Context facts**: ${facts}`);
+      sections.push(`Use these facts if you believe they help make the best questions ever. If you don't think they are relevant, ignore them.`);
+    }
+
+    // Add schema and previous questions
+    sections.push(`Now, generate a JSON object for the topic "${topic}" that conforms to this JSON schema:\n${GeminiService.QUESTION_SCHEMA}`);
+
+    if (request.previousQuestions && request.previousQuestions.length > 0) {
+      console.log(`   📝 Avoiding ${request.previousQuestions.length} previous questions`);
+      sections.push(
+        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates as in these prior questions:\n${request.previousQuestions.join(", ")}`
+      );
+    }
+
+    const prompt = sections.join('\n\n');
+    console.log(`   📏 Stage 2 prompt length: ${prompt.length} characters`);
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          // No tools - pure formatting
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
+          maxOutputTokens: 1024,
+          thinkingConfig: {
+            thinkingBudget: 64
+          }
+        }
+      });
+      
+      const candidate = response.candidates?.[0];
+      if (!candidate?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid response structure from Stage 2');
+      }
+      
+      const text = candidate.content.parts[0].text;
+      console.log(`   📄 Stage 2 response length: ${text.length} characters`);
+      
+      return this.parseResponse(text, request);
+    } catch (error) {
+      console.error(`❌ Stage 2 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to format question: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate a trivia question using two-stage approach
    * @param request - The question generation request
    * @returns Promise<GeneratedQuestion> - The generated question with acceptable answers
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
-    const prompt = this.buildPrompt(request);
+    const startTime = Date.now();
+    console.log(`🚀 Starting two-stage question generation for topic: "${request.topic}"`);
+    console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
     
     try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      // Stage 1: Gather facts (may return empty string if fails)
+      const facts = await this.gatherFacts(request.topic);
       
-      return this.parseResponse(text, request);
+      // Stage 2: Format question (deterministic)
+      const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
+      
+      // Log success
+      const totalTime = Date.now() - startTime;
+      console.log(`✅ Two-stage generation completed in ${totalTime}ms`);
+      console.log(`   ❓ Question: "${generatedQuestion.question}"`);
+      console.log(`   ✅ Correct answer: "${generatedQuestion.correctAnswer}"`);
+      console.log(`   📋 Acceptable answers (${generatedQuestion.acceptableAnswers.length}): [${generatedQuestion.acceptableAnswers.join(', ')}]`);
+      console.log(`   🏷️  Category: ${generatedQuestion.category}`);
+      console.log(`   📊 Difficulty: ${generatedQuestion.difficulty}/5`);
+      
+      // Log question quality metrics
+      const questionTokens = GeminiService.tokenizer.tokenize(generatedQuestion.question) || [];
+      console.log(`   📏 Question length: ${questionTokens.length} tokens (target: ≤65)`);
+      console.log(`   🎯 Question quality: ${questionTokens.length <= 65 ? '✅ Within token limit' : '⚠️ Exceeds token limit'}`);
+      
+      return generatedQuestion;
     } catch (error) {
-      console.error("Error generating question with Gemini:", error);
+      console.error("❌ Error in two-stage question generation:", error);
+      console.error(`   🔍 Error details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`   📊 Request context: topic="${request.topic}", difficulty=${request.difficulty}`);
       throw new Error(`Failed to generate question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  /**
-   * Build the prompt for Gemini API based on the request parameters
-   */
-  private buildPrompt(request: QuestionRequest): string {
-    const difficultyDescription = this.getDifficultyDescription(request.difficulty);
-    
-    const sections = [
-      // Role and core instructions
-      GeminiService.CORE_INSTRUCTIONS,
-      
-      // Task specification
-      `Your task is to generate a single, specific, factual trivia question about "${request.topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
-      
-      // Example for reference
-      `**Example of question style and quality for topic "Harry Potter" with difficulty 3:**
-      ${GeminiService.EXAMPLE_QUESTION}`,
-      
-      // Generation request with schema
-      `Now, generate a JSON object for the topic "${request.topic}" that conforms to this JSON schema:
-      ${GeminiService.QUESTION_SCHEMA}`
-    ];
 
-    // Add previous questions constraint if provided
-    if (request.previousQuestions && request.previousQuestions.length > 0) {
-      sections.push(
-        `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates (e.g., multiple "In what year..." or "How many..." starts) as in these prior questions**:
-        ${request.previousQuestions.join(", ")}`
-      );
-    }
-
-    return sections.join('\n\n');
-  }
 
   /**
    * Parse the Gemini API response into a structured question object
    */
   private parseResponse(response: string, request: QuestionRequest): GeneratedQuestion {
+    console.log(`🔍 Starting response parsing...`);
+    console.log(`   📄 Raw response length: ${response.length} characters`);
+    
     try {
-      const parsed = JSON.parse(response);
+      // Clean up markdown wrapper if present (new SDK often wraps JSON in code blocks)
+      let cleanResponse = response.trim();
+      console.log(`   🧹 Cleaning response format...`);
+      
+      if (cleanResponse.startsWith('```json') && cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.slice(7, -3).trim(); // Remove ```json and ending ```
+        console.log(`   ✅ Removed JSON code block wrapper`);
+      } else if (cleanResponse.startsWith('```') && cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.slice(3, -3).trim(); // Remove generic ``` wrappers
+        console.log(`   ✅ Removed generic code block wrapper`);
+      } else {
+        console.log(`   ℹ️  No code block wrapper detected`);
+      }
+      
+      console.log(`   📝 Cleaned response preview: "${cleanResponse.substring(0, 100)}..."`);
+      
+      // Parse JSON
+      console.log(`   🔍 Attempting JSON parsing...`);
+      const parsed = JSON.parse(cleanResponse);
+      console.log(`   ✅ JSON parsed successfully`);
       
       // Validate required fields
-      if (!parsed.question || !parsed.correctAnswer || !parsed.acceptableAnswers) {
-        throw new Error("Missing required fields in API response");
+      console.log(`   🔍 Validating required fields...`);
+      const requiredFields = ['question', 'correctAnswer', 'acceptableAnswers'];
+      const missingFields = requiredFields.filter(field => !parsed[field]);
+      
+      if (missingFields.length > 0) {
+        console.error(`   ❌ Missing required fields: ${missingFields.join(', ')}`);
+        throw new Error(`Missing required fields in API response: ${missingFields.join(', ')}`);
       }
+      console.log(`   ✅ All required fields present`);
 
       // Ensure acceptableAnswers is an array and includes the correct answer
+      console.log(`   🔍 Processing acceptable answers...`);
       let acceptableAnswers = Array.isArray(parsed.acceptableAnswers) ? parsed.acceptableAnswers : [parsed.correctAnswer];
+      console.log(`   📋 Initial acceptable answers: [${acceptableAnswers.join(', ')}]`);
       
       // Add the correct answer to acceptable answers if not already included
-      if (!acceptableAnswers.some((ans: string) => ans.toLowerCase() === parsed.correctAnswer.toLowerCase())) {
+      const correctAnswerLower = parsed.correctAnswer.toLowerCase();
+      const hasCorrectAnswer = acceptableAnswers.some((ans: string) => ans.toLowerCase() === correctAnswerLower);
+      
+      if (!hasCorrectAnswer) {
+        console.log(`   ➕ Adding correct answer to acceptable answers list`);
         acceptableAnswers.unshift(parsed.correctAnswer);
+      } else {
+        console.log(`   ✅ Correct answer already in acceptable answers`);
       }
 
       // Normalize all acceptable answers for consistent matching
+      console.log(`   🔧 Normalizing acceptable answers...`);
       acceptableAnswers = acceptableAnswers.map((ans: string) => ans.trim());
+      console.log(`   📋 Final acceptable answers (${acceptableAnswers.length}): [${acceptableAnswers.join(', ')}]`);
 
-      return {
+      const result = {
         question: parsed.question.trim(),
         correctAnswer: parsed.correctAnswer.trim(),
         acceptableAnswers,
         category: parsed.category || "General",
         difficulty: request.difficulty
       };
+      
+      console.log(`   ✅ Successfully parsed and validated question structure`);
+      console.log(`   📊 Final question stats: category="${result.category}", difficulty=${result.difficulty}`);
+      
+      return result;
     } catch (error) {
-      console.error("Failed to parse Gemini response:", response);
+      console.error("❌ Failed to parse Gemini response");
+      console.error(`   📄 Response that failed to parse: "${response}"`);
+      console.error(`   🔍 Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw new Error(`Failed to parse question response: ${error instanceof Error ? error.message : 'Invalid JSON'}`);
     }
   }
