@@ -130,15 +130,16 @@ Validate rules 1–8 and schema compliance; fix and revalidate until all pass. T
       console.log(`   🔧 Prompt length: ${contextualPrompt.length} characters`);
       
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-2.5-flash',
         contents: contextualPrompt,
         config: {
           tools: [{ googleSearch: {} }],
-          temperature: 0.4,
+          temperature: 0,
           topP: 0.9,
-          maxOutputTokens: 2048,
+          topK: 40,
+          maxOutputTokens: 1024,
           thinkingConfig: {
-            thinkingBudget: 0
+            thinkingBudget: 256
           }
         }
       });
