@@ -19,7 +19,7 @@ export function AnnouncementsPanel(): React.ReactElement {
       {
         id: "launch-beta",
         title: "Public Beta launched",
-        summary: "We’re shipping frequent UI updates and performance fixes. Share feedback in Discord!",
+        summary: "Share feedback in Discord please!",
         date: new Date().toISOString(),
         url: process.env.NEXT_PUBLIC_DISCORD_URL,
       },
