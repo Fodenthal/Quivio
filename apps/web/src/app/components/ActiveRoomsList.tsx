@@ -160,10 +160,40 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (loading) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-text-secondary">Loading active rooms...</span>
+      <div className={`card p-6 h-full flex flex-col ${className}`}>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="skeleton-text w-40 mb-2"></div>
+            <div className="skeleton-text w-32"></div>
+          </div>
+          <div className="skeleton h-8 w-28 rounded-md"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className="card card-hover p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="skeleton-text w-48 mb-2"></div>
+                  <div className="skeleton-text w-64 mb-2"></div>
+                  <div className="flex items-center space-x-3">
+                    <div className="skeleton-text w-24"></div>
+                    <div className="skeleton-text w-20"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <div className="skeleton-text w-16 mb-2"></div>
+                  <div className="skeleton h-6 w-20"></div>
+                </div>
+                <div>
+                  <div className="skeleton-text w-20 mb-2"></div>
+                  <div className="skeleton h-6 w-24"></div>
+                </div>
+              </div>
+              <div className="skeleton h-9 w-full rounded-md"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -171,14 +201,14 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (error) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
+      <div className={`card p-8 h-full flex items-center justify-center ${className}`}>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-text-main mb-2">Failed to Load Rooms</h3>
           <p className="text-text-secondary mb-4">{error}</p>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="btn-primary px-4 py-2"
           >
             {refreshing ? 'Retrying...' : 'Try Again'}
           </button>
@@ -189,14 +219,14 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   if (rooms.length === 0) {
     return (
-      <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 h-full flex items-center justify-center ${className}`}>
+      <div className={`card p-8 h-full flex items-center justify-center ${className}`}>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-text-main mb-2">No Active Rooms</h3>
           <p className="text-text-secondary mb-4">Be the first to create a room and start playing!</p>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="btn-primary px-4 py-2"
           >
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
@@ -206,7 +236,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
   }
 
   return (
-    <div className={`bg-white/10 backdrop-blur-xl rounded-lg shadow-glass border border-white/20 h-full flex flex-col ${className}`}>
+    <div className={`card h-full flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-white/10">
         <div>
@@ -216,7 +246,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="px-3 py-1.5 bg-white/10 text-text-secondary rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
+          className="btn-ghost px-3 py-1.5 text-sm"
         >
           {refreshing ? '⟳' : '↻'} Refresh
         </button>
@@ -231,10 +261,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
             const difficultyColor = getDifficultyColor(room.difficulty);
 
             return (
-              <div
-                key={room.gamePin}
-                className="bg-white/5 rounded-lg p-4 border border-white/10 hover:border-white/20 transition-all duration-200"
-              >
+              <div key={room.gamePin} className="card card-hover p-4">
                 {/* Room Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
@@ -272,14 +299,12 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                 </div>
 
                 {/* Join Button */}
-                <button
+                 <button
                   onClick={() => handleJoinRoom(room.gamePin)}
                   disabled={!status.joinable || !onJoinRoom}
-                  className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-200 ${
-                    status.joinable && onJoinRoom
-                      ? 'bg-primary text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
-                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  }`}
+                   className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+                     status.joinable && onJoinRoom ? 'btn-primary' : 'bg-white/10 text-text-secondary cursor-not-allowed'
+                   }`}
                 >
                   {!onJoinRoom 
                     ? 'Join Disabled' 
