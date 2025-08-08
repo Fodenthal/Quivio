@@ -134,13 +134,13 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
    */
   const getRoomStatus = (room: RoomMetadata) => {
     const isFull = room.playerCount >= room.maxPlayers;
-    const isJoinable = !isFull && !room.gameStarted;
-    
+    const isJoinable = !isFull; // Allow joining even if the game has started
+
     if (isFull) {
       return { label: "Full", color: "text-red-400", joinable: false };
     }
     if (room.gameStarted) {
-      return { label: "In Progress", color: "text-yellow-400", joinable: false };
+      return { label: "In Progress", color: "text-yellow-400", joinable: true };
     }
     if (room.canStart) {
       return { label: "Ready to Start", color: "text-green-400", joinable: true };
