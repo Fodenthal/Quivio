@@ -29,11 +29,16 @@ export default function RootLayout({
         <DisplayNameProvider>
           {children}
         </DisplayNameProvider>
-        <footer className="w-full border-t mt-8 py-4 text-center text-sm text-gray-500 bg-white/80">
-          <Link href="/about" className="hover:underline mx-2">About</Link>|
-          <Link href="/privacy-policy" className="hover:underline mx-2">Privacy Policy</Link>|
-          <Link href="/terms-conditions" className="hover:underline mx-2">Terms & Conditions</Link>|
-          <Link href="/contact" className="hover:underline mx-2">Contact</Link>
+        <footer className="w-full border-t mt-8 py-4 text-center text-sm text-text-secondary bg-white/10 backdrop-blur-xl">
+          <div className="container-app">
+            <Link href="/about" className="hover:underline mx-2">About</Link>
+            <span className="mx-1">|</span>
+            <Link href="/privacy-policy" className="hover:underline mx-2">Privacy Policy</Link>
+            <span className="mx-1">|</span>
+            <Link href="/terms-conditions" className="hover:underline mx-2">Terms & Conditions</Link>
+            <span className="mx-1">|</span>
+            <Link href="/contact" className="hover:underline mx-2">Contact</Link>
+          </div>
         </footer>
       </body>
     </html>
