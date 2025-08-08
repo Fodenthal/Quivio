@@ -4,6 +4,11 @@ import { GameLayout, GameLayoutProps } from "../../app/components/GameLayout";
 import { ConnectionStatus } from "../../lib/gameClient";
 import { GameState, PlayerData, GameStatus } from "@shared/index";
 
+// Mock the UserDisplayName component to avoid context requirements
+vi.mock("../../app/components/UserDisplayName", () => ({
+  UserDisplayName: vi.fn(() => <div data-testid="user-display-name">User</div>)
+}));
+
 // Mock the GameView component
 vi.mock("../../app/components/GameView", () => ({
   GameView: vi.fn(({ 
