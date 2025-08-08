@@ -14,13 +14,9 @@ export function InfoPanel(): React.ReactElement {
         </div>
         <p className="text-sm text-text-secondary">
           Quivio is a realtime, social trivia game powered by AI-generated questions on any topic.
-          We’re currently in beta, so expect frequent updates, some nonsense questions, and a few rough edges.
+          We’re currently in beta, so expect frequent updates as we smooth out the rough edges. 
         </p>
       </div>
-      <div className="divider my-4" />
-      <p className="text-sm text-text-secondary mb-3">
-        Please join the Discord if you have any feedback at all—we’d love to start building a community.
-      </p>
       <a
         href={discordUrl}
         target="_blank"
