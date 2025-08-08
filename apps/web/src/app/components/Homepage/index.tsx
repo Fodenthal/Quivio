@@ -7,8 +7,8 @@ import { ActiveRoomsList } from "../ActiveRoomsList";
 // Removed TrendingTopics in favor of a larger Active Rooms area
 import { UserDisplayName } from "../UserDisplayName";
 import { useDisplayName } from "../../../contexts/DisplayNameContext";
-import { InfoPanel } from "./InfoPanel";
-import { AnnouncementsPanel } from "./AnnouncementsPanel";
+import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
+import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
