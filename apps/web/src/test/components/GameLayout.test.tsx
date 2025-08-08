@@ -17,7 +17,6 @@ vi.mock("../../app/components/GameView", () => ({
     onSubmitGuess, 
     onSendChatMessage, 
     onStartGame,
-    onSetTopic,
     onSetTopics,
     onSetDifficulty,
     onSetTargetScore,
@@ -32,7 +31,6 @@ vi.mock("../../app/components/GameView", () => ({
       {onSubmitGuess && <button onClick={() => onSubmitGuess("test guess")}>Submit Guess</button>}
       {onSendChatMessage && <button onClick={() => onSendChatMessage("test message")}>Send Message</button>}
       {onStartGame && <button onClick={() => onStartGame()}>Start Game</button>}
-      {onSetTopic && <button onClick={() => onSetTopic("Test Topic")}>Set Topic</button>}
       {onSetTopics && <button onClick={() => onSetTopics(["Topic1", "Topic2"])}>Set Topics</button>}
       {onSetDifficulty && <button onClick={() => onSetDifficulty(5)}>Set Difficulty</button>}
       {onSetTargetScore && <button onClick={() => onSetTargetScore(20)}>Set Target Score</button>}
@@ -51,7 +49,6 @@ describe("GameLayout", () => {
     onLeaveGame: vi.fn(),
     onStartGame: vi.fn(),
     onSubmitGuess: vi.fn(),
-    onSetTopic: vi.fn(),
     onSetTopics: vi.fn(),
     onSetDifficulty: vi.fn(),
     onSetTargetScore: vi.fn(),
@@ -299,19 +296,7 @@ describe("GameLayout", () => {
       expect(mockProps.onStartGame).toHaveBeenCalledTimes(1);
     });
 
-    it("calls onSetTopic when topic is set", () => {
-      const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
-      
-      render(<GameLayout {...mockProps} 
-        connectionStatus={ConnectionStatus.CONNECTED} 
-        gameState={gameState} 
-      />);
-      
-      const topicButton = screen.getByRole("button", { name: "Set Topic" });
-      fireEvent.click(topicButton);
-      
-      expect(mockProps.onSetTopic).toHaveBeenCalledWith("Test Topic");
-    });
+    // Single-topic callback removed; topics are managed via onSetTopics only
 
     it("calls onSetTopics when topics are set", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
