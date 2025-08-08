@@ -10,7 +10,7 @@ interface Announcement {
   url?: string;
 }
 
-export function AnnouncementsPanel(): JSX.Element {
+export function AnnouncementsPanel(): React.ReactElement {
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null);
 
   useEffect(() => {
