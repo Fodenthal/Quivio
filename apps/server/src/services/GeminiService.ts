@@ -45,21 +45,26 @@ export class GeminiService {
   // Core instructions for question generation
   private static readonly CORE_INSTRUCTIONS = `
 
-  You are Quivio’s master trivia author, known for crafting concise, engaging and fun questions. Output ONE JSON object only (no prose).
+  You are Quivio’s master trivia author. Output ONE JSON object only (no prose).
 
-### Always-True Rules
-1. **Direct trivia:** Test knowledge *about* the topic, never meta (no “What is often asked about…?”).
-2. **Clarity & length:** Question must be ≤65 tokens, factually checkable, and yield an unambiguous answer.
-3. **Difficulty knob:** 1=very easy, 5=expert. Calibrate thoughtfully (see request block).
-4. **Non-trivial-number rule:** If the correct answer is a bare integer, it must satisfy ≥1: (a) ≥3 digits; (b) calendar year ≥1000; (c) decimal/fraction; (d) outside 1–20. If not, rewrite the question.
-5. **Acceptable answers:** Include exhaustive common variants—abbreviations, nicknames, alternative spellings, formal names, punctuation variants (e.g., "GSW", "Golden State Warriors", "Wardell Curry Sr.").
-6. **Diverse phrasing:** Across calls, vary structure (who/what/where/when/how many/records/dates/puzzle). Avoid repeating the same template every time (see prior questions below).
-7. **Category:** Use the broadest sensible label (e.g., Sports for athlete facts unless clearly Film, History, etc.).
+  ### Always-True Rules
+  1. Direct trivia only: Ask about a single, concrete, checkable fact. Absolutely no meta: no definitions, origins, overviews, "about the field", or "how the game works".
+  2. Clarity & length: ≤65 tokens, unambiguous single answer, fact-checkable.
+  3. Difficulty knob: 1 = very easy, 5 = expert. Calibrate to the request.
+  4. Non-trivial-number rule: If the answer is a bare number, ensure one of: (a) ≥3 digits; (b) year ≥ 1000; (c) decimal/fraction; or (d) outside 1–20. Otherwise, rewrite.
+  5. Acceptable answers: Include common variants—abbreviations, nicknames, alternative spellings, number/word forms, punctuation variants.
+  6. Diverse phrasing over time; avoid repeating templates seen in prior questions.
+  7. Category: Use a sensible broad label (e.g., Sports, History, Science).
 
-### Self-Check Before Returning
-Validate rules 1–7 and schema compliance; fix and revalidate until all pass. Then return the JSON object.
+  ### Topic Handling
+  • If the topic is a broad domain (e.g., "geography", "mathematics", "probability"), instantiate a specific, self-contained question in that domain (no definitions/overviews). Examples:
+    – Probability (≈3/5): "A fair die is rolled 3 times. What is the expected value of the sum?" → 10.5
+    – Geography (≈2/5): "What is the capital of Canada?" → Ottawa
+    – Geometry (≈3/5): "What is the area of a circle with radius 5?" → 25π
+  • If the topic refers to a specific entity or a time-sensitive/superlative, ask a direct factual question about that entity (e.g., date, number, record, winner).
 
-**IMPORTANT: Output ONLY the raw JSON object. Do not include any explanatory text, markdown formatting, or prose before or after the JSON.**`;
+  ### Self-Check Before Returning
+  Enforce the rules and ensure the question is not meta. Return ONLY the JSON object.`;
 
 
   constructor(apiKey: string) {
@@ -71,30 +76,34 @@ Validate rules 1–7 and schema compliance; fix and revalidate until all pass. T
   }
 
   /**
-   * Stage 1: Gather factual context using Google Search
+   * Stage 1: Gather factual context (optionally using Google Search)
    * @param topic - The topic to research
-   * @returns Promise<string> - Concise factual summary (1-2 sentences)
+   * @param enableSearchTools - If true, allow model to use Google Search tool; otherwise, skip tools
+   * @returns Promise<string> - Concise factual summary (1-2 sentences) or empty string if not needed
    */
-  private async gatherFacts(topic: string): Promise<string> {
+  private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
     console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
     
     const factGatheringPrompt = `
-You are Quivio's master trivia researcher. Your job is to gather accurate, specific facts about "${topic}" that would be suitable for creating trivia questions.
+You are Quivio's master trivia researcher.
 
-Use the Google Search tool if needed to find current, accurate information. Return a concise factual summary in 1-2 sentences that covers the most important, verifiable facts about this topic.
+WHEN TO SEARCH
+- Search ONLY if the topic asks for or implies a concrete, verifiable fact about a specific entity (person, place, event, work, company, team, law) OR a time-sensitive/superlative fact (current holder, latest record, winners, standings, "largest/fastest", recent releases).
+- Do NOT search for computational math or self-contained puzzles; nor for broad domains without a specific entity (e.g., "geography", "mathematics").
 
-Focus on facts that would make good trivia questions - dates, numbers, names, locations, achievements, or other specific details that can be tested.
+TASK
+- If you decide to search, quickly collect specific, testable facts (dates, numbers, names, locations, achievements) and return a concise 1–2 sentence factual summary suitable for trivia.
+- If you decide not to search, return an empty string.
 
-Topic to research: "${topic}"
+Topic: "${topic}"
 
-Return only the factual summary - no extra formatting or explanations.`;
+Return only the summary (no extra formatting).`;
 
     try {
-      const response = await this.ai.models.generateContent({
+      const request: any = {
         model: 'gemini-2.5-flash',
         contents: factGatheringPrompt,
         config: {
-          tools: [{ googleSearch: {} }],
           temperature: 0,
           topP: 1.0,
           topK: 1.0,
@@ -103,7 +112,11 @@ Return only the factual summary - no extra formatting or explanations.`;
             thinkingBudget: 128
           }
         }
-      });
+      };
+      if (enableSearchTools) {
+        request.config.tools = [{ googleSearch: {} }];
+      }
+      const response = await this.ai.models.generateContent(request);
 
       const candidate = response.candidates?.[0];
       if (!candidate?.content?.parts?.[0]?.text) {
@@ -119,6 +132,65 @@ Return only the factual summary - no extra formatting or explanations.`;
       console.log(`   🔄 Proceeding to Stage 2 without additional context`);
       return ''; // Empty facts - Stage 2 will proceed without context
     }
+  }
+
+  /**
+   * Decide whether Stage 1 search should be used for a topic
+   * Heuristic: prefer search only for specific entities or time-sensitive/superlatives
+   * @param topic - The input topic
+   * @returns boolean - true if we should enable search tools
+   */
+  private shouldSearch(topic: string): boolean {
+    const raw = topic || '';
+    const t = raw.trim();
+    const lower = t.toLowerCase();
+
+    // Block broad domains and computational/puzzle topics
+    const broadDomains = [
+      'geography','mathematics','math','algebra','geometry','calculus','statistics','probability',
+      'physics','chemistry','biology','history','literature','sports','sport','film','movies','music',
+      'art','finance','economics','computer science','programming','coding'
+    ];
+    if (broadDomains.some(k => lower === k)) {
+      return false;
+    }
+    const puzzleKeywords = ['expected value','permutation','combination','riddle','puzzle','emoji','flags','logic puzzle'];
+    if (puzzleKeywords.some(k => lower.includes(k))) {
+      return false;
+    }
+
+    // Time-sensitive / superlative indicators
+    const timeOrSuperlative = [
+      'current','latest','last','this season','this year','today','recent','new','standings','rankings',
+      'chart','box office','release','released','premiered','winner','winners','champion','record',
+      'largest','fastest','highest','most','top','draft','trade','acquired','wimbledon','olympics','world cup'
+    ];
+    if (timeOrSuperlative.some(k => lower.includes(k))) {
+      return true;
+    }
+
+    // Years (e.g., 1999, 2023)
+    if (/(19|20)\d{2}/.test(lower)) {
+      return true;
+    }
+
+    // Entity-like keywords
+    const entityPhrases = [
+      'season','episode','album','song','track','movie','film','series','novel','book','chapter','volume',
+      'league','cup','tournament','grand prix','tour de france','formula 1','f1','nba','nfl','mlb','nhl',
+      'premier league','champions league','grammys','oscars','emmys','ballon d\'or','uefa','fifa','nobel'
+    ];
+    if (entityPhrases.some(k => lower.includes(k))) {
+      return true;
+    }
+
+    // Proper noun heuristic: two or more capitalized tokens
+    const capitalizedCount = (t.match(/\b[A-Z][A-Za-z0-9'’.\-]*\b/g) || []).length;
+    if (capitalizedCount >= 2) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -139,13 +211,13 @@ Return only the factual summary - no extra formatting or explanations.`;
       GeminiService.CORE_INSTRUCTIONS,
       
       // Task specification
-      `Your task is to generate a single, specific, factual trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
+      `Your task is to generate a single, specific, **non-meta** trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
     ];
 
     // Add facts if available
     if (facts && facts.trim()) {
       sections.push(`**Context facts**: ${facts}`);
-      sections.push(`Use these facts if you believe they help make the best questions ever. If you don't think they are relevant, ignore them.`);
+      sections.push(`Only use these facts if they make the question more precise; otherwise ignore.`);
     }
 
     // Add schema and previous questions
@@ -203,8 +275,10 @@ Return only the factual summary - no extra formatting or explanations.`;
     console.log(`   📊 Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
     
     try {
-      // Stage 1: Gather facts (may return empty string if fails)
-      const facts = await this.gatherFacts(request.topic);
+      // Stage 1: Decide whether to search and gather facts accordingly
+      const useSearch = this.shouldSearch(request.topic);
+      console.log(`🔎 Search enabled: ${useSearch} (topic: "${request.topic}")`);
+      const facts = useSearch ? await this.gatherFacts(request.topic, true) : '';
       
       // Stage 2: Format question (deterministic)
       const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
