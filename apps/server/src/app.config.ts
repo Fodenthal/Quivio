@@ -136,6 +136,32 @@ export default config({
         });
 
         /**
+         * Popular Topics API
+         * GET /api/topics/popular?limit=50 - Get list of popular topics ranked
+         */
+        app.get('/api/topics/popular', async (req, res) => {
+            try {
+                const db = DatabaseFactory.getInstance();
+                const limit = Math.max(1, Math.min(200, parseInt((req.query.limit as string) || '50')));
+                // @ts-ignore - method is present on both implementations
+                const topics = await (db as any).getPopularTopics(limit);
+
+                res.json({
+                    success: true,
+                    count: topics.length,
+                    topics,
+                    timestamp: Date.now(),
+                });
+            } catch (error) {
+                console.error('❌ Popular topics API error:', error);
+                res.status(500).json({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                });
+            }
+        });
+
+        /**
          * Question Database Debug API (Development only)
          * These endpoints allow you to inspect the cached questions
          */

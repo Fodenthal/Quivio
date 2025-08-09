@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
+import { usePopularTopics } from "../../hooks/usePopularTopics";
 
 interface AISettingsPanelProps {
   gameState: GameState;
@@ -26,6 +27,7 @@ export function AISettingsPanel({
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
+  const { topics: popularTopics } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
   // Use 5-tier difficulty system directly (1-5)
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
@@ -176,6 +178,50 @@ export function AISettingsPanel({
             </button>
           )}
         </div>
+        {!isReadOnly && (
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-text-main mb-1">Add from popular topics</label>
+            <div className="relative">
+              <select
+                className="w-full max-w-xl px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  if (!topics.includes(value)) setTopics([...topics, value]);
+                  // reset back to placeholder
+                  e.currentTarget.selectedIndex = 0;
+                }}
+              >
+                <option value="">Select a popular topic…</option>
+                {popularTopics.slice(0, 10).map((t) => (
+                  <option key={t.topic} value={t.topic}>
+                    {t.topic} ({t.questionCount})
+                  </option>
+                ))}
+              </select>
+            </div>
+            {popularTopics.length > 10 && (
+              <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-white/10">
+                <ul className="divide-y divide-white/5">
+                  {popularTopics.slice(10).map((t) => (
+                    <li key={t.topic}>
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-white/10"
+                        onClick={() => {
+                          if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
+                        }}
+                      >
+                        {t.topic}
+                        <span className="ml-2 text-xs text-text-secondary">{t.questionCount} questions</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
         <div className="text-xs text-text-secondary mt-1">
           {isReadOnly ? (
             <span className="text-text-secondary/70 italic">

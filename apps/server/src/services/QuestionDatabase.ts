@@ -305,4 +305,31 @@ export class QuestionDatabase {
       return [];
     }
   }
+
+  /**
+   * Get most popular topics based on aggregate usedCount and availability
+   */
+  public async getPopularTopics(limit: number = 50): Promise<Array<{ topic: string; questionCount: number; totalUsedCount: number }>> {
+    if (!this.db) return [];
+
+    try {
+      const query = `
+        SELECT topic,
+               COUNT(*) AS questionCount,
+               COALESCE(SUM(usedCount), 0) AS totalUsedCount
+        FROM questions
+        GROUP BY topic
+        HAVING topic IS NOT NULL AND TRIM(topic) <> ''
+        ORDER BY totalUsedCount DESC, questionCount DESC, topic ASC
+        LIMIT ?
+      `;
+
+      const stmt = this.db.prepare(query);
+      const rows = stmt.all(limit) as Array<{ topic: string; questionCount: number; totalUsedCount: number }>;
+      return rows;
+    } catch (error) {
+      console.error('Failed to get popular topics:', error);
+      return [];
+    }
+  }
 } 
