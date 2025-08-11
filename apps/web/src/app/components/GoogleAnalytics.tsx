@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { Suspense } from "react";
 import { GAListener } from "./GAListener";
 
 export type GoogleAnalyticsProps = {
@@ -32,7 +33,9 @@ export const GoogleAnalytics = ({ measurementId }: GoogleAnalyticsProps) => {
           gtag('config', '${measurementId}', { page_path: window.location.pathname });
         `}
       </Script>
-      <GAListener measurementId={measurementId} />
+      <Suspense fallback={null}>
+        <GAListener measurementId={measurementId} />
+      </Suspense>
     </>
   );
 };
