@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { GeneratedQuestion } from "../../../../../server/src/services/GeminiService";
 
 export async function POST(request: Request) {
   // Ensure this endpoint is only available in development
@@ -29,7 +30,6 @@ export async function POST(request: Request) {
 
     // Dynamically import dev-only dependency to avoid bundling in production
     const { GeminiService } = await import("../../../../../server/src/services/GeminiService");
-    const { GeneratedQuestion } = await import("../../../../../server/src/services/GeminiService");
     const geminiService = new GeminiService(apiKey);
 
     const questionRequest = {
