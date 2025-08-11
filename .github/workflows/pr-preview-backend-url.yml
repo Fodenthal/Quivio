@@ -1,0 +1,97 @@
+name: Sync backend preview URL to Vercel
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sync-backend-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve Render preview URL for this branch
+        id: render
+        env:
+          BRANCH: ${{ github.head_ref }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVER_SERVICE_ID: ${{ secrets.RENDER_SERVER_SERVICE_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ] || [ -z "${RENDER_SERVER_SERVICE_ID:-}" ]; then
+            echo "Render secrets not configured; skipping." >&2
+            echo "url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("fs");
+            const branch = process.env.BRANCH;
+            const serviceId = process.env.RENDER_SERVER_SERVICE_ID;
+            const apiKey = process.env.RENDER_API_KEY;
+            const output = process.env.GITHUB_OUTPUT;
+            const headers = { Authorization: `Bearer ${apiKey}` };
+            async function main() {
+              const res = await fetch(`https://api.render.com/v1/services/${serviceId}/deploys?limit=50`, { headers });
+              if (!res.ok) {
+                throw new Error(`Render API error: ${res.status}`);
+              }
+              const deploys = await res.json();
+              const preferred = ["live", "succeeded"];
+              const match = deploys.find(d => (d?.commit?.branch === branch) && preferred.includes(d?.status));
+              let url = "";
+              if (match) {
+                url = match.previewUrl || match.url || (match.service && match.service.url) || "";
+              }
+              fs.appendFileSync(output, `url=${url}\n`);
+            }
+            main().catch(err => { console.error(err); fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=\n`); });
+          '
+
+      - name: Upsert Vercel preview env var for this branch
+        if: steps.render.outputs.url != ''
+        id: vercel
+        env:
+          BRANCH: ${{ github.head_ref }}
+          BACKEND_URL: ${{ steps.render.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "Vercel secrets not configured; skipping." >&2
+            exit 0
+          fi
+
+          # Normalize to wss:// for Colyseus client
+          WS_URL="${BACKEND_URL}"
+          WS_URL="${WS_URL/https:\/\//wss://}"
+          WS_URL="${WS_URL/http:\/\//ws://}"
+          WS_URL="${WS_URL%%/}"
+
+          # Create or update env var scoped to this branch on preview target
+          curl -sS -X POST "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d @- << JSON || true
+          {
+            "key": "NEXT_PUBLIC_BACKEND_URL",
+            "value": "${WS_URL}",
+            "target": ["preview"],
+            "type": "plain",
+            "gitBranch": "${BRANCH}"
+          }
+          JSON
+
+          echo "Env var set for branch ${BRANCH}: NEXT_PUBLIC_BACKEND_URL=${WS_URL}"
+
+      - name: Note about redeploy
+        if: steps.render.outputs.url != ''
+        run: |
+          echo "Ensure Vercel project setting 'Redeploy on Env Changes' is enabled so the preview rebuilds automatically."
+
+
