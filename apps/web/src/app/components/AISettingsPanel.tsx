@@ -133,8 +133,7 @@ export function AISettingsPanel({
   };
 
   return (
-    <div className="bg-white/10 rounded-2xl shadow-lg p-8 border border-white/20 max-w-xl w-full mx-auto space-y-8">
-      <h2 className="text-2xl font-bold text-text-main mb-4">AI Question Settings</h2>
+    <div className="bg-white/10 rounded-2xl shadow-lg p-4 border border-white/20 max-w-xl w-full mx-auto space-y-4">
       {/* Game Topics Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
@@ -184,21 +183,21 @@ export function AISettingsPanel({
           </div>
 
           {!isReadOnly && showPopular && popularTopics.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 z-20 rounded-md border border-white/10 bg-white/5 backdrop-blur-xl shadow-glass max-h-60 overflow-y-auto">
-              <ul className="divide-y divide-white/5">
+            <div className="mt-2 z-10 rounded-md border border-gray-700 bg-gray-800 text-gray-100 shadow-lg max-h-60 overflow-y-auto">
+              <ul className="divide-y divide-gray-700">
                 {popularTopics.slice(0, 50).map((t) => (
                   <li key={t.topic}>
                     <button
                       type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-white/10"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
                         setShowPopular(false);
                       }}
                     >
-                      {t.topic}
-                      <span className="ml-2 text-xs text-text-secondary">{t.questionCount} questions</span>
+                      <span className="text-gray-100">{t.topic}</span>
+                      <span className="ml-2 text-xs text-gray-300">{t.questionCount} questions</span>
                     </button>
                   </li>
                 ))}
@@ -219,7 +218,7 @@ export function AISettingsPanel({
           )}
         </div>
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-4 border-t border-white/10" />
       {/* Difficulty Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
@@ -237,11 +236,11 @@ export function AISettingsPanel({
           )}
         </div>
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="flex flex-row gap-6 mt-2">
+        <div className="flex flex-row gap-4 mt-2">
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
             <input
