@@ -182,8 +182,8 @@ export function AISettingsPanel({
           {!isReadOnly && popularTopics.length > 0 && (
             <div className="mt-3">
               <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
-              <div className="grid grid-cols-2 gap-2">
-                {popularTopics.slice(0, 6).map((t) => (
+              <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1">
+                {popularTopics.slice(0, 36).map((t) => (
                   <button
                     key={t.topic}
                     type="button"
