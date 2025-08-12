@@ -27,7 +27,6 @@ export function AISettingsPanel({
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
-  const [showPopular, setShowPopular] = useState(false);
   const { topics: popularTopics } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
   // Use 5-tier difficulty system directly (1-5)
@@ -161,8 +160,6 @@ export function AISettingsPanel({
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={handleNewTopicKeyDown}
-              onFocus={() => !isReadOnly && setShowPopular(true)}
-              onBlur={() => setShowPopular(false)}
             placeholder="Add a topic..."
             disabled={isReadOnly}
             className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -182,41 +179,33 @@ export function AISettingsPanel({
             )}
           </div>
 
-          {!isReadOnly && showPopular && popularTopics.length > 0 && (
-            <div className="mt-2 z-10 rounded-md border border-gray-700 bg-gray-800 text-gray-100 shadow-lg max-h-60 overflow-y-auto">
-              <ul className="divide-y divide-gray-700">
-                {popularTopics.slice(0, 50).map((t) => (
-                  <li key={t.topic}>
-                    <button
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
-                        setShowPopular(false);
-                      }}
-                    >
-                      <span className="text-gray-100">{t.topic}</span>
-                      <span className="ml-2 text-xs text-gray-300">{t.questionCount} questions</span>
-                    </button>
-                  </li>
+          {!isReadOnly && popularTopics.length > 0 && (
+            <div className="mt-3">
+              <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
+              <div className="grid grid-cols-2 gap-2">
+                {popularTopics.slice(0, 6).map((t) => (
+                  <button
+                    key={t.topic}
+                    type="button"
+                    className="text-left px-3 py-2 text-sm rounded-md bg-white/5 hover:bg-white/10 border border-white/5"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
+                    }}
+                  >
+                    <div className="truncate text-text-main">{t.topic}</div>
+                    <div className="text-xs text-text-secondary">{t.questionCount} questions</div>
+                  </button>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>
-        <div className="text-xs text-text-secondary mt-1">
-          {isReadOnly ? (
-            <span className="text-text-secondary/70 italic">
-              The host is configuring these topics.
-            </span>
-          ) : (
-            <span className="text-text-secondary/70">
-              Topics update automatically as you type.
-              {validTopics.length > 1 && " Multiple topics will rotate during the game."}
-            </span>
-          )}
-        </div>
+        {isReadOnly && (
+          <div className="text-xs text-text-secondary mt-1 italic">
+            The host is configuring these topics.
+          </div>
+        )}
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Difficulty Section */}
