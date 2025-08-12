@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface PopularTopicRow {
   topic: string;
@@ -14,7 +14,7 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  async function fetchOnce(): Promise<void> {
+  const fetchOnce = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -29,7 +29,7 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [limit]);
 
   useEffect(() => {
     fetchOnce();
@@ -38,7 +38,7 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [refreshMs, limit]);
+  }, [refreshMs, fetchOnce]);
 
   return { topics, isLoading, error, refetch: fetchOnce };
 }
