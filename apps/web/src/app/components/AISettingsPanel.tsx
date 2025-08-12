@@ -27,6 +27,7 @@ export function AISettingsPanel({
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
+  const [showPopular, setShowPopular] = useState(false);
   const { topics: popularTopics } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
   // Use 5-tier difficulty system directly (1-5)
@@ -154,12 +155,15 @@ export function AISettingsPanel({
             </span>
           ))}
         </div>
-        <div className="flex gap-2 items-center">
-          <input
+        <div className="relative">
+          <div className="flex gap-2 items-center">
+            <input
             type="text"
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
             onKeyDown={handleNewTopicKeyDown}
+              onFocus={() => !isReadOnly && setShowPopular(true)}
+              onBlur={() => setShowPopular(false)}
             placeholder="Add a topic..."
             disabled={isReadOnly}
             className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -167,61 +171,41 @@ export function AISettingsPanel({
                 ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                 : "bg-white/10 border-white/20 text-text-main"
             }`}
-          />
-          {!isReadOnly && (
-            <button
-              type="button"
-              onClick={handleAddTopicChip}
-              className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              + Add
-            </button>
-          )}
-        </div>
-        {!isReadOnly && (
-          <div className="mt-3">
-            <label className="block text-sm font-medium text-text-main mb-1">Add from popular topics</label>
-            <div className="relative">
-              <select
-                className="w-full max-w-xl px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) return;
-                  if (!topics.includes(value)) setTopics([...topics, value]);
-                  // reset back to placeholder
-                  e.currentTarget.selectedIndex = 0;
-                }}
+            />
+            {!isReadOnly && (
+              <button
+                type="button"
+                onClick={handleAddTopicChip}
+                className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">Select a popular topic…</option>
-                {popularTopics.slice(0, 10).map((t) => (
-                  <option key={t.topic} value={t.topic}>
-                    {t.topic} ({t.questionCount})
-                  </option>
-                ))}
-              </select>
-            </div>
-            {popularTopics.length > 10 && (
-              <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-white/10">
-                <ul className="divide-y divide-white/5">
-                  {popularTopics.slice(10).map((t) => (
-                    <li key={t.topic}>
-                      <button
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-white/10"
-                        onClick={() => {
-                          if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
-                        }}
-                      >
-                        {t.topic}
-                        <span className="ml-2 text-xs text-text-secondary">{t.questionCount} questions</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                + Add
+              </button>
             )}
           </div>
-        )}
+
+          {!isReadOnly && showPopular && popularTopics.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-2 z-20 rounded-md border border-white/10 bg-white/5 backdrop-blur-xl shadow-glass max-h-60 overflow-y-auto">
+              <ul className="divide-y divide-white/5">
+                {popularTopics.slice(0, 50).map((t) => (
+                  <li key={t.topic}>
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-white/10"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
+                        setShowPopular(false);
+                      }}
+                    >
+                      {t.topic}
+                      <span className="ml-2 text-xs text-text-secondary">{t.questionCount} questions</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
         <div className="text-xs text-text-secondary mt-1">
           {isReadOnly ? (
             <span className="text-text-secondary/70 italic">
