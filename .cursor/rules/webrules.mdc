@@ -11,9 +11,10 @@ alwaysApply: false
   - `page.tsx` – top-level component
   - `components/` – local UI pieces  
   - `actions.ts` – server actions if needed
+ - Next.js App Router requires `default` exports for `page.tsx` and `layout.tsx`; this is an allowed exception to the named-exports rule.
 
 ## Styling & UI
-- **Use shadcn/ui primitives** (`Button`, `Card`, `Dialog`) never fork library code
+- Prefer shadcn/ui primitives (`Button`, `Card`, `Dialog`) when available; never fork library code
 - **Use Tailwind utility classes only** no inline `style={{ … }}` (prevents inconsistency)
 - **Use `clsx` or `class-variance-authority`** for dynamic classes (avoid string concat)
 - **Optimize mobile first** test in 375px viewport (majority of users)
@@ -24,9 +25,10 @@ alwaysApply: false
 
 ## Code Organization
 - **Prefer `async/await`** avoid raw `.then()` chains (better error handling)
-- **Keep functions ≤40 lines** extract helpers if larger (improves maintainability)
+- Aim to keep functions ≤ 40 lines; extract helpers if larger (improves maintainability)
 - **Import order**: ① Node built-ins ② third-party ③ workspace packages (`@shared`) ④ relative (`./`)
 - **Document conditional rendering** with JSDoc rationale
 - **Document loading/error states** for async operations
+- Document only exported/public functions and complex flows; trivial UI components don't need JSDoc.
 
 _For detailed patterns see `/docs/frontend.md`_
