@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import Link from "next/link";
 import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <DisplayNameProvider>
+          <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
           {children}
         </DisplayNameProvider>
         <footer className="w-full border-t mt-8 py-4 text-center text-sm text-text-secondary bg-white/10 backdrop-blur-xl">

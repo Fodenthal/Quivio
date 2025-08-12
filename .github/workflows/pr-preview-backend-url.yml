@@ -1,0 +1,136 @@
+name: Sync backend preview URL to Vercel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-backend-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve Render preview URL for this branch
+        id: render
+        env:
+          BRANCH: ${{ github.head_ref }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVER_SERVICE_ID: ${{ secrets.RENDER_SERVER_SERVICE_ID }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ] || [ -z "${RENDER_SERVER_SERVICE_ID:-}" ]; then
+            echo "Render secrets not configured; skipping." >&2
+            echo "url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("fs");
+            const branch = process.env.BRANCH;
+            const serviceId = process.env.RENDER_SERVER_SERVICE_ID;
+            const apiKey = process.env.RENDER_API_KEY;
+            const ownerId = process.env.RENDER_OWNER_ID;
+            const repo = process.env.GITHUB_REPOSITORY; // e.g., "Fodenthal/Getmoney"
+            const output = process.env.GITHUB_OUTPUT;
+            const headers = { Authorization: `Bearer ${apiKey}` };
+            async function main() {
+              // First, try the main service for branch-specific deploys
+              const resMain = await fetch(`https://api.render.com/v1/services/${serviceId}/deploys?limit=50`, { headers });
+              let url = "";
+              if (resMain.ok) {
+                const deploys = await resMain.json();
+                const preferred = ["live", "succeeded"];
+                const match = deploys.find(d => (d?.commit?.branch === branch) && preferred.includes(d?.status));
+                if (match) {
+                  url = match.previewUrl || match.url || (match.service && match.service.url) || "";
+                }
+              }
+
+              // If not found, enumerate services (preview envs have different service IDs)
+              if (!url) {
+                const svcUrl = ownerId
+                  ? `https://api.render.com/v1/owners/${ownerId}/services?limit=200`
+                  : `https://api.render.com/v1/services?limit=200`;
+                const resSvcs = await fetch(svcUrl, { headers });
+                if (resSvcs.ok) {
+                  const services = await resSvcs.json();
+                  const branchKey = branch.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
+                  const candidates = services.filter(s => {
+                    const name = (s.name || "").toLowerCase();
+                    const repoMatch = (s.repo || s.githubRepo || s.serviceDetails?.repo || "").toLowerCase() === (repo || "").toLowerCase();
+                    const branchMatch = (s.branch || s.serviceDetails?.branch || "").toLowerCase() === branch.toLowerCase();
+                    const nameHasBranch = name.includes(branchKey);
+                    const looksLikeServer = name.includes("server") || name.includes("colyseus");
+                    return (repoMatch && branchMatch) || (nameHasBranch && looksLikeServer);
+                  });
+                  if (candidates.length) {
+                    // Pick the most recently updated service
+                    candidates.sort((a,b) => new Date(b.updatedAt||0) - new Date(a.updatedAt||0));
+                    const previewServiceId = candidates[0].id;
+                    const resPrev = await fetch(`https://api.render.com/v1/services/${previewServiceId}/deploys?limit=10`, { headers });
+                    if (resPrev.ok) {
+                      const prevDeploys = await resPrev.json();
+                      const preferred = ["live", "succeeded"];
+                      const matchPrev = prevDeploys.find(d => preferred.includes(d?.status));
+                      if (matchPrev) {
+                        url = matchPrev.previewUrl || matchPrev.url || (matchPrev.service && matchPrev.service.url) || "";
+                      }
+                    }
+                  }
+                }
+              }
+
+              console.log("Resolved Render URL:", url || "<none>");
+              fs.appendFileSync(output, `url=${url}\n`);
+            }
+            main().catch(err => { console.error(err); fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=\n`); });
+          '
+
+      - name: Upsert Vercel preview env var for this branch
+        if: steps.render.outputs.url != ''
+        id: vercel
+        env:
+          BRANCH: ${{ github.head_ref }}
+          BACKEND_URL: ${{ steps.render.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "Vercel secrets not configured; skipping." >&2
+            exit 0
+          fi
+
+          # Normalize to wss:// for Colyseus client
+          WS_URL="${BACKEND_URL}"
+          WS_URL="${WS_URL/https:\/\//wss://}"
+          WS_URL="${WS_URL/http:\/\//ws://}"
+          WS_URL="${WS_URL%%/}"
+
+          # Create or update env var scoped to this branch on preview target
+          curl -sS -X POST "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d @- << JSON || true
+          {
+            "key": "NEXT_PUBLIC_BACKEND_URL",
+            "value": "${WS_URL}",
+            "target": ["preview"],
+            "type": "plain",
+            "gitBranch": "${BRANCH}"
+          }
+          JSON
+
+          echo "Env var set for branch ${BRANCH}: NEXT_PUBLIC_BACKEND_URL=${WS_URL}"
+
+      - name: Note about redeploy
+        if: steps.render.outputs.url != ''
+        run: |
+          echo "Ensure Vercel project setting 'Redeploy on Env Changes' is enabled so the preview rebuilds automatically."
+
+

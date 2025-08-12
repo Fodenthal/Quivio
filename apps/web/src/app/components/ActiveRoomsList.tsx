@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDisplayName } from "../../contexts/DisplayNameContext";
 
 /**
@@ -45,6 +45,44 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [privateRoomsCount, setPrivateRoomsCount] = useState<number>(() => {
+    // Initialize between 3 and 10 inclusive
+    return Math.floor(Math.random() * (10 - 3 + 1)) + 3;
+  });
+  const nextPrivateRoomsChangeAtRef = useRef<number>(
+    Date.now() + (Math.floor(Math.random() * (180 - 60 + 1)) + 60) * 1000
+  );
+
+  /**
+   * Calculate the next private rooms display count.
+   * Keeps the value within [3, 10] and varies by 1–2 each update.
+   * @param current Current displayed private rooms count
+   * @returns Next displayed private rooms count within bounds
+   */
+  const calculateNextPrivateRoomsCount = (current: number): number => {
+    const min = 3;
+    const max = 10;
+
+    // Possible deltas: -2, -1, +1, +2 (exclude 0)
+    const deltas = [-2, -1, 1, 2];
+    // Filter deltas that keep the value within bounds
+    const validDeltas = deltas.filter((delta) => current + delta >= min && current + delta <= max);
+    if (validDeltas.length === 0) return current; // Safeguard, though bounds logic should prevent this
+    const chosenDelta = validDeltas[Math.floor(Math.random() * validDeltas.length)];
+    return current + chosenDelta;
+  };
+
+  /**
+   * Schedule the next time the private rooms count may change.
+   * Uses a randomized delay to make changes feel organic and less frequent.
+   * Currently set to 60–180 seconds.
+   * @returns Epoch timestamp in milliseconds for the next change
+   */
+  const scheduleNextPrivateRoomsChange = (): number => {
+    const now = Date.now();
+    const delaySeconds = Math.floor(Math.random() * (180 - 60 + 1)) + 60;
+    return now + delaySeconds * 1000;
+  };
 
   /**
    * Fetch active rooms from the server API
@@ -73,6 +111,12 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
     } finally {
       setLoading(false);
       setRefreshing(false);
+      // Update the private rooms display count only when scheduled
+      const now = Date.now();
+      if (now >= nextPrivateRoomsChangeAtRef.current) {
+        setPrivateRoomsCount((current) => calculateNextPrivateRoomsCount(current));
+        nextPrivateRoomsChangeAtRef.current = scheduleNextPrivateRoomsChange();
+      }
     }
   }, []);
 
@@ -241,7 +285,9 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
       <div className="flex items-center justify-between p-6 border-b border-white/10">
         <div>
           <h3 className="text-xl font-semibold text-text-main">Active Rooms</h3>
-          <p className="text-sm text-text-secondary mt-1">{rooms.length} rooms available</p>
+          <p className="text-sm text-text-secondary mt-1">
+            {rooms.filter((r) => !r.isPrivate).length} public room, {privateRoomsCount} private rooms
+          </p>
         </div>
         <button
           onClick={handleRefresh}
