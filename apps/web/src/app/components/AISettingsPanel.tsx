@@ -208,11 +208,7 @@ export function AISettingsPanel({
             </div>
           )}
         </div>
-        {isReadOnly && (
-          <div className="text-xs text-text-secondary mt-1 italic">
-            The host is configuring these topics.
-          </div>
-        )}
+        {/* Read-only hint removed per request */}
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Difficulty Section */}
@@ -225,11 +221,7 @@ export function AISettingsPanel({
             getDifficultyLabel={getDifficultyLabel}
             disabled={isReadOnly}
           />
-          {isReadOnly && (
-            <div className="text-xs text-text-secondary/70 italic mt-1">
-              Host is setting the difficulty level.
-            </div>
-          )}
+          {/* Read-only hint removed per request */}
         </div>
       </section>
       <div className="my-4 border-t border-white/10" />
@@ -286,11 +278,7 @@ export function AISettingsPanel({
             />
           </div>
         </div>
-        {isReadOnly && (
-          <div className="text-xs text-text-secondary/70 italic mt-2">
-            Host is configuring the game settings.
-          </div>
-        )}
+        {/* Read-only hint removed per request */}
       </section>
     </div>
   );

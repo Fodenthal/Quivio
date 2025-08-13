@@ -26,7 +26,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    const res = NextResponse.json(data);
+    // Cache for 60s at the edge/CDN; allow stale-while-revalidate
+    res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    return res;
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }
