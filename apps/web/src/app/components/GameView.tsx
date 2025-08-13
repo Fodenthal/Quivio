@@ -38,6 +38,7 @@ export const GameView = memo(function GameView({
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chatHasFocus, setChatHasFocus] = useState(false);
+  const [activePanel, setActivePanel] = useState<'players' | 'chat'>("players");
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -436,8 +437,53 @@ export const GameView = memo(function GameView({
         )}
       </div>
 
-      {/* PlayerList - optimized width, now same height as question panel */}
-      <div className="w-full md:w-72 h-full min-h-[40dvh] md:min-h-[60dvh] flex flex-col">
+      {/* md-only right column wrapper with toggle above the panel */}
+      <div className="hidden md:flex lg:hidden flex-col md:w-80 min-h-[60dvh]">
+        <div className="mb-2 self-stretch flex justify-end">
+          <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
+            <button
+              type="button"
+              onClick={() => setActivePanel('players')}
+              aria-pressed={activePanel === 'players'}
+              className={`px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+            >
+              Players
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePanel('chat')}
+              aria-pressed={activePanel === 'chat'}
+              className={`ml-1 px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+            >
+              Chat
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0">
+          {activePanel === 'players' ? (
+            <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+              <PlayerList 
+                gameState={gameState}
+                participatingPlayers={gameState.participatingPlayers}
+                showParticipationStatus={phase === "ended"}
+              />
+            </div>
+          ) : (
+            <div ref={chatContainerRef} className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+              <Chat
+                messages={chatMessages}
+                currentPlayerId={currentPlayerId}
+                onSendMessage={handleSendMessage}
+                disabled={false}
+                shouldAutoFocus={chatHasFocus}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PlayerList - desktop only */}
+      <div className={`hidden lg:flex w-full lg:w-72 h-full min-h-[60dvh] flex-col`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -445,10 +491,10 @@ export const GameView = memo(function GameView({
         />
       </div>
 
-      {/* Chat Panel */}
+      {/* Chat Panel - desktop only */}
       <div 
         ref={chatContainerRef}
-        className="w-full md:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[40dvh] md:min-h-[60dvh] flex flex-col"
+        className={`hidden lg:flex w-full lg:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col`}
       >
         <Chat
           messages={chatMessages}
@@ -457,6 +503,28 @@ export const GameView = memo(function GameView({
           disabled={false}
           shouldAutoFocus={chatHasFocus}
         />
+      </div>
+
+      {/* Phone controls: floating toggle for Players/Chat */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 md:hidden">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center space-x-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel('players')}
+            aria-label="Show players"
+            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+          >
+            Players
+          </button>
+          <button
+            type="button"
+            onClick={() => setActivePanel('chat')}
+            aria-label="Show chat"
+            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+          >
+            Chat
+          </button>
+        </div>
       </div>
     </div>
   );
