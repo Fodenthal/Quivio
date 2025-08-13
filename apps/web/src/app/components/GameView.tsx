@@ -315,7 +315,7 @@ export const GameView = memo(function GameView({
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -527,8 +527,8 @@ export const GameView = memo(function GameView({
         )}
       </div>
 
-      {/* md-only right column wrapper with toggle above the panel */}
-      <div className="hidden md:flex lg:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
+      {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
+      <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
         <div className="mt-1 mb-2 self-stretch flex justify-end">
           <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
             <button
@@ -572,8 +572,8 @@ export const GameView = memo(function GameView({
         </div>
       </div>
 
-      {/* PlayerList - desktop only */}
-      <div className={`hidden lg:flex w-full lg:w-72 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden`}>
+      {/* PlayerList - xl+ only */}
+      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -581,10 +581,10 @@ export const GameView = memo(function GameView({
         />
       </div>
 
-      {/* Chat Panel - desktop only */}
+      {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden lg:flex w-full lg:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,22rem)] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
