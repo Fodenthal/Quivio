@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
@@ -10,6 +10,17 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 export const metadata: Metadata = {
   title: "Quivio",
   description: "A multiplayer trivia game",
+  themeColor: "#1a1a2e",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

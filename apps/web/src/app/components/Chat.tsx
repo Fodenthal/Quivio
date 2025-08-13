@@ -28,7 +28,7 @@ export function Chat({
   const validMessages = messages.filter((message) => message && message.id && message.playerName && message.content);
   
   return (
-    <div className="h-[600px] flex flex-col">
+    <div className="min-h-[50dvh] md:h-[600px] flex flex-col">
       {/* Chat Header */}
       <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-white/20">
         <h3 className="text-xl font-bold text-text-main">Chat</h3>

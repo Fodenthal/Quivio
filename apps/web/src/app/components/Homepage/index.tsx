@@ -58,7 +58,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh safe-bottom">
       {/* Header styled like GameLayout, with Quivio and UserDisplayName */}
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,7 +73,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left: Active Rooms - 2/3 width with generous height */}
           <div className="lg:col-span-2">
-            <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[75vh]" />
+            <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
           </div>
           {/* Right: Stacked panels */}
           <div className="flex flex-col gap-4">

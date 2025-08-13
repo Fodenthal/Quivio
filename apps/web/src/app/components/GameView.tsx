@@ -222,9 +222,9 @@ export const GameView = memo(function GameView({
   }), [gameState.roundTimeRemaining, formatTime]);
 
   return (
-    <div className="flex gap-6 h-full min-h-[600px]">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-[60dvh]">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
+      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -324,7 +324,7 @@ export const GameView = memo(function GameView({
             {/* Question Display Panel or Ad Placeholder */}
             {phase === "loading" ? (
               // Ad placeholder during question generation
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 <div className="flex-grow flex flex-col justify-center">
                   <h2 className="text-8xl font-bold text-text-main tracking-wider">
                     AD
@@ -335,7 +335,7 @@ export const GameView = memo(function GameView({
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
@@ -373,7 +373,7 @@ export const GameView = memo(function GameView({
             )}
 
             {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-              <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-6 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
                 {phase === "round-ended" ? (
                   <div className="text-center">
                     {(() => {
@@ -437,7 +437,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* PlayerList - optimized width, now same height as question panel */}
-      <div className="w-72 h-full min-h-[600px] flex flex-col">
+      <div className="w-full md:w-72 h-full min-h-[40dvh] md:min-h-[60dvh] flex flex-col">
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -448,7 +448,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel */}
       <div 
         ref={chatContainerRef}
-        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[600px] flex flex-col"
+        className="w-full md:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[40dvh] md:min-h-[60dvh] flex flex-col"
       >
         <Chat
           messages={chatMessages}
