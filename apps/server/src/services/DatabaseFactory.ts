@@ -15,6 +15,11 @@ export interface IQuestionDatabase {
   getAvailableTopics(): Promise<Array<{ topic: string; difficulty: number; count: number }>> | Array<{ topic: string; difficulty: number; count: number }>;
   getAllQuestions(limit?: number): Promise<any[]> | any[];
   searchQuestions(searchTerm: string, limit?: number): Promise<any[]> | any[];
+  /**
+   * Return popular topics ranked by usage and availability. The list should be
+   * ordered by total usage first (descending), then by number of questions.
+   */
+  getPopularTopics(limit?: number): Promise<Array<{ topic: string; questionCount: number; totalUsedCount: number }>> | Array<{ topic: string; questionCount: number; totalUsedCount: number }>;
 }
 
 /**

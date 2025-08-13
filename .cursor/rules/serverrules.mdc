@@ -18,7 +18,7 @@ alwaysApply: false
 
 ## Code Quality
 - **Prefer `async/await`** avoid raw `.then()` chains (better error handling)
-- **Keep functions ≤40 lines** extract helpers if larger (improves maintainability)
+- Aim to keep functions ≤ 40 lines; extract helpers if larger (improves maintainability)
 
 ## Environment & Presence
 - **Use `RedisPresence` in production** fall back to `LocalPresence` in tests (scalability)

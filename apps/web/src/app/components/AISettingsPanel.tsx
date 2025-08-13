@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
 import { DifficultySlider } from "./DifficultySlider";
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
+import { usePopularTopics } from "../../hooks/usePopularTopics";
 
 interface AISettingsPanelProps {
   gameState: GameState;
@@ -26,6 +27,7 @@ export function AISettingsPanel({
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
+  const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
   // Use 5-tier difficulty system directly (1-5)
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
@@ -130,8 +132,7 @@ export function AISettingsPanel({
   };
 
   return (
-    <div className="bg-white/10 rounded-2xl shadow-lg p-8 border border-white/20 max-w-xl w-full mx-auto space-y-8">
-      <h2 className="text-2xl font-bold text-text-main mb-4">AI Question Settings</h2>
+    <div className="bg-white/10 rounded-2xl shadow-lg p-4 border border-white/20 max-w-xl w-full mx-auto space-y-4">
       {/* Game Topics Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
@@ -152,8 +153,9 @@ export function AISettingsPanel({
             </span>
           ))}
         </div>
-        <div className="flex gap-2 items-center">
-          <input
+        <div className="relative">
+          <div className="flex gap-2 items-center">
+            <input
             type="text"
             value={newTopic}
             onChange={e => setNewTopic(e.target.value)}
@@ -165,31 +167,61 @@ export function AISettingsPanel({
                 ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                 : "bg-white/10 border-white/20 text-text-main"
             }`}
-          />
-          {!isReadOnly && (
-            <button
-              type="button"
-              onClick={handleAddTopicChip}
-              className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              + Add
-            </button>
-          )}
+            />
+            {!isReadOnly && (
+              <button
+                type="button"
+                onClick={handleAddTopicChip}
+                className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                + Add
+              </button>
+            )}
+          </div>
+
+          <div className="mt-3">
+            <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
+            <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
+              {popularTopics.length > 0 ? (
+                popularTopics.slice(0, 36).map((t) => (
+                  <button
+                    key={t.topic}
+                    type="button"
+                    disabled={isReadOnly}
+                    title={isReadOnly ? "Only the host can select topics" : undefined}
+                    className={`text-left px-3 py-2 text-sm rounded-md border ${
+                      isReadOnly
+                        ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed opacity-60"
+                        : "bg-white/5 hover:bg-white/10 border-white/5"
+                    }`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (isReadOnly) return;
+                      if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
+                    }}
+                  >
+                    <div className="truncate text-text-main">{t.topic}</div>
+                    <div className="text-xs text-text-secondary">{t.questionCount} questions</div>
+                  </button>
+                ))
+              ) : isPopularLoading ? (
+                Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="h-10 rounded-md bg-white/5 border border-white/10 animate-pulse"
+                  />
+                ))
+              ) : (
+                <div className="col-span-2 text-xs text-text-secondary/70 italic">
+                  Popular topics are temporarily unavailable.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="text-xs text-text-secondary mt-1">
-          {isReadOnly ? (
-            <span className="text-text-secondary/70 italic">
-              The host is configuring these topics.
-            </span>
-          ) : (
-            <span className="text-text-secondary/70">
-              Topics update automatically as you type.
-              {validTopics.length > 1 && " Multiple topics will rotate during the game."}
-            </span>
-          )}
-        </div>
+        {/* Read-only hint removed per request */}
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-4 border-t border-white/10" />
       {/* Difficulty Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
@@ -200,18 +232,14 @@ export function AISettingsPanel({
             getDifficultyLabel={getDifficultyLabel}
             disabled={isReadOnly}
           />
-          {isReadOnly && (
-            <div className="text-xs text-text-secondary/70 italic mt-1">
-              Host is setting the difficulty level.
-            </div>
-          )}
+          {/* Read-only hint removed per request */}
         </div>
       </section>
-      <div className="my-6 border-t border-white/10" />
+      <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="flex flex-row gap-6 mt-2">
+        <div className="flex flex-row gap-4 mt-2">
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
             <input
@@ -261,11 +289,7 @@ export function AISettingsPanel({
             />
           </div>
         </div>
-        {isReadOnly && (
-          <div className="text-xs text-text-secondary/70 italic mt-2">
-            Host is configuring the game settings.
-          </div>
-        )}
+        {/* Read-only hint removed per request */}
       </section>
     </div>
   );

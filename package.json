@@ -13,7 +13,8 @@
     "test": "CI=1 pnpm -r --if-present run test",
     "test:parallel": "CI=1 pnpm -r --parallel --if-present run test",
     "test:web:watch": "pnpm --filter=web run test:watch",
-    "fetch:questions": "pnpm --filter server exec tsx src/scripts/fetchQuestionsByTopic.ts"
+    "fetch:questions": "pnpm --filter server exec tsx src/scripts/fetchQuestionsByTopic.ts",
+    "vercel:set-branch-env": "node scripts/setVercelBranchEnv.mjs"
   },
   "keywords": [],
   "author": "",

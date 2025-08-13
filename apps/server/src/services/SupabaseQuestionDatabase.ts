@@ -342,4 +342,49 @@ export class SupabaseQuestionDatabase {
       return [];
     }
   }
+
+  /**
+   * Get most popular topics based on aggregate used_count and availability
+   */
+  public async getPopularTopics(limit: number = 50): Promise<Array<{ topic: string; questionCount: number; totalUsedCount: number }>> {
+    if (!this.client) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from('questions')
+        .select('topic, used_count')
+        .not('topic', 'is', null);
+
+      if (error) {
+        throw error;
+      }
+
+      const topicMap = new Map<string, { questionCount: number; totalUsedCount: number }>();
+      (data || []).forEach((row: any) => {
+        const topic: string = row.topic;
+        const usedCount: number = row.used_count || 0;
+        const entry = topicMap.get(topic) || { questionCount: 0, totalUsedCount: 0 };
+        entry.questionCount += 1;
+        entry.totalUsedCount += usedCount;
+        topicMap.set(topic, entry);
+      });
+
+      const results = Array.from(topicMap.entries()).map(([topic, agg]) => ({
+        topic,
+        questionCount: agg.questionCount,
+        totalUsedCount: agg.totalUsedCount,
+      }));
+
+      results.sort((a, b) => {
+        if (b.totalUsedCount !== a.totalUsedCount) return b.totalUsedCount - a.totalUsedCount;
+        if (b.questionCount !== a.questionCount) return b.questionCount - a.questionCount;
+        return a.topic.localeCompare(b.topic);
+      });
+
+      return results.slice(0, limit);
+    } catch (error) {
+      console.error('Failed to get popular topics from Supabase:', error);
+      return [];
+    }
+  }
 } 

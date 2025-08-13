@@ -17,7 +17,7 @@ alwaysApply: false
 | **Linting** | ruff --select all |
 | **Imports** | Absolute imports inside package; no implicit relative (`from .foo import *`) |
 | **Type hints** | Full type hints on **all** public / exported functions & class methods |
-| **Docstrings** | Google‑style: `Args`, `Returns`, `Raises`, `Example`; top‑level module docstring required |
+| **Docstrings** | Use Google‑style for public APIs (`Args`, `Returns`, `Raises`, `Example`). Module docstrings encouraged. Current CI ignores pydocstyle; enable Ruff D rules if strict enforcement is desired. |
 | **Exceptions** | Raise custom subclasses of `Exception`; never bare `ValueError` unless obvious |
 | **Data models** | Use `pydantic.BaseModel` (or `dataclasses.dataclass` with type hints) for structured payloads |
 | **Logging** | Use `logging` std‑lib — never `print()` except in CLIs |
