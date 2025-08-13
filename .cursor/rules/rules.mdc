@@ -6,8 +6,7 @@ alwaysApply: true
 
 ## Project-wide constraints
 
-- Use `pnpm test` after implementing complex tasks (never pnpm dev)
-- Prefer named exports** (`export const foo`) not `export default` for module
+- Prefer named exports** (`export const foo`) not `export default` for modules
 - **Throw `Error` objects** never strings (enables proper stack traces)
 - Document exported/public APIs and non-trivial code paths with comprehensive JSDoc. Omit for trivial UI components. Include:
     - `@param`, `@returns`, `@throws`

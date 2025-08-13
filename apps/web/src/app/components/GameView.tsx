@@ -46,6 +46,7 @@ export const GameView = memo(function GameView({
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const phoneSheetContentRef = useRef<HTMLDivElement>(null);
+  const phoneSheetRef = useRef<HTMLDivElement>(null);
   // Memoize chat messages early so effects can reference safely
   const chatMessages = useMemo(() => {
     return Array.from(gameState.chatMessages.values()).filter(
@@ -220,15 +221,17 @@ export const GameView = memo(function GameView({
   }, [isPhonePanelOpen]);
 
   // Track unread chat when sheet is closed on phones
+  const prevChatLenRef = useRef<number>(chatMessages.length);
   useEffect(() => {
-    if (!isPhonePanelOpen && activePanel !== 'chat') {
-      // sheet closed and chat not in view
-      setUnreadChatCount((prev) => (chatMessages.length > 0 ? prev + 1 : prev));
-    } else {
-      // visible -> reset
-      setUnreadChatCount(0);
+    const newLen = chatMessages.length;
+    const prevLen = prevChatLenRef.current;
+    const delta = Math.max(0, newLen - prevLen);
+    prevChatLenRef.current = newLen;
+    const chatVisible = (isPhonePanelOpen && activePanel === 'chat') || (typeof window !== 'undefined' && window.innerWidth >= 1024);
+    if (!chatVisible && delta > 0) {
+      setUnreadChatCount((prev) => prev + delta);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (chatVisible) setUnreadChatCount(0);
   }, [chatMessages.length, isPhonePanelOpen, activePanel]);
 
   // Restore chat scroll when opening
@@ -237,6 +240,54 @@ export const GameView = memo(function GameView({
       const node = phoneSheetContentRef.current || chatContainerRef.current;
       if (node) node.scrollTop = chatScrollTopRef.current;
     }
+  }, [isPhonePanelOpen, activePanel]);
+
+  // Focus trap and ESC to close when sheet is open
+  useEffect(() => {
+    if (!isPhonePanelOpen) return;
+    const sheet = phoneSheetRef.current;
+    if (!sheet) return;
+
+    const focusableSelectors = [
+      'button', 'a[href]', 'input', 'textarea', 'select', '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+    const getFocusable = () => Array.from(sheet.querySelectorAll<HTMLElement>(focusableSelectors)).filter(el => !el.hasAttribute('disabled'));
+    const focusables = getFocusable();
+    if (focusables.length) focusables[0].focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // preserve chat scroll when closing from chat
+        if (activePanel === 'chat') {
+          const node = phoneSheetContentRef.current;
+          if (node) chatScrollTopRef.current = node.scrollTop;
+        }
+        setIsPhonePanelOpen(false);
+        // restore guess input focus if appropriate
+        setTimeout(() => guessInputRef.current?.focus(), 50);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const list = getFocusable();
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isPhonePanelOpen, activePanel]);
 
   // Reset chat focus when new round starts
@@ -478,7 +529,7 @@ export const GameView = memo(function GameView({
 
       {/* md-only right column wrapper with toggle above the panel */}
       <div className="hidden md:flex lg:hidden flex-col md:w-80 min-h-[60dvh]">
-        <div className="mb-2 self-stretch flex justify-end">
+        <div className="mt-1 mb-2 self-stretch flex justify-end">
           <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
             <button
               type="button"
@@ -567,14 +618,27 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Phone full-height sheet */}
-      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} md:hidden inset-0 z-40` }>
-        <div className="absolute inset-0 bg-black/40" onClick={() => setIsPhonePanelOpen(false)} />
-        <div className="absolute inset-x-0 bottom-0 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-t-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
+      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} md:hidden inset-0 z-40` } role="dialog" aria-modal="true" aria-label={activePanel === 'chat' ? 'Chat' : 'Players'} ref={phoneSheetRef}>
+        <div className="absolute inset-0 bg-black/40" onClick={() => {
+          if (activePanel === 'chat') {
+            const node = phoneSheetContentRef.current;
+            if (node) chatScrollTopRef.current = node.scrollTop;
+          }
+          setIsPhonePanelOpen(false);
+          setTimeout(() => guessInputRef.current?.focus(), 50);
+        }} />
+        <div className="absolute left-3 right-3 bottom-3 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
               <button
                 type="button"
-                onClick={() => { setActivePanel('players'); setChatHasFocus(false); }}
+                onClick={() => {
+                  if (activePanel === 'chat') {
+                    const node = phoneSheetContentRef.current;
+                    if (node) chatScrollTopRef.current = node.scrollTop;
+                  }
+                  setActivePanel('players'); setChatHasFocus(false);
+                }}
                 aria-pressed={activePanel === 'players'}
                 className={`px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
               >
@@ -593,7 +657,14 @@ export const GameView = memo(function GameView({
               type="button"
               aria-label="Close panel"
               className="px-3 py-1 text-sm text-text-secondary hover:text-text-main"
-              onClick={() => setIsPhonePanelOpen(false)}
+              onClick={() => {
+                if (activePanel === 'chat') {
+                  const node = phoneSheetContentRef.current;
+                  if (node) chatScrollTopRef.current = node.scrollTop;
+                }
+                setIsPhonePanelOpen(false);
+                setTimeout(() => guessInputRef.current?.focus(), 50);
+              }}
             >
               Close
             </button>
