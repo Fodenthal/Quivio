@@ -529,13 +529,13 @@ export const GameView = memo(function GameView({
 
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
       <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
-        <div className="mt-1 mb-2 self-stretch flex justify-end">
-          <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
+        <div className="mt-1 mb-2 self-stretch">
+          <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
             <button
               type="button"
               onClick={() => setActivePanel('players')}
               aria-pressed={activePanel === 'players'}
-              className={`px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
             >
               Players
             </button>
@@ -543,7 +543,7 @@ export const GameView = memo(function GameView({
               type="button"
               onClick={() => setActivePanel('chat')}
               aria-pressed={activePanel === 'chat'}
-              className={`ml-1 px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
             >
               Chat
             </button>
@@ -629,7 +629,7 @@ export const GameView = memo(function GameView({
         }} />
         <div className="absolute left-3 right-3 bottom-3 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
+            <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -640,7 +640,7 @@ export const GameView = memo(function GameView({
                   setActivePanel('players'); setChatHasFocus(false);
                 }}
                 aria-pressed={activePanel === 'players'}
-                className={`px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+                className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
               >
                 Players
               </button>
@@ -648,7 +648,7 @@ export const GameView = memo(function GameView({
                 type="button"
                 onClick={() => { setActivePanel('chat'); setChatHasFocus(true); }}
                 aria-pressed={activePanel === 'chat'}
-                className={`ml-1 px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+                className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
               >
                 Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
               </button>
