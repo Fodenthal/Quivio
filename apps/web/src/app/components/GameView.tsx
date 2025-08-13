@@ -39,9 +39,19 @@ export const GameView = memo(function GameView({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chatHasFocus, setChatHasFocus] = useState(false);
   const [activePanel, setActivePanel] = useState<'players' | 'chat'>("players");
+  const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const chatScrollTopRef = useRef<number>(0);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const phoneSheetContentRef = useRef<HTMLDivElement>(null);
+  // Memoize chat messages early so effects can reference safely
+  const chatMessages = useMemo(() => {
+    return Array.from(gameState.chatMessages.values()).filter(
+      (message) => message && typeof message === 'object' && message.id && message.playerName
+    );
+  }, [gameState.chatMessages]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -195,6 +205,40 @@ export const GameView = memo(function GameView({
     };
   }, []);
 
+  // Body scroll lock when phone panel is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const originalOverflow = document.body.style.overflow;
+    if (isPhonePanelOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalOverflow || '';
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow || '';
+    };
+  }, [isPhonePanelOpen]);
+
+  // Track unread chat when sheet is closed on phones
+  useEffect(() => {
+    if (!isPhonePanelOpen && activePanel !== 'chat') {
+      // sheet closed and chat not in view
+      setUnreadChatCount((prev) => (chatMessages.length > 0 ? prev + 1 : prev));
+    } else {
+      // visible -> reset
+      setUnreadChatCount(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatMessages.length, isPhonePanelOpen, activePanel]);
+
+  // Restore chat scroll when opening
+  useEffect(() => {
+    if (isPhonePanelOpen && activePanel === 'chat') {
+      const node = phoneSheetContentRef.current || chatContainerRef.current;
+      if (node) node.scrollTop = chatScrollTopRef.current;
+    }
+  }, [isPhonePanelOpen, activePanel]);
+
   // Reset chat focus when new round starts
   useEffect(() => {
     if (phase === "playing" && !hasPlayerGuessed) {
@@ -202,12 +246,7 @@ export const GameView = memo(function GameView({
     }
   }, [gameState.currentRound, phase, hasPlayerGuessed]);
 
-  // Memoize chat messages to prevent unnecessary filtering on every render
-  const chatMessages = useMemo(() => {
-    return Array.from(gameState.chatMessages.values()).filter(
-      (message) => message && typeof message === 'object' && message.id && message.playerName
-    );
-  }, [gameState.chatMessages]);
+  // (moved earlier)
 
   // Memoize the onSendMessage callback to prevent Chat from re-rendering
   const handleSendMessage = useCallback((content: string) => {
@@ -510,7 +549,7 @@ export const GameView = memo(function GameView({
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center space-x-1">
           <button
             type="button"
-            onClick={() => setActivePanel('players')}
+            onClick={() => { setActivePanel('players'); setIsPhonePanelOpen(true); setChatHasFocus(false); }}
             aria-label="Show players"
             className={`px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
@@ -518,12 +557,64 @@ export const GameView = memo(function GameView({
           </button>
           <button
             type="button"
-            onClick={() => setActivePanel('chat')}
+            onClick={() => { setActivePanel('chat'); setIsPhonePanelOpen(true); setChatHasFocus(true); }}
             aria-label="Show chat"
             className={`px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
-            Chat
+            Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
           </button>
+        </div>
+      </div>
+
+      {/* Phone full-height sheet */}
+      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} md:hidden inset-0 z-40` }>
+        <div className="absolute inset-0 bg-black/40" onClick={() => setIsPhonePanelOpen(false)} />
+        <div className="absolute inset-x-0 bottom-0 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-t-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
+              <button
+                type="button"
+                onClick={() => { setActivePanel('players'); setChatHasFocus(false); }}
+                aria-pressed={activePanel === 'players'}
+                className={`px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              >
+                Players
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActivePanel('chat'); setChatHasFocus(true); }}
+                aria-pressed={activePanel === 'chat'}
+                className={`ml-1 px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              >
+                Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
+              </button>
+            </div>
+            <button
+              type="button"
+              aria-label="Close panel"
+              className="px-3 py-1 text-sm text-text-secondary hover:text-text-main"
+              onClick={() => setIsPhonePanelOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div ref={phoneSheetContentRef} className="flex-1 overflow-auto p-4">
+            {activePanel === 'players' ? (
+              <PlayerList 
+                gameState={gameState}
+                participatingPlayers={gameState.participatingPlayers}
+                showParticipationStatus={phase === 'ended'}
+              />
+            ) : (
+              <Chat
+                messages={chatMessages}
+                currentPlayerId={currentPlayerId}
+                onSendMessage={handleSendMessage}
+                disabled={false}
+                shouldAutoFocus={chatHasFocus}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
