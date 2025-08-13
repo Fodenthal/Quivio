@@ -10,7 +10,10 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 export const metadata: Metadata = {
   title: "Quivio",
   description: "A multiplayer trivia game",
-  themeColor: "#1a1a2e",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a2e" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

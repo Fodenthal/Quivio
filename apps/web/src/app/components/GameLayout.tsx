@@ -103,7 +103,7 @@ export function GameLayout({
   return (
     <div className="min-h-dvh safe-bottom">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10">
+      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <h1 className="text-3xl font-bold text-primary">Quivio</h1>

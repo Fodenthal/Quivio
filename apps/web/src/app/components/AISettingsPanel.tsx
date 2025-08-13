@@ -181,7 +181,7 @@ export function AISettingsPanel({
 
           <div className="mt-3">
             <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
               {popularTopics.length > 0 ? (
                 popularTopics.slice(0, 36).map((t) => (
                   <button
