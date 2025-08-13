@@ -105,31 +105,33 @@ export function GameLayout({
       {/* Header with connection status */}
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-20 overflow-x-hidden">
             <h1 className="text-3xl font-bold text-primary">Quivio</h1>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* User Display Name - shown when connected */}
               {connectionStatus === ConnectionStatus.CONNECTED && (
-                <UserDisplayName />
+                <div className="hidden sm:block">
+                  <UserDisplayName />
+                </div>
               )}
               
               {/* Leave Game Button - shown when connected */}
               {connectionStatus === ConnectionStatus.CONNECTED && (
                 <button
                   onClick={onLeaveGame}
-                  className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-main hover:bg-white/10 rounded-md transition-colors"
+                  className="hidden sm:inline-flex px-3 sm:px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-main hover:bg-white/10 rounded-md transition-colors"
                 >
                   Leave Game
                 </button>
               )}
               
               {/* Connection Status Indicator */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <div
                   className={`w-3 h-3 rounded-full ${getStatusColor(connectionStatus)}`}
                 />
-                <span className="text-sm font-medium text-text-secondary">
+                <span className="hidden sm:inline text-sm font-medium text-text-secondary">
                   {getStatusText(connectionStatus)}
                 </span>
               </div>

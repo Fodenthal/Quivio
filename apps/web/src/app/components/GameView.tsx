@@ -313,7 +313,7 @@ export const GameView = memo(function GameView({
   }), [gameState.roundTimeRemaining, formatTime]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-[60dvh]">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
       <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
@@ -528,7 +528,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* md-only right column wrapper with toggle above the panel */}
-      <div className="hidden md:flex lg:hidden flex-col md:w-80 min-h-[60dvh]">
+      <div className="hidden md:flex lg:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
         <div className="mt-1 mb-2 self-stretch flex justify-end">
           <div className="inline-flex bg-white/10 border border-white/20 rounded-md p-1">
             <button
@@ -573,7 +573,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* PlayerList - desktop only */}
-      <div className={`hidden lg:flex w-full lg:w-72 h-full min-h-[60dvh] flex-col`}>
+      <div className={`hidden lg:flex w-full lg:w-72 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -584,7 +584,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - desktop only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden lg:flex w-full lg:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col`}
+        className={`hidden lg:flex w-full lg:w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden`}
       >
         <Chat
           messages={chatMessages}
