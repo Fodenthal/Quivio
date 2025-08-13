@@ -27,7 +27,7 @@ export function AISettingsPanel({
 }: AISettingsPanelProps) {
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
-  const { topics: popularTopics } = usePopularTopics({ refreshMs: 120000, limit: 100 });
+  const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
   // Use 5-tier difficulty system directly (1-5)
   const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
@@ -179,11 +179,11 @@ export function AISettingsPanel({
             )}
           </div>
 
-          {popularTopics.length > 0 && (
-            <div className="mt-3">
-              <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
-              <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1">
-                {popularTopics.slice(0, 36).map((t) => (
+          <div className="mt-3">
+            <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
+            <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
+              {popularTopics.length > 0 ? (
+                popularTopics.slice(0, 36).map((t) => (
                   <button
                     key={t.topic}
                     type="button"
@@ -203,10 +203,21 @@ export function AISettingsPanel({
                     <div className="truncate text-text-main">{t.topic}</div>
                     <div className="text-xs text-text-secondary">{t.questionCount} questions</div>
                   </button>
-                ))}
-              </div>
+                ))
+              ) : isPopularLoading ? (
+                Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="h-10 rounded-md bg-white/5 border border-white/10 animate-pulse"
+                  />
+                ))
+              ) : (
+                <div className="col-span-2 text-xs text-text-secondary/70 italic">
+                  Popular topics are temporarily unavailable.
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
         {/* Read-only hint removed per request */}
       </section>
