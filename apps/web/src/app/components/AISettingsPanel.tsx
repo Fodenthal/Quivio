@@ -179,7 +179,7 @@ export function AISettingsPanel({
             )}
           </div>
 
-          {!isReadOnly && popularTopics.length > 0 && (
+          {popularTopics.length > 0 && (
             <div className="mt-3">
               <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
               <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1">
@@ -187,9 +187,16 @@ export function AISettingsPanel({
                   <button
                     key={t.topic}
                     type="button"
-                    className="text-left px-3 py-2 text-sm rounded-md bg-white/5 hover:bg-white/10 border border-white/5"
+                    disabled={isReadOnly}
+                    title={isReadOnly ? "Only the host can select topics" : undefined}
+                    className={`text-left px-3 py-2 text-sm rounded-md border ${
+                      isReadOnly
+                        ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed opacity-60"
+                        : "bg-white/5 hover:bg-white/10 border-white/5"
+                    }`}
                     onMouseDown={(e) => {
                       e.preventDefault();
+                      if (isReadOnly) return;
                       if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
                     }}
                   >
