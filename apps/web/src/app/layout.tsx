@@ -45,7 +45,7 @@ export default function RootLayout({
           <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
           {children}
         </DisplayNameProvider>
-        <footer className="w-full border-t mt-8 py-4 text-center text-sm text-text-secondary bg-white/10 backdrop-blur-xl">
+        <footer className="w-full border-t mt-8 py-4 text-center text-sm text-text-secondary bg-white/10 backdrop-blur-xl safe-bottom">
           <div className="container-app">
             <Link href="/about" className="hover:underline mx-2">About</Link>
             <span className="mx-1">|</span>

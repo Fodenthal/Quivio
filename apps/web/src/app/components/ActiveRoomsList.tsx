@@ -292,30 +292,30 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="btn-ghost px-3 py-1.5 text-sm"
+          className="btn-ghost px-4 py-2 text-sm"
         >
           {refreshing ? '⟳' : '↻'} Refresh
         </button>
       </div>
 
       {/* Rooms Grid */}
-      <div className="p-6 flex-1 overflow-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="p-4 md:p-6 flex-1 overflow-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
           {rooms.map((room) => {
             const status = getRoomStatus(room);
             const difficultyLabel = getDifficultyLabel(room.difficulty);
             const difficultyColor = getDifficultyColor(room.difficulty);
 
             return (
-              <div key={room.gamePin} className="card card-hover p-4">
+              <div key={room.gamePin} className="card card-hover p-3 md:p-4">
                 {/* Room Header */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2 md:mb-3">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-lg font-semibold text-text-main truncate">
                       {room.roomName}
                     </h4>
-                    <div className="text-xs text-text-secondary mt-1 mb-2">
-                      Topics: {room.topics.join(", ")}
+                    <div className="text-xs text-text-secondary mt-1 mb-2 truncate">
+                      <span className="whitespace-nowrap">Topics: {room.topics.join(", ")}</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-text-secondary">
@@ -329,7 +329,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                 </div>
 
                 {/* Room Details */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
                   <div className="text-center">
                     <div className="text-sm text-text-secondary">Players</div>
                     <div className="text-lg font-bold text-text-main">
@@ -348,7 +348,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                  <button
                   onClick={() => handleJoinRoom(room.gamePin)}
                   disabled={!status.joinable || !onJoinRoom}
-                   className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+                   className={`w-full py-3 px-4 rounded-md font-medium transition-all duration-200 ${
                      status.joinable && onJoinRoom ? 'btn-primary' : 'bg-white/10 text-text-secondary cursor-not-allowed'
                    }`}
                 >
