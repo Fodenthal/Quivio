@@ -172,7 +172,7 @@ export function AISettingsPanel({
               <button
                 type="button"
                 onClick={handleAddTopicChip}
-                className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="hidden sm:inline-flex px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 + Add
               </button>
@@ -242,9 +242,9 @@ export function AISettingsPanel({
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section */}
-          <section>
+      <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-4 mt-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 mt-2">
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
             <input
@@ -256,7 +256,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -274,7 +274,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -292,7 +292,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"

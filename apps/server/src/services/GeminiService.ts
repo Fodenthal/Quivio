@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { WordTokenizer } from 'natural';
+import { WordTokenizer, PorterStemmer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
+import { shouldSkipSearch } from './SearchDecision';
 
 export interface GeneratedQuestion {
   question: string;
@@ -14,6 +15,7 @@ export interface QuestionRequest {
   topic: string;
   difficulty: number; // 1-5 scale
   previousQuestions?: string[]; // To avoid duplicates
+  previousSearchQueries?: string[]; // To diversify Stage 1 queries (optional, per-session)
 }
 
 /**
@@ -22,6 +24,13 @@ export interface QuestionRequest {
  */
 export class GeminiService {
   private ai: GoogleGenAI;
+  private factsCache: Map<string, { value: string; expiresAt: number }>; // TTL cache
+  private searchHistory: Map<string, string[]>; // normalizedTopic -> recent normalized queries
+
+  // Constants
+  private static readonly FACTS_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private static readonly MAX_HISTORY_PER_TOPIC = 30;
+  private static readonly QUERIES_PER_ROUND = 5;
 
   // JSON Schema for the expected response format
   private static readonly QUESTION_SCHEMA = `{
@@ -73,6 +82,8 @@ export class GeminiService {
     }
     
     this.ai = new GoogleGenAI({apiKey: apiKey});
+    this.factsCache = new Map();
+    this.searchHistory = new Map();
   }
 
   /**
@@ -81,9 +92,16 @@ export class GeminiService {
    * @param enableSearchTools - If true, allow model to use Google Search tool; otherwise, skip tools
    * @returns Promise<string> - Concise factual summary (1-2 sentences) or empty string if not needed
    */
-  private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
+  private async gatherFacts(topic: string, usedQueries: string[], enableSearchTools: boolean): Promise<string> {
     console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
     
+    const normalizedTopic = GeminiService.normalizeForHistory(topic);
+    const history = this.searchHistory.get(normalizedTopic) || [];
+    const mergedUsed = Array.from(new Set([...
+      (usedQueries || []).map(GeminiService.normalizeForHistory),
+      ...history
+    ])).slice(0, GeminiService.MAX_HISTORY_PER_TOPIC);
+
     const factGatheringPrompt = `
 You are Quivio's master trivia researcher.
 
@@ -100,14 +118,26 @@ Topic: "${topic}"
 Return only the summary (no extra formatting).`;
 
     try {
+      // Structured JSON response with schema
+      const responseSchema = {
+        type: 'object',
+        properties: {
+          queryUsed: { type: 'string', description: 'The exact search query executed' },
+          facts: { type: 'string', description: '1–2 sentence factual summary derived from search results' }
+        },
+        required: ['queryUsed', 'facts']
+      };
+
       const request: any = {
         model: 'gemini-2.5-flash',
-        contents: factGatheringPrompt,
+        contents: this.buildStage1Prompt(topic, mergedUsed, GeminiService.QUERIES_PER_ROUND),
         config: {
-          temperature: 0,
-          topP: 1.0,
-          topK: 1.0,
+          temperature: 0.2,
+          topP: 0.9,
+          topK: 40,
           maxOutputTokens: 256,
+          responseMimeType: 'application/json',
+          responseSchema,
           thinkingConfig: {
             thinkingBudget: 128
           }
@@ -119,19 +149,88 @@ Return only the summary (no extra formatting).`;
       const response = await this.ai.models.generateContent(request);
 
       const candidate = response.candidates?.[0];
-      if (!candidate?.content?.parts?.[0]?.text) {
+      const raw = candidate?.content?.parts?.[0]?.text ?? '';
+      if (!raw) {
         console.warn("Raw Stage 1 response:", JSON.stringify(response, null, 2));
-        return ''; // Empty facts - Stage 2 will proceed without context
+        return '';
       }
 
-      const facts = candidate.content.parts[0].text.trim();
-      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts}..."`);
+      // Parse JSON robustly
+      let clean = raw.trim();
+      if (clean.startsWith('```json') && clean.endsWith('```')) clean = clean.slice(7, -3).trim();
+      else if (clean.startsWith('```') && clean.endsWith('```')) clean = clean.slice(3, -3).trim();
+
+      let parsed: { queryUsed?: string; facts?: string } = {};
+      try {
+        parsed = JSON.parse(clean);
+      } catch (e) {
+        console.warn('⚠️  Stage 1 JSON parse failed, treating entire output as facts');
+        parsed = { queryUsed: '', facts: clean };
+      }
+
+      const queryUsed = (parsed.queryUsed ?? '').toString();
+      const facts = (parsed.facts ?? '').toString().trim();
+      const normalizedQuery = GeminiService.normalizeForHistory(queryUsed);
+
+      console.log(`   🔎 Query chosen: "${queryUsed || '(unknown)'}"`);
+      console.log(`   ✅ Gathered facts (${facts.length} chars)`);
+
+      // Update history (dedupe + cap)
+      if (normalizedQuery) {
+        const existing = this.searchHistory.get(normalizedTopic) || [];
+        const next = [normalizedQuery, ...existing.filter(q => q !== normalizedQuery)].slice(0, GeminiService.MAX_HISTORY_PER_TOPIC);
+        this.searchHistory.set(normalizedTopic, next);
+
+        // Cache facts for topic|query
+        const cacheKey = `${normalizedTopic}|${normalizedQuery}`;
+        const now = Date.now();
+        this.factsCache.set(cacheKey, { value: facts, expiresAt: now + GeminiService.FACTS_TTL_MS });
+      }
+
       return facts;
     } catch (error) {
       console.warn(`⚠️  Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.log(`   🔄 Proceeding to Stage 2 without additional context`);
       return ''; // Empty facts - Stage 2 will proceed without context
     }
+  }
+
+  private buildStage1Prompt(topic: string, usedQueries: string[], count: number): string {
+    const usedList = usedQueries && usedQueries.length > 0 ? usedQueries.join(' | ') : '(none)';
+    return `You are Quivio's master trivia researcher.
+
+TASK
+- Propose ${count} short, diverse, Google-style search queries for the topic below that are NOT in the used list.
+- Choose ONE of your novel queries and use the search tool to collect concise, testable facts.
+- Return ONLY a JSON object with fields: queryUsed (string), facts (string, 1–2 sentences).
+
+TOPIC: "${topic}"
+USED_QUERIES: ${usedList}
+
+OUTPUT FORMAT (JSON only):
+{"queryUsed":"...","facts":"..."}`;
+  }
+
+  private mergePreviousQueries(topic: string, previous: string[]): string[] {
+    const normalizedTopic = GeminiService.normalizeForHistory(topic);
+    const history = this.searchHistory.get(normalizedTopic) || [];
+    const merged = Array.from(new Set([
+      ...history,
+      ...(previous || []).map(GeminiService.normalizeForHistory)
+    ]));
+    return merged.slice(0, GeminiService.MAX_HISTORY_PER_TOPIC);
+  }
+
+  private async gatherFactsWithUsedQueries(topic: string, usedQueries: string[]): Promise<string> {
+    return this.gatherFacts(topic, usedQueries, true);
+  }
+
+  private static normalizeForHistory(text: string): string {
+    if (!text) return '';
+    const lower = text.toLowerCase().trim().replace(/\s+/g, ' ');
+    const tokens = lower.split(/[^a-z0-9]+/g).filter(Boolean);
+    const stemmed = tokens.map(tok => tok.length > 3 ? PorterStemmer.stem(tok) : tok);
+    return stemmed.join(' ');
   }
 
   /**
@@ -141,56 +240,9 @@ Return only the summary (no extra formatting).`;
    * @returns boolean - true if we should enable search tools
    */
   private shouldSearch(topic: string): boolean {
-    const raw = topic || '';
-    const t = raw.trim();
-    const lower = t.toLowerCase();
-
-    // Block broad domains and computational/puzzle topics
-    const broadDomains = [
-      'geography','mathematics','math','algebra','geometry','calculus','statistics','probability',
-      'physics','chemistry','biology','history','literature','sports','sport','film','movies','music',
-      'art','finance','economics','computer science','programming','coding'
-    ];
-    if (broadDomains.some(k => lower === k)) {
-      return false;
-    }
-    const puzzleKeywords = ['expected value','permutation','combination','riddle','puzzle','emoji','flags','logic puzzle'];
-    if (puzzleKeywords.some(k => lower.includes(k))) {
-      return false;
-    }
-
-    // Time-sensitive / superlative indicators
-    const timeOrSuperlative = [
-      'current','latest','last','this season','this year','today','recent','new','standings','rankings',
-      'chart','box office','release','released','premiered','winner','winners','champion','record',
-      'largest','fastest','highest','most','top','draft','trade','acquired','wimbledon','olympics','world cup'
-    ];
-    if (timeOrSuperlative.some(k => lower.includes(k))) {
-      return true;
-    }
-
-    // Years (e.g., 1999, 2023)
-    if (/(19|20)\d{2}/.test(lower)) {
-      return true;
-    }
-
-    // Entity-like keywords
-    const entityPhrases = [
-      'season','episode','album','song','track','movie','film','series','novel','book','chapter','volume',
-      'league','cup','tournament','grand prix','tour de france','formula 1','f1','nba','nfl','mlb','nhl',
-      'premier league','champions league','grammys','oscars','emmys','ballon d\'or','uefa','fifa','nobel'
-    ];
-    if (entityPhrases.some(k => lower.includes(k))) {
-      return true;
-    }
-
-    // Proper noun heuristic: two or more capitalized tokens
-    const capitalizedCount = (t.match(/\b[A-Z][A-Za-z0-9'’.\-]*\b/g) || []).length;
-    if (capitalizedCount >= 2) {
-      return true;
-    }
-
-    return false;
+    const decision = shouldSkipSearch(topic);
+    console.log(`🔎 Search decision: ${decision.skip ? 'skip' : 'search'} (reason: ${decision.reason})`);
+    return !decision.skip;
   }
 
   /**
@@ -278,7 +330,24 @@ Return only the summary (no extra formatting).`;
       // Stage 1: Decide whether to search and gather facts accordingly
       const useSearch = this.shouldSearch(request.topic);
       console.log(`🔎 Search enabled: ${useSearch} (topic: "${request.topic}")`);
-      const facts = useSearch ? await this.gatherFacts(request.topic, true) : '';
+      const mergedPrevQueries = this.mergePreviousQueries(request.topic, request.previousSearchQueries || []);
+      // Attempt cache read using last known query key if any (best-effort)
+      const normalizedTopic = GeminiService.normalizeForHistory(request.topic);
+      const maybeLastQuery = (this.searchHistory.get(normalizedTopic) || [])[0];
+      let facts = '';
+      if (useSearch) {
+        if (maybeLastQuery) {
+          const cacheKey = `${normalizedTopic}|${maybeLastQuery}`;
+          const cached = this.factsCache.get(cacheKey);
+          if (cached && cached.expiresAt > Date.now()) {
+            console.log('   ♻️ Using cached facts for last query');
+            facts = cached.value;
+          }
+        }
+        if (!facts) {
+          facts = await this.gatherFactsWithUsedQueries(request.topic, mergedPrevQueries);
+        }
+      }
       
       // Stage 2: Format question (deterministic)
       const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
