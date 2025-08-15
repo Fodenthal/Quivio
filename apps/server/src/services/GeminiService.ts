@@ -77,28 +77,34 @@ export class GeminiService {
   }
 
   /**
-   * Stage 1: Gather factual context (optionally using Google Search)
-   * @param topic - The topic to research
+   * Stage 1: Search-only factual context gathering (summary output)
+   * Decision to search is handled outside via heuristics; when invoked, search tools are enabled
+   * and the model must perform web search and synthesize a concise summary.
+   * @param topic - The topic to research (search is required for this call)
    * @param enableSearchTools - If true, allow model to use Google Search tool; otherwise, skip tools
-   * @returns Promise<string> - Concise factual summary (1-2 sentences) or empty string if not needed
+   * @returns Promise<string> - Concise factual summary (1–2 sentences)
    */
   private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
     console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
     
+    const CHAR_LIMIT = 300;
     const factGatheringPrompt = `
-You are Quivio's master trivia researcher.
+You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
-WHEN TO SEARCH
-- Search ONLY if the topic asks for or implies a concrete, verifiable fact about a specific entity (person, place, event, work, company, team, law) OR a time-sensitive/superlative fact (current holder, latest record, winners, standings, "largest/fastest", recent releases).
-- Do NOT search for computational math or self-contained puzzles; nor for broad domains without a specific entity (e.g., "geography", "mathematics").
+OBJECTIVE
+- Use the Google Search tool to find concrete, testable facts (dates, numbers, names, locations, achievements).
+- Prefer fresh, non-obvious angles (records, awards, firsts/lasts, milestones) over generic summaries.
 
-TASK
-- If you decide to search, quickly collect specific, testable facts (dates, numbers, names, locations, achievements) and return a concise 1–2 sentence factual summary suitable for trivia.
-- If you decide not to search, return an empty string.
+OUTPUT CONSTRAINTS (hard):
+- EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
+- No lists/bullets/markdown/quotes/citations. No parentheticals unless part of a proper name.
 
-Topic: "${topic}"
+PROCEDURE
+1) Issue one or more search queries targeting different angles if needed.
+2) Skim results and extract 1–2 specific facts suitable for trivia.
+3) Synthesize into 1–2 sentences within the character cap.
 
-Return only the summary (no extra formatting).`;
+Return ONLY the 1–2 sentence summary.`;
 
     try {
       const request: any = {
@@ -125,9 +131,12 @@ Return only the summary (no extra formatting).`;
         return ''; // Empty facts - Stage 2 will proceed without context
       }
 
-      const facts = candidate.content.parts[0].text.trim();
-      console.log(`   ✅ Gathered facts (${facts.length} chars): "${facts}..."`);
-      return facts;
+      // Normalize whitespace and enforce character cap strictly
+      const raw = candidate.content.parts[0].text.trim().replace(/\s+/g, ' ');
+      const clipped = raw.length > CHAR_LIMIT ? raw.slice(0, CHAR_LIMIT).trim() : raw;
+      console.log(`   The raw response was: "${raw}"`);
+      console.log(`   ✅ Gathered facts (${clipped.length} chars, cap=${CHAR_LIMIT}): "${clipped}..."`);
+      return clipped;
     } catch (error) {
       console.warn(`⚠️  Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.log(`   🔄 Proceeding to Stage 2 without additional context`);
