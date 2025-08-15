@@ -87,13 +87,13 @@ export class GeminiService {
   private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
     console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
     
-    const CHAR_LIMIT = 300;
+    const CHAR_LIMIT = 400;
     const factGatheringPrompt = `
 You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
 OBJECTIVE
-- Use the Google Search tool to find concrete, testable facts (dates, numbers, names, locations, achievements).
-- Prefer fresh, non-obvious angles (records, awards, firsts/lasts, milestones) over generic summaries.
+- Use the Google Search tool to find concrete, testable facts.
+- Prefer fresh, non-obvious angles over generic summaries.
 
 OUTPUT CONSTRAINTS (hard):
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
