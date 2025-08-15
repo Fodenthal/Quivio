@@ -38,9 +38,21 @@ export const GameView = memo(function GameView({
   const [currentGuess, setCurrentGuess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chatHasFocus, setChatHasFocus] = useState(false);
+  const [activePanel, setActivePanel] = useState<'players' | 'chat'>("players");
+  const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const chatScrollTopRef = useRef<number>(0);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const phoneSheetContentRef = useRef<HTMLDivElement>(null);
+  const phoneSheetRef = useRef<HTMLDivElement>(null);
+  // Memoize chat messages early so effects can reference safely
+  const chatMessages = useMemo(() => {
+    return Array.from(gameState.chatMessages.values()).filter(
+      (message) => message && typeof message === 'object' && message.id && message.playerName
+    );
+  }, [gameState.chatMessages]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -194,6 +206,90 @@ export const GameView = memo(function GameView({
     };
   }, []);
 
+  // Body scroll lock when phone panel is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const originalOverflow = document.body.style.overflow;
+    if (isPhonePanelOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalOverflow || '';
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow || '';
+    };
+  }, [isPhonePanelOpen]);
+
+  // Track unread chat when sheet is closed on phones
+  const prevChatLenRef = useRef<number>(chatMessages.length);
+  useEffect(() => {
+    const newLen = chatMessages.length;
+    const prevLen = prevChatLenRef.current;
+    const delta = Math.max(0, newLen - prevLen);
+    prevChatLenRef.current = newLen;
+    const chatVisible = (isPhonePanelOpen && activePanel === 'chat') || (typeof window !== 'undefined' && window.innerWidth >= 1024);
+    if (!chatVisible && delta > 0) {
+      setUnreadChatCount((prev) => prev + delta);
+    }
+    if (chatVisible) setUnreadChatCount(0);
+  }, [chatMessages.length, isPhonePanelOpen, activePanel]);
+
+  // Restore chat scroll when opening
+  useEffect(() => {
+    if (isPhonePanelOpen && activePanel === 'chat') {
+      const node = phoneSheetContentRef.current || chatContainerRef.current;
+      if (node) node.scrollTop = chatScrollTopRef.current;
+    }
+  }, [isPhonePanelOpen, activePanel]);
+
+  // Focus trap and ESC to close when sheet is open
+  useEffect(() => {
+    if (!isPhonePanelOpen) return;
+    const sheet = phoneSheetRef.current;
+    if (!sheet) return;
+
+    const focusableSelectors = [
+      'button', 'a[href]', 'input', 'textarea', 'select', '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+    const getFocusable = () => Array.from(sheet.querySelectorAll<HTMLElement>(focusableSelectors)).filter(el => !el.hasAttribute('disabled'));
+    const focusables = getFocusable();
+    if (focusables.length) focusables[0].focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // preserve chat scroll when closing from chat
+        if (activePanel === 'chat') {
+          const node = phoneSheetContentRef.current;
+          if (node) chatScrollTopRef.current = node.scrollTop;
+        }
+        setIsPhonePanelOpen(false);
+        // restore guess input focus if appropriate
+        setTimeout(() => guessInputRef.current?.focus(), 50);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const list = getFocusable();
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPhonePanelOpen, activePanel]);
+
   // Reset chat focus when new round starts
   useEffect(() => {
     if (phase === "playing" && !hasPlayerGuessed) {
@@ -201,12 +297,7 @@ export const GameView = memo(function GameView({
     }
   }, [gameState.currentRound, phase, hasPlayerGuessed]);
 
-  // Memoize chat messages to prevent unnecessary filtering on every render
-  const chatMessages = useMemo(() => {
-    return Array.from(gameState.chatMessages.values()).filter(
-      (message) => message && typeof message === 'object' && message.id && message.playerName
-    );
-  }, [gameState.chatMessages]);
+  // (moved earlier)
 
   // Memoize the onSendMessage callback to prevent Chat from re-rendering
   const handleSendMessage = useCallback((content: string) => {
@@ -222,9 +313,9 @@ export const GameView = memo(function GameView({
   }), [gameState.roundTimeRemaining, formatTime]);
 
   return (
-    <div className="flex gap-6 h-full min-h-[600px]">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[600px] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -324,7 +415,7 @@ export const GameView = memo(function GameView({
             {/* Question Display Panel or Ad Placeholder */}
             {phase === "loading" ? (
               // Ad placeholder during question generation
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 <div className="flex-grow flex flex-col justify-center">
                   <h2 className="text-8xl font-bold text-text-main tracking-wider">
                     AD
@@ -335,7 +426,7 @@ export const GameView = memo(function GameView({
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/20 rounded-lg p-8 text-center h-[420px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
@@ -373,7 +464,7 @@ export const GameView = memo(function GameView({
             )}
 
             {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-              <div className="bg-black/20 rounded-lg p-6 h-[92px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-6 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
                 {phase === "round-ended" ? (
                   <div className="text-center">
                     {(() => {
@@ -436,8 +527,53 @@ export const GameView = memo(function GameView({
         )}
       </div>
 
-      {/* PlayerList - optimized width, now same height as question panel */}
-      <div className="w-72 h-full min-h-[600px] flex flex-col">
+      {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
+      <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
+        <div className="mt-1 mb-2 self-stretch">
+          <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setActivePanel('players')}
+              aria-pressed={activePanel === 'players'}
+              className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+            >
+              Players
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePanel('chat')}
+              aria-pressed={activePanel === 'chat'}
+              className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+            >
+              Chat
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0">
+          {activePanel === 'players' ? (
+            <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+              <PlayerList 
+                gameState={gameState}
+                participatingPlayers={gameState.participatingPlayers}
+                showParticipationStatus={phase === "ended"}
+              />
+            </div>
+          ) : (
+            <div ref={chatContainerRef} className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+              <Chat
+                messages={chatMessages}
+                currentPlayerId={currentPlayerId}
+                onSendMessage={handleSendMessage}
+                disabled={false}
+                shouldAutoFocus={chatHasFocus}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PlayerList - xl+ only */}
+      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -445,10 +581,10 @@ export const GameView = memo(function GameView({
         />
       </div>
 
-      {/* Chat Panel */}
+      {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className="w-80 bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[600px] flex flex-col"
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,22rem)] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
@@ -457,6 +593,100 @@ export const GameView = memo(function GameView({
           disabled={false}
           shouldAutoFocus={chatHasFocus}
         />
+      </div>
+
+      {/* Phone controls: floating toggle for Players/Chat */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 md:hidden">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center space-x-1">
+          <button
+            type="button"
+            onClick={() => { setActivePanel('players'); setIsPhonePanelOpen(true); setChatHasFocus(false); }}
+            aria-label="Show players"
+            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+          >
+            Players
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActivePanel('chat'); setIsPhonePanelOpen(true); setChatHasFocus(true); }}
+            aria-label="Show chat"
+            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+          >
+            Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
+          </button>
+        </div>
+      </div>
+
+      {/* Phone full-height sheet */}
+      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} md:hidden inset-0 z-40` } role="dialog" aria-modal="true" aria-label={activePanel === 'chat' ? 'Chat' : 'Players'} ref={phoneSheetRef}>
+        <div className="absolute inset-0 bg-black/40" onClick={() => {
+          if (activePanel === 'chat') {
+            const node = phoneSheetContentRef.current;
+            if (node) chatScrollTopRef.current = node.scrollTop;
+          }
+          setIsPhonePanelOpen(false);
+          setTimeout(() => guessInputRef.current?.focus(), 50);
+        }} />
+        <div className="absolute left-3 right-3 bottom-3 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (activePanel === 'chat') {
+                    const node = phoneSheetContentRef.current;
+                    if (node) chatScrollTopRef.current = node.scrollTop;
+                  }
+                  setActivePanel('players'); setChatHasFocus(false);
+                }}
+                aria-pressed={activePanel === 'players'}
+                className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              >
+                Players
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActivePanel('chat'); setChatHasFocus(true); }}
+                aria-pressed={activePanel === 'chat'}
+                className={`flex-1 text-center px-3 py-1 text-sm rounded ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary hover:bg-white/10'}`}
+              >
+                Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
+              </button>
+            </div>
+            <button
+              type="button"
+              aria-label="Close panel"
+              className="px-3 py-1 text-sm text-text-secondary hover:text-text-main"
+              onClick={() => {
+                if (activePanel === 'chat') {
+                  const node = phoneSheetContentRef.current;
+                  if (node) chatScrollTopRef.current = node.scrollTop;
+                }
+                setIsPhonePanelOpen(false);
+                setTimeout(() => guessInputRef.current?.focus(), 50);
+              }}
+            >
+              Close
+            </button>
+          </div>
+          <div ref={phoneSheetContentRef} className="flex-1 overflow-auto p-4">
+            {activePanel === 'players' ? (
+              <PlayerList 
+                gameState={gameState}
+                participatingPlayers={gameState.participatingPlayers}
+                showParticipationStatus={phase === 'ended'}
+              />
+            ) : (
+              <Chat
+                messages={chatMessages}
+                currentPlayerId={currentPlayerId}
+                onSendMessage={handleSendMessage}
+                disabled={false}
+                shouldAutoFocus={chatHasFocus}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -101,35 +101,49 @@ export function GameLayout({
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh safe-bottom">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10">
+      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-20 overflow-x-hidden">
             <h1 className="text-3xl font-bold text-primary">Quivio</h1>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* User Display Name - shown when connected */}
               {connectionStatus === ConnectionStatus.CONNECTED && (
-                <UserDisplayName />
+                <div className="hidden sm:block">
+                  <UserDisplayName />
+                </div>
               )}
               
               {/* Leave Game Button - shown when connected */}
-              {connectionStatus === ConnectionStatus.CONNECTED && (
+            {connectionStatus === ConnectionStatus.CONNECTED && (
+              <>
                 <button
                   onClick={onLeaveGame}
-                  className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-main hover:bg-white/10 rounded-md transition-colors"
+                  className="hidden sm:inline-flex px-3 sm:px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-main hover:bg-white/10 rounded-md transition-colors"
                 >
                   Leave Game
                 </button>
-              )}
+                <button
+                  onClick={onLeaveGame}
+                  aria-label="Leave game"
+                  className="inline-flex sm:hidden items-center justify-center w-9 h-9 rounded-md hover:bg-white/10 text-text-secondary hover:text-text-main"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M16 13v-2H7V8l-5 4 5 4v-3h9z"/>
+                    <path d="M20 3h-8a2 2 0 00-2 2v3h2V5h8v14h-8v-3h-2v3a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/>
+                  </svg>
+                </button>
+              </>
+            )}
               
               {/* Connection Status Indicator */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <div
                   className={`w-3 h-3 rounded-full ${getStatusColor(connectionStatus)}`}
                 />
-                <span className="text-sm font-medium text-text-secondary">
+                <span className="hidden sm:inline text-sm font-medium text-text-secondary">
                   {getStatusText(connectionStatus)}
                 </span>
               </div>

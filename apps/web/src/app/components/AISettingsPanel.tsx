@@ -172,7 +172,7 @@ export function AISettingsPanel({
               <button
                 type="button"
                 onClick={handleAddTopicChip}
-                className="px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="hidden sm:inline-flex px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 + Add
               </button>
@@ -181,7 +181,7 @@ export function AISettingsPanel({
 
           <div className="mt-3">
             <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
-            <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
               {popularTopics.length > 0 ? (
                 popularTopics.slice(0, 36).map((t) => (
                   <button
@@ -189,12 +189,17 @@ export function AISettingsPanel({
                     type="button"
                     disabled={isReadOnly}
                     title={isReadOnly ? "Only the host can select topics" : undefined}
-                    className={`text-left px-3 py-2 text-sm rounded-md border ${
+                    className={`text-left px-3 py-2 text-sm rounded-md border select-none touch-manipulation ${
                       isReadOnly
                         ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed opacity-60"
                         : "bg-white/5 hover:bg-white/10 border-white/5"
                     }`}
                     onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (isReadOnly) return;
+                      if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
+                    }}
+                    onTouchStart={(e) => {
                       e.preventDefault();
                       if (isReadOnly) return;
                       if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
@@ -239,7 +244,7 @@ export function AISettingsPanel({
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="flex flex-row gap-4 mt-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 mt-2">
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
             <input
@@ -249,7 +254,9 @@ export function AISettingsPanel({
               value={targetScore}
               onChange={handleTargetScoreChange}
               disabled={isReadOnly}
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -265,7 +272,9 @@ export function AISettingsPanel({
               value={roundTime}
               onChange={handleRoundTimeChange}
               disabled={isReadOnly}
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -281,7 +290,9 @@ export function AISettingsPanel({
               value={maxPlayers}
               onChange={handleMaxPlayersChange}
               disabled={isReadOnly}
-              className={`w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
