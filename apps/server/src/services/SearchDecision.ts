@@ -86,7 +86,7 @@ function containsEntityPhrase(lower: string): boolean {
     'ufc', 'super bowl', 'world series', 'stanley cup', 'tour de france', 'grand prix',
     'masters', 'open', 'mls', 'ncaa', "ballon d'or", 'grammys', 'oscars', 'emmys',
     'premier league', 'champions league', 'fifa', 'uefa', 'nobel', 'world cup',
-    'formula 1', 'f1'
+    'formula 1', 'f1', `wimbledon`, `us open`, `australian open`, `french open`,
   ];
   return phrases.some(p => lower.includes(p));
 }
@@ -95,7 +95,7 @@ function isComputationalOrPuzzle(lower: string): boolean {
   const keywords = [
     'expected value', 'permutation', 'combination', 'solve', 'derivative', 'integral',
     'probability of', 'riddle', 'puzzle', 'logic puzzle', 'emoji', 'flags',
-    'compute', 'calculate', 'show that', 'prove that'
+    'compute', 'calculate', 'show that', 'prove that', `guess`, `guessing`
   ];
   return keywords.some(k => lower.includes(k));
 }
@@ -106,7 +106,9 @@ function isBroadDomain(lower: string): boolean {
     'physics','chemistry','biology','history','literature','sports','sport','film','movies','music',
     'art','finance','economics','computer science','programming','coding','philosophy','geology',
     'botany','zoology','astronomy','grammar','vocabulary','language','politics','law','medicine',
-    'anatomy','psychology','sociology'
+    'anatomy','psychology','sociology', 'tennis', 'basketball', 'football', 'soccer', 'baseball',
+    'hockey', 'golf', 'cricket', 'rugby', 'boxing', 'mma', 'wrestling', 'tennis', 'basketball',
+    'football', 'soccer', 'baseball', 'hockey', 'golf', 'cricket', 'rugby', 'boxing', 'mma', 'wrestling'
   ];
   return broadDomains.includes(lower);
 }
