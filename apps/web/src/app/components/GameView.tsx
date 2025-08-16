@@ -111,13 +111,12 @@ export const GameView = memo(function GameView({
     return gameState.roundGuesses.get(currentPlayerId);
   }, [gameState.roundGuesses, currentPlayerId]);
 
-  const promptFontSize = useMemo(() => {
+  const isLongPrompt = useMemo(() => {
     const textLength = gameState.currentPrompt?.text?.length || 0;
-    if (textLength > 150) {
-      return "text-2xl";
-    }
-    return "text-3xl";
+    return textLength > 150;
   }, [gameState.currentPrompt?.text]);
+  const promptMobileClass = useMemo(() => (isLongPrompt ? "text-lg" : "text-xl"), [isLongPrompt]);
+  const promptMdClass = useMemo(() => (isLongPrompt ? "md:text-2xl" : "md:text-3xl"), [isLongPrompt]);
 
 
 
@@ -426,7 +425,7 @@ export const GameView = memo(function GameView({
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
+              <div className="bg-black/20 rounded-lg p-4 md:p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center max-w-full overflow-x-hidden">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
@@ -454,7 +453,7 @@ export const GameView = memo(function GameView({
                       </span>
                     </div>
                     <div className="flex-grow flex flex-col justify-center">
-                      <h3 className={`${promptFontSize} font-semibold text-text-main leading-relaxed`}>
+                      <h3 className={`${promptMobileClass} ${promptMdClass} font-semibold text-text-main break-words leading-normal md:leading-relaxed`}>
                         {gameState.currentPrompt.text}
                       </h3>
                     </div>

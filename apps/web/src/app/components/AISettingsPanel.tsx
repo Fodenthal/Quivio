@@ -264,7 +264,7 @@ export function AISettingsPanel({
             />
           </div>
           <div className="flex flex-col">
-            <label className="block text-sm font-medium text-text-main mb-1">Round Time (s)</label>
+            <label className="block text-sm font-medium text-text-main mb-1">Round Time</label>
             <input
               type="number"
               min={10}
