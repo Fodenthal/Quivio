@@ -1,5 +1,6 @@
 import { GeneratedQuestion } from "../../../services/GeminiService";
 import { TriviaRoomState } from "../../schema/TriviaRoomState";
+import { STATIC_PROMPTS } from "../staticPrompts";
 
 /**
  * Responsible for mapping a GeneratedQuestion into the room state's current prompt
@@ -49,7 +50,7 @@ export class PromptLoader {
    * Loads a static prompt into state, used when AI generation fails completely.
    */
   loadStaticPrompt(): { correctAnswer: string; acceptableAnswers: string[] } {
-    const prompts = this.getStaticPrompts();
+    const prompts = this.getStaticPrompts ? this.getStaticPrompts() : STATIC_PROMPTS;
     const available = prompts.filter(p => !this.usedPrompts.has(p.id));
     if (available.length === 0) {
       this.usedPrompts.clear();

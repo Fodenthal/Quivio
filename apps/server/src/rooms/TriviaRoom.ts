@@ -6,6 +6,9 @@ import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
 import { QuestionBufferManager } from "./TriviaRoom/question/QuestionBufferManager";
 import { PromptLoader } from "./TriviaRoom/question/PromptLoader";
+import { STATIC_PROMPTS } from "./TriviaRoom/staticPrompts";
+import { PinGenerator } from "./TriviaRoom/registry/PinGenerator";
+import { RegistrySync } from "./TriviaRoom/registry/RegistrySync";
 import { GuessManager } from "./TriviaRoom/guess/GuessManager";
 import { RoundManager } from "./TriviaRoom/round/RoundManager";
 
@@ -56,6 +59,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
   private disposeTimer?: NodeJS.Timeout;
+  private registrySync!: RegistrySync;
+  private pinGenerator = new PinGenerator();
   private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
   
   // Performance monitoring
@@ -66,59 +71,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private questionBuffer: GeneratedQuestion[] = [];
   private readonly QUESTION_BUFFER_SIZE = 2; // Keep 2 questions ahead
   private isGeneratingQuestions = false; // Prevent concurrent generation
-
-  // Static prompt database
-  private static readonly PROMPTS: StaticPrompt[] = [
-    // Geography
-    { id: "geo_1", text: "What is the capital of France?", category: "Geography", difficulty: "easy", answer: "Paris" },
-    { id: "geo_2", text: "What is the largest country in the world by land area?", category: "Geography", difficulty: "easy", answer: "Russia" },
-    { id: "geo_3", text: "What is the capital of Japan?", category: "Geography", difficulty: "easy", answer: "Tokyo" },
-    { id: "geo_4", text: "What is the longest river in the world?", category: "Geography", difficulty: "medium", answer: "Nile" },
-    { id: "geo_5", text: "What is the highest mountain in the world?", category: "Geography", difficulty: "easy", answer: "Mount Everest" },
-    { id: "geo_6", text: "What is the capital of Australia?", category: "Geography", difficulty: "medium", answer: "Canberra" },
-    { id: "geo_7", text: "What is the largest desert in the world?", category: "Geography", difficulty: "medium", answer: "Sahara" },
-    { id: "geo_8", text: "What is the capital of Brazil?", category: "Geography", difficulty: "medium", answer: "Brasília" },
-    
-    // History
-    { id: "hist_1", text: "In what year did World War II end?", category: "History", difficulty: "easy", answer: "1945" },
-    { id: "hist_2", text: "Who was the first President of the United States?", category: "History", difficulty: "easy", answer: "George Washington" },
-    { id: "hist_3", text: "In what year did Columbus discover America?", category: "History", difficulty: "medium", answer: "1492" },
-    { id: "hist_4", text: "What ancient wonder was located in Alexandria?", category: "History", difficulty: "hard", answer: "Lighthouse" },
-    { id: "hist_5", text: "Who was the first Emperor of Rome?", category: "History", difficulty: "medium", answer: "Augustus" },
-    { id: "hist_6", text: "In what year did the Berlin Wall fall?", category: "History", difficulty: "medium", answer: "1989" },
-    { id: "hist_7", text: "Who was the first woman to win a Nobel Prize?", category: "History", difficulty: "hard", answer: "Marie Curie" },
-    { id: "hist_8", text: "What year did the Titanic sink?", category: "History", difficulty: "medium", answer: "1912" },
-    
-    // Pop Culture
-    { id: "pop_1", text: "What is the name of the main character in the movie 'Titanic'?", category: "Pop Culture", difficulty: "easy", answer: "Jack" },
-    { id: "pop_2", text: "Who played Iron Man in the Marvel Cinematic Universe?", category: "Pop Culture", difficulty: "easy", answer: "Robert Downey Jr" },
-    { id: "pop_3", text: "What is the name of the fictional town where 'The Simpsons' live?", category: "Pop Culture", difficulty: "medium", answer: "Springfield" },
-    { id: "pop_4", text: "What year did the first iPhone come out?", category: "Pop Culture", difficulty: "medium", answer: "2007" },
-    { id: "pop_5", text: "Who is the lead singer of Queen?", category: "Pop Culture", difficulty: "easy", answer: "Freddie Mercury" },
-    { id: "pop_6", text: "What is the name of the main character in 'Breaking Bad'?", category: "Pop Culture", difficulty: "medium", answer: "Walter White" },
-    { id: "pop_7", text: "What is the name of the fictional school in 'Harry Potter'?", category: "Pop Culture", difficulty: "easy", answer: "Hogwarts" },
-    { id: "pop_8", text: "Who created the TV show 'The Office' (US version)?", category: "Pop Culture", difficulty: "hard", answer: "Greg Daniels" },
-    
-    // Science
-    { id: "sci_1", text: "What is the chemical symbol for gold?", category: "Science", difficulty: "easy", answer: "Au" },
-    { id: "sci_2", text: "What is the hardest natural substance on Earth?", category: "Science", difficulty: "medium", answer: "Diamond" },
-    { id: "sci_3", text: "What is the largest planet in our solar system?", category: "Science", difficulty: "easy", answer: "Jupiter" },
-    { id: "sci_4", text: "What is the atomic number of carbon?", category: "Science", difficulty: "medium", answer: "6" },
-    { id: "sci_5", text: "What is the speed of light in miles per second?", category: "Science", difficulty: "hard", answer: "186282" },
-    { id: "sci_6", text: "What is the name of the force that keeps planets in orbit?", category: "Science", difficulty: "easy", answer: "Gravity" },
-    { id: "sci_7", text: "What is the chemical formula for water?", category: "Science", difficulty: "easy", answer: "H2O" },
-    { id: "sci_8", text: "What is the largest organ in the human body?", category: "Science", difficulty: "medium", answer: "Skin" },
-    
-    // Sports
-    { id: "sport_1", text: "What country has won the most FIFA World Cups?", category: "Sports", difficulty: "medium", answer: "Brazil" },
-    { id: "sport_2", text: "What is the national sport of Japan?", category: "Sports", difficulty: "hard", answer: "Sumo" },
-    { id: "sport_3", text: "How many players are on a basketball court at once?", category: "Sports", difficulty: "easy", answer: "10" },
-    { id: "sport_4", text: "What is the name of the trophy awarded to the winner of the Super Bowl?", category: "Sports", difficulty: "medium", answer: "Vince Lombardi Trophy" },
-    { id: "sport_5", text: "What year did the first modern Olympic Games take place?", category: "Sports", difficulty: "medium", answer: "1896" },
-    { id: "sport_6", text: "What is the most popular sport in the world?", category: "Sports", difficulty: "easy", answer: "Soccer" },
-    { id: "sport_7", text: "How many Grand Slam tennis tournaments are there?", category: "Sports", difficulty: "medium", answer: "4" },
-    { id: "sport_8", text: "What is the nickname of the New York Yankees?", category: "Sports", difficulty: "hard", answer: "The Bronx Bombers" }
-  ];
 
   private usedPrompts: Set<string> = new Set();
   private currentRoundAnswer: string = "";
@@ -158,7 +110,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.currentDifficulty = options.difficulty || 3;
     
     // Generate and assign game pin with collision handling
-    this.state.gamePin = this.generateUniqueGamePin();
+    this.state.gamePin = this.pinGenerator.generateUniqueGamePin();
     console.log(`🎯 Room ${this.roomId} created with game pin: ${this.state.gamePin}`);
     
     // Register room in the game pin registry with metadata
@@ -184,9 +136,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
     this.promptLoader = new PromptLoader({
       state: this.state,
-      getStaticPrompts: () => TriviaRoom.PROMPTS,
+      getStaticPrompts: () => STATIC_PROMPTS,
       usedPrompts: this.usedPrompts,
     });
+    this.registrySync = new RegistrySync(this.roomId, this.state);
     this.guessManager = new GuessManager(this.state);
     this.roundManager = new RoundManager(this.state);
 
@@ -268,29 +221,15 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
   }
 
-  /**
-   * Update room metadata in the registry with current room state
-   */
   private updateRoomMetadata() {
-    const registry = GamePinRegistry.getInstance();
-    registry.updateRoomMetadata(this.roomId, {
-      roomName: this.state.roomName,
-      topics: this.state.topics,
-      difficulty: this.state.currentDifficulty,
-      playerCount: this.state.players.size,
-      maxPlayers: this.state.maxPlayers,
-      isPrivate: this.state.isPrivate,
-      gameStarted: this.state.gameStatus === GameStatus.IN_PROGRESS,
-      canStart: this.state.canStart
-    });
+    this.registrySync.update();
   }
 
   onDispose() {
     console.log(`Disposing TriviaRoom: ${this.roomId}`);
     
     // Remove room from game pin registry
-    const registry = GamePinRegistry.getInstance();
-    registry.removeRoomById(this.roomId);
+    this.registrySync.remove();
     
     // Clean up timers
     if (this.roundTimer) {
@@ -932,45 +871,5 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       // Update room metadata in registry
       this.updateRoomMetadata();
     }
-  }
-
-  /**
-   * Map numeric difficulty (1-5) to string representation
-   */
-  // moved into PromptLoader
-
-  /**
-   * Generate a unique 5-character alphanumeric game pin with collision detection
-   */
-  private generateUniqueGamePin(): string {
-    const registry = GamePinRegistry.getInstance();
-    const maxAttempts = 10;
-    
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const gamePin = this.generateGamePin();
-      
-      if (!registry.isPinInUse(gamePin)) {
-        return gamePin;
-      }
-      
-      console.warn(`⚠️ Game pin collision on attempt ${attempt}: ${gamePin} already in use`);
-    }
-    
-    // If we still have collisions after max attempts, append timestamp for uniqueness
-    const fallbackPin = this.generateGamePin() + Date.now().toString().slice(-1);
-    console.warn(`🚨 Using fallback pin after ${maxAttempts} collisions: ${fallbackPin}`);
-    return fallbackPin.substring(0, 5); // Ensure 5 characters
-  }
-
-  /**
-   * Generate a 5-character alphanumeric game pin
-   */
-  private generateGamePin(): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let gamePin = '';
-    for (let i = 0; i < 5; i++) {
-      gamePin += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return gamePin;
   }
 }
