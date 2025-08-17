@@ -6,6 +6,8 @@ import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
 import { QuestionBufferManager } from "./TriviaRoom/question/QuestionBufferManager";
 import { PromptLoader } from "./TriviaRoom/question/PromptLoader";
+import { GuessManager } from "./TriviaRoom/guess/GuessManager";
+import { RoundManager } from "./TriviaRoom/round/RoundManager";
 
 export interface RoomOptions {
   targetScore?: number;
@@ -126,6 +128,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private recentQuestions: string[] = []; // Track recent questions to avoid duplicates (migrated into manager)
   private questionBufferManager!: QuestionBufferManager;
   private promptLoader!: PromptLoader;
+  private guessManager!: GuessManager;
+  private roundManager!: RoundManager;
 
   onCreate(options: RoomOptions = {}) {
     console.log("Creating TriviaRoom:", this.roomId);
@@ -183,6 +187,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       getStaticPrompts: () => TriviaRoom.PROMPTS,
       usedPrompts: this.usedPrompts,
     });
+    this.guessManager = new GuessManager(this.state);
+    this.roundManager = new RoundManager(this.state);
 
     // Set up message handlers
     this.setupMessageHandlers();
@@ -326,9 +332,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle guess submission
     this.onMessage(MSG.SUBMIT_GUESS, (client, message: GuessMessage) => {
-      // ✅ Only act on well-formed messages
       if (typeof message?.guess === "string") {
-        this.handleGuess(client.sessionId, message.guess);
+        const handled = this.guessManager.handleGuess(
+          client.sessionId,
+          message.guess,
+          () => this.endRound(),
+          (winnerId) => this.endGame(winnerId)
+        );
+        if (handled) {
+          console.log(`📊 roundGuesses now has ${this.state.roundGuesses.size} entries`);
+        }
       }
     });
 
@@ -491,9 +504,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // NOW start the timer after questions are ready and displayed
     this.state.roundStartTime = Date.now();
-    
-    // Performance monitoring - track round start (after questions loaded)
-    this.roundStartTimestamp = Date.now();
+    this.roundManager.markRoundLoaded();
     
     console.log(`📝 Round ${this.state.currentRound}: ${this.state.currentPrompt.text}`);
   }
@@ -531,6 +542,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.currentAcceptableAnswers = acceptableAnswers;
+      this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
       return;
     }
 
@@ -539,110 +551,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(generatedQuestion);
       this.currentRoundAnswer = correctAnswer;
       this.currentAcceptableAnswers = acceptableAnswers;
+      this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
       console.log(`📝 Loaded question: "${generatedQuestion.question}" (Topic: ${this.state.currentTopic}, Answer: ${generatedQuestion.correctAnswer})`);
     } else {
       console.log("🔄 All question generation failed, falling back to static prompts...");
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.currentAcceptableAnswers = acceptableAnswers;
+      this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
     }
   }
 
   // moved into PromptLoader
 
-  private handleGuess(playerId: string, guess: string) {
-    if (
-      !this.state.currentPrompt ||
-      !this.state.currentPrompt.text ||
-      this.state.gameStatus !== GameStatus.IN_PROGRESS ||
-      this.state.gamePaused ||
-      this.state.roundEnded
-    ) {
-      return;
-    }
-
-    // Check if we're actually in a round
-    if (this.state.currentRound === 0) {
-      return;
-    }
-
-    // Check if player already guessed this round
-    if (this.state.roundGuesses.has(playerId)) {
-      return; // Player already guessed this round
-    }
-
-    // Check if guess is correct using enhanced answer matching
-    const isCorrect = GeminiService.isAnswerAcceptable(guess, this.currentAcceptableAnswers);
-    
-    if (isCorrect) {
-      // Remove any previous incorrect guess since they got it right
-      this.state.removeIncorrectGuess(playerId);
-      
-      // Record the correct guess
-      this.state.addGuess(playerId, guess, isCorrect);
-      
-      // 🔍 DEBUG: Log for purple highlighting issue
-      console.log(`✅ ${playerId} guessed correctly: "${guess}"`);
-      console.log(`📊 roundGuesses now has ${this.state.roundGuesses.size} entries`);
-      
-      this.handleCorrectGuess(playerId);
-    } else {
-      // Track this incorrect guess for live display
-      this.state.addIncorrectGuess(playerId, guess.trim());
-      
-      // Note: We don't add incorrect guesses to roundGuesses yet
-      // This allows multiple attempts until they get it right or the round ends
-      console.log(`❌ ${playerId} guessed incorrectly: "${guess.trim()}"`);
-    }
-  }
-
-  private handleCorrectGuess(playerId: string) {
-    // Add player to correct guess order
-    this.state.correctGuessOrder.push(playerId);
-    const position = this.state.correctGuessOrder.length - 1; // 0-based position
-
-    let finalScore: number;
-
-    if (position === 0) {
-      // First player to answer correctly always gets 10 points
-      finalScore = 10;
-      console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: 1)`);
-    } else {
-      // Subsequent players get a score based on a curve, maxing out at 9
-      const elapsed = Date.now() - this.state.roundStartTime;
-      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
-      const timeFraction = timeRemaining / this.state.roundTime;
-
-      const maxPoints = 9; // Max points for subsequent players
-      const minPoints = 1; // Minimum points for a correct answer
-      const bonusPoints = maxPoints - minPoints;
-
-      // Calculate score using a square root curve for a slower drop-off
-      const score = minPoints + (bonusPoints * Math.sqrt(timeFraction));
-      
-      // Round to nearest integer
-      finalScore = Math.max(minPoints, Math.round(score));
-      
-      console.log(`🎯 Player ${playerId} scored ${finalScore} points (position: ${position + 1}, Time: ${timeRemaining.toFixed(0)}ms, Frac: ${timeFraction.toFixed(2)})`);
-    }
-    
-    // Award points
-    this.state.addScore(playerId, finalScore);
-    
-    // Check for game winner immediately
-    const winner = this.checkForWinner();
-    if (winner) {
-      this.endGame(winner);
-      return;
-    }
-    
-    // Check if all active players have answered correctly
-    if (this.checkAllPlayersAnswered()) {
-      console.log("All players have answered correctly, ending round early");
-      this.endRound();
-    }
-    // Otherwise, let the round continue until timer expires
-  }
+  // moved into GuessManager
 
   /**
    * Checks if all active players in the game have answered correctly.
@@ -675,20 +597,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.state.roundEnded) return;
     
     // Performance monitoring - track round completion
-    const roundDuration = Date.now() - this.roundStartTimestamp;
-    const playerCount = this.state.players.size;
     const reason = this.state.roundTimeRemaining <= 0 ? "timer_expired" : "all_answered_correctly";
-    
-    this.roundTransitionMetrics.push({
-      duration: roundDuration,
-      reason: reason,
-      playerCount: playerCount
-    });
-    
-    // Keep only last 10 rounds of metrics to prevent memory bloat
-    if (this.roundTransitionMetrics.length > 10) {
-      this.roundTransitionMetrics.shift();
-    }
+    this.roundManager.addRoundEndMetric(reason);
     
     console.log(`🏁 Round ${this.state.currentRound} ended (${reason}) - Answer: "${this.currentRoundAnswer}"`);
     
