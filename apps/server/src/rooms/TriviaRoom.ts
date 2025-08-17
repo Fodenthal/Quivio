@@ -4,6 +4,8 @@ import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from 
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
+import { QuestionBufferManager } from "./TriviaRoom/question/QuestionBufferManager";
+import { PromptLoader } from "./TriviaRoom/question/PromptLoader";
 
 export interface RoomOptions {
   targetScore?: number;
@@ -121,7 +123,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private currentAcceptableAnswers: string[] = [];
   private geminiService: GeminiService;
   private questionDatabase: any; // Using any for now since both implementations have the same interface
-  private recentQuestions: string[] = []; // Track recent questions to avoid duplicates
+  private recentQuestions: string[] = []; // Track recent questions to avoid duplicates (migrated into manager)
+  private questionBufferManager!: QuestionBufferManager;
+  private promptLoader!: PromptLoader;
 
   onCreate(options: RoomOptions = {}) {
     console.log("Creating TriviaRoom:", this.roomId);
@@ -166,6 +170,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       canStart: false
     });
     
+    // Initialize managers
+    this.questionBufferManager = new QuestionBufferManager({
+      state: this.state,
+      geminiService: this.geminiService,
+      questionDatabase: this.questionDatabase,
+      questionBufferSize: this.QUESTION_BUFFER_SIZE,
+      logger: console.log,
+    });
+    this.promptLoader = new PromptLoader({
+      state: this.state,
+      getStaticPrompts: () => TriviaRoom.PROMPTS,
+      usedPrompts: this.usedPrompts,
+    });
+
     // Set up message handlers
     this.setupMessageHandlers();
     
@@ -441,7 +459,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.updateRoomMetadata();
     
     // Pre-fill question buffer for smooth gameplay
-    await this.preFillQuestionBuffer();
+    await this.questionBufferManager.preFillBuffer();
     
     // Start first round
     this.startNewRound().catch(error => {
@@ -483,298 +501,54 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   /**
    * Pre-generate questions to fill the buffer
    */
-  private async preFillQuestionBuffer(): Promise<void> {
-    if (this.state.currentTopic === "__DEV__") {
-      console.log("⚙️ Development mode active. Skipping question buffer pre-generation.");
-      return;
-    }
-
-    const topic = this.state.currentTopic || "";
-    if (!topic) {
-      throw new Error("No topic set. Please add at least one topic before starting the game.");
-    }
-    const difficulty = this.state.currentDifficulty || 3;
-
-    console.log(`🔄 Pre-filling ${this.QUESTION_BUFFER_SIZE} questions for buffer...`);
-    
-    // First, try to fill buffer with cached questions from database
-    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, this.QUESTION_BUFFER_SIZE);
-    
-    for (const cachedQuestion of dbQuestions) {
-      if (this.questionBuffer.length >= this.QUESTION_BUFFER_SIZE) break;
-      
-      if (!this.recentQuestions.includes(cachedQuestion.question)) {
-        this.questionBuffer.push(cachedQuestion);
-        this.recentQuestions.push(cachedQuestion.question);
-        console.log(`📦 Pre-filled with cached question: "${cachedQuestion.question}"`);
-      }
-    }
-    
-    // Fill remaining slots with newly generated questions
-    while (this.questionBuffer.length < this.QUESTION_BUFFER_SIZE && !this.isGeneratingQuestions) {
-      try {
-        await this.generateAndAddToBuffer();
-      } catch (error) {
-        console.error("Failed to pre-generate question for buffer:", error);
-        break; // Stop trying if generation fails
-      }
-    }
-    
-    console.log(`✅ Question buffer initialized with ${this.questionBuffer.length} questions (${dbQuestions.length} from cache)`);
-    
-    // Log database stats
-    const stats = await this.questionDatabase.getStats();
-    console.log(`📊 Database stats: ${stats.totalQuestions} total questions, ${stats.topicCount} topics, avg usage: ${stats.avgUsagePerQuestion}`);
-  }
+  // moved to QuestionBufferManager
 
   /**
    * Generate a single question and add it to the buffer
    */
-  private async generateAndAddToBuffer(): Promise<void> {
-    if (this.isGeneratingQuestions || this.questionBuffer.length >= this.QUESTION_BUFFER_SIZE) {
-      return;
-    }
-
-    this.isGeneratingQuestions = true;
-    
-    try {
-      // Use round-robin approach to get questions from all topics equally
-      const allTopics = this.state.topics || [];
-      if (allTopics.length === 0) {
-        throw new Error("No topics set. Please add at least one topic before starting the game.");
-      }
-      const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-      const difficulty = this.state.currentDifficulty || 3;
-      
-      // First, try to get questions from database
-      const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 1);
-      
-      if (dbQuestions.length > 0) {
-        // Use cached question from database
-        const cachedQuestion = dbQuestions[0];
-        
-        // Only add if not recently used
-        if (!this.recentQuestions.includes(cachedQuestion.question)) {
-          this.questionBuffer.push(cachedQuestion);
-          this.recentQuestions.push(cachedQuestion.question);
-          if (this.recentQuestions.length > 50) {
-            this.recentQuestions.shift();
-          }
-          
-          // Advance to next topic for next question
-          this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-          this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-          
-          console.log(`📦 Added cached question to buffer: "${cachedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.QUESTION_BUFFER_SIZE})`);
-          return;
-        }
-      }
-      
-      // No suitable cached questions, generate new one via API
-      const questionRequest = {
-        topic,
-        difficulty,
-        previousQuestions: this.recentQuestions
-      };
-
-      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
-      
-      // Store the new question in database for future use
-      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
-      
-      // Add to buffer and track recent questions
-      this.questionBuffer.push(generatedQuestion);
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
-      
-      // Advance to next topic for next question
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-      
-      console.log(`📦 Added generated question to buffer: "${generatedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.QUESTION_BUFFER_SIZE})`);
-      
-    } finally {
-      this.isGeneratingQuestions = false;
-    }
-  }
+  // moved to QuestionBufferManager
 
   /**
    * Refill the buffer in the background (non-blocking)
    */
-  private refillQuestionBuffer(): void {
-    if (this.state.currentTopic === "__DEV__" || this.isGeneratingQuestions) {
-      return;
-    }
-
-    // Don't await this - let it run in the background
-    this.generateAndAddToBuffer().catch(error => {
-      console.error("Background question generation failed:", error);
-    });
-  }
+  // moved to QuestionBufferManager
 
   /**
    * Clear the question buffer (e.g., when topic/difficulty changes)
    */
-  private clearQuestionBuffer(): void {
-    this.questionBuffer = [];
-    this.isGeneratingQuestions = false;
-    console.log(`🗑️ Question buffer cleared`);
-  }
+  // moved to QuestionBufferManager
 
   /**
    * Get the next question from buffer or generate one if buffer is empty
    */
   private async getNextQuestion(): Promise<GeneratedQuestion | null> {
-    // If we have buffered questions, use them
-    if (this.questionBuffer.length > 0) {
-      const question = this.questionBuffer.shift()!;
-      console.log(`📤 Using buffered question: "${question.question}" (Remaining in buffer: ${this.questionBuffer.length})`);
-      
-      // Mark question as used in database
-      await this.questionDatabase.markQuestionAsUsed(question.question);
-      
-      // Trigger background refill
-      this.refillQuestionBuffer();
-      
-      return question;
-    }
-
-    // No buffered questions available, try database first
-    // Use round-robin approach to get questions from all topics equally
-    const allTopics = this.state.topics || [];
-    if (allTopics.length === 0) {
-      throw new Error("No topics set. Please add at least one topic before starting the game.");
-    }
-    const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-    const difficulty = this.state.currentDifficulty || 3;
-    
-    console.log("⚠️ Question buffer empty, checking database...");
-    
-    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 5);
-    const availableDbQuestions = dbQuestions.filter((q: any) => !this.recentQuestions.includes(q.question));
-    
-    if (availableDbQuestions.length > 0) {
-      const question = availableDbQuestions[0];
-      
-      // Track recent questions
-      this.recentQuestions.push(question.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
-      
-      // Mark question as used in database
-      await this.questionDatabase.markQuestionAsUsed(question.question);
-      
-      // Advance to next topic for next question
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-      
-      console.log(`📤 Using database question directly: "${question.question}" (Topic: ${topic})`);
-      
-      // Try to refill buffer after this
-      this.refillQuestionBuffer();
-      
-      return question;
-    }
-    
-    // No suitable questions in database, generate one directly (fallback)
-    console.log("⚠️ No suitable questions in database, generating question directly...");
-    
-    try {
-      const questionRequest = {
-        topic,
-        difficulty,
-        previousQuestions: this.recentQuestions
-      };
-
-      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
-      
-      // Store the new question in database for future use
-      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
-      
-      // Track recent questions
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
-      
-      // Advance to next topic for next question
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-      
-      console.log(`📝 Generated question directly: "${generatedQuestion.question}" (Topic: ${topic})`);
-      
-      // Try to refill buffer after this
-      this.refillQuestionBuffer();
-      
-      return generatedQuestion;
-      
-    } catch (error) {
-      console.error("Failed to generate question directly:", error);
-      return null;
-    }
+    return this.questionBufferManager.getNextQuestion();
   }
 
   private async loadNewPrompt(): Promise<void> {
     if (this.state.currentTopic === "__DEV__") {
       console.log("⚙️ Development mode active. Loading static prompt.");
-      this.loadStaticPrompt();
+      const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
+      this.currentRoundAnswer = correctAnswer;
+      this.currentAcceptableAnswers = acceptableAnswers;
       return;
     }
 
-    // Topic cycling is now handled at the question generation level for better distribution
-
-    // Try to get a question from the buffer first
     const generatedQuestion = await this.getNextQuestion();
-    
     if (generatedQuestion) {
-      // Update state with the buffered/generated question
-      this.state.currentPrompt.id = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      this.state.currentPrompt.text = generatedQuestion.question;
-      this.state.currentPrompt.category = generatedQuestion.category;
-      this.state.currentPrompt.difficulty = this.mapDifficultyToString(generatedQuestion.difficulty);
-      this.state.currentPrompt.topic = this.state.currentTopic || "";
-      this.state.currentPrompt.difficultyLevel = generatedQuestion.difficulty;
-      this.state.currentPrompt.acceptableAnswers = generatedQuestion.acceptableAnswers;
-      
-      // Store the correct answer and acceptable answers for this round
-      this.currentRoundAnswer = generatedQuestion.correctAnswer;
-      this.currentAcceptableAnswers = generatedQuestion.acceptableAnswers;
-      
+      const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(generatedQuestion);
+      this.currentRoundAnswer = correctAnswer;
+      this.currentAcceptableAnswers = acceptableAnswers;
       console.log(`📝 Loaded question: "${generatedQuestion.question}" (Topic: ${this.state.currentTopic}, Answer: ${generatedQuestion.correctAnswer})`);
-      
     } else {
-      // Fallback to static prompts if all AI generation fails
       console.log("🔄 All question generation failed, falling back to static prompts...");
-      this.loadStaticPrompt();
+      const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
+      this.currentRoundAnswer = correctAnswer;
+      this.currentAcceptableAnswers = acceptableAnswers;
     }
   }
 
-  private loadStaticPrompt(): void {
-    // Fallback method using static prompts
-    const availablePrompts = TriviaRoom.PROMPTS.filter(prompt => !this.usedPrompts.has(prompt.id));
-    
-    if (availablePrompts.length === 0) {
-      this.usedPrompts.clear();
-      availablePrompts.push(...TriviaRoom.PROMPTS);
-    }
-    
-    const selectedPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
-    this.usedPrompts.add(selectedPrompt.id);
-    
-    this.state.currentPrompt.id = selectedPrompt.id;
-    this.state.currentPrompt.text = selectedPrompt.text;
-    this.state.currentPrompt.category = selectedPrompt.category;
-    this.state.currentPrompt.difficulty = selectedPrompt.difficulty;
-    this.state.currentPrompt.topic = "Mixed Topics";
-    this.state.currentPrompt.difficultyLevel = this.mapStringToNumber(selectedPrompt.difficulty);
-    this.state.currentPrompt.acceptableAnswers = [selectedPrompt.answer];
-    
-    this.currentRoundAnswer = selectedPrompt.answer;
-    this.currentAcceptableAnswers = [selectedPrompt.answer];
-  }
+  // moved into PromptLoader
 
   private handleGuess(playerId: string, guess: string) {
     if (
@@ -1196,11 +970,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         this.state.currentTopicIndex = 0;
         console.log(`🎯 Topics set to: [${validTopics.join(", ")}]`);
         
-        // Clear recent questions when topics change to allow fresh questions
-        this.recentQuestions = [];
-        
-        // Clear question buffer since questions are for the old topics
-        this.clearQuestionBuffer();
+        // Clear recent questions and buffer when topics change to allow fresh questions
+        this.questionBufferManager.resetRecents();
+        this.questionBufferManager.clear();
         
         // Update room metadata in registry
         this.updateRoomMetadata();
@@ -1227,11 +999,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.state.currentTopic = topic.trim();
       console.log(`🎯 Topic set to: "${this.state.currentTopic}"`);
       
-      // Clear recent questions when topic changes to allow fresh questions
-      this.recentQuestions = [];
-      
-      // Clear question buffer since questions are for the old topic
-      this.clearQuestionBuffer();
+      // Clear recent questions and buffer when topic changes to allow fresh questions
+      this.questionBufferManager.resetRecents();
+      this.questionBufferManager.clear();
       
       // Update room metadata in registry
       this.updateRoomMetadata();
@@ -1247,7 +1017,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       console.log(`📊 Difficulty set to: ${this.state.currentDifficulty}/5`);
       
       // Clear question buffer since questions are for the old difficulty
-      this.clearQuestionBuffer();
+      this.questionBufferManager.clear();
       
       // Update room metadata in registry
       this.updateRoomMetadata();
@@ -1257,25 +1027,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   /**
    * Map numeric difficulty (1-5) to string representation
    */
-  private mapDifficultyToString(difficulty: number): string {
-    if (difficulty <= 1) return "very easy";
-    if (difficulty <= 2) return "easy";
-    if (difficulty <= 3) return "medium";
-    if (difficulty <= 4) return "hard";
-    return "very hard";
-  }
-
-  /**
-   * Map string difficulty to numeric representation
-   */
-  private mapStringToNumber(difficulty: string): number {
-    switch (difficulty.toLowerCase()) {
-      case "easy": return 2;
-      case "medium": return 3;
-      case "hard": return 4;
-      default: return 3;
-    }
-  }
+  // moved into PromptLoader
 
   /**
    * Generate a unique 5-character alphanumeric game pin with collision detection
