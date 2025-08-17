@@ -9,13 +9,13 @@ const ContactPage: React.FC = () => (
       <h2 className="text-xl font-semibold mb-2 text-gray-100">How to Reach Us</h2>
       <ul className="list-disc list-inside space-y-2 text-gray-400">
         <li>
-          <span className="font-medium">General Inquiries &amp; Support:</span> Email us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>
+          <span className="font-medium">General Inquiries &amp; Support:</span> Email us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>
         </li>
         <li>
-          <span className="font-medium">Business &amp; Partnerships:</span> Contact us at <a href="mailto:partnerships@quizza.io" className="text-blue-400 underline">partnerships@quizza.io</a>
+          <span className="font-medium">Business &amp; Partnerships:</span> Contact us at <a href="mailto:partnerships@quivio.fun" className="text-blue-400 underline">partnerships@quivio.fun</a>
         </li>
         <li>
-          <span className="font-medium">Feedback &amp; Suggestions:</span> Send ideas to <a href="mailto:feedback@quizza.io" className="text-blue-400 underline">feedback@quizza.io</a>
+          <span className="font-medium">Feedback &amp; Suggestions:</span> Send ideas to <a href="mailto:feedback@quivio.fun" className="text-blue-400 underline">feedback@quivio.fun</a>
         </li>
       </ul>
     </section>
@@ -23,7 +23,7 @@ const ContactPage: React.FC = () => (
       <h2 className="text-xl font-semibold mb-2 text-gray-100">Response Time</h2>
       <p className="text-gray-400">We aim to respond to all inquiries within 24-48 business hours.</p>
     </section>
-    <p className="mt-8 text-gray-400">Thank you for being a part of the Quizza.io community!</p>
+    <p className="mt-8 text-gray-400">Thank you for being a part of the Quivio community!</p>
   </main>
 );
 
