@@ -7,17 +7,13 @@ import { computeScore } from "../scoring/ScoringRules";
  * Handles guess processing and scoring, updating the room state accordingly.
  */
 export class GuessManager {
-  private currentRoundAnswer: string = "";
-  private currentAcceptableAnswers: string[] = [];
-
   constructor(private readonly state: TriviaRoomState) {}
 
   /**
    * Set the current round's answer payload.
    */
   setAnswerPayload(correctAnswer: string, acceptableAnswers: string[]): void {
-    this.currentRoundAnswer = correctAnswer;
-    this.currentAcceptableAnswers = acceptableAnswers;
+    // Keep for compatibility; state.currentPrompt.acceptableAnswers already contains these.
   }
 
   /**
@@ -31,7 +27,8 @@ export class GuessManager {
     if (this.state.roundGuesses.has(playerId)) return false;
 
     const guess = (rawGuess ?? "").toString();
-    const isCorrect = GeminiService.isAnswerAcceptable(guess, this.currentAcceptableAnswers);
+    const acceptable = this.state.currentPrompt?.acceptableAnswers || [];
+    const isCorrect = GeminiService.isAnswerAcceptable(guess, acceptable);
     if (isCorrect) {
       this.state.removeIncorrectGuess(playerId);
       this.state.addGuess(playerId, guess, true);

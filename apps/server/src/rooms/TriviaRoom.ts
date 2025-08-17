@@ -9,6 +9,9 @@ import { PromptLoader } from "./TriviaRoom/question/PromptLoader";
 import { STATIC_PROMPTS } from "./TriviaRoom/staticPrompts";
 import { PinGenerator } from "./TriviaRoom/registry/PinGenerator";
 import { RegistrySync } from "./TriviaRoom/registry/RegistrySync";
+import { ChatManager } from "./TriviaRoom/chat/ChatManager";
+import { SettingsManager } from "./TriviaRoom/settings/SettingsManager";
+import { PlayerManager } from "./TriviaRoom/players/PlayerManager";
 import { GuessManager } from "./TriviaRoom/guess/GuessManager";
 import { RoundManager } from "./TriviaRoom/round/RoundManager";
 
@@ -61,6 +64,9 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private disposeTimer?: NodeJS.Timeout;
   private registrySync!: RegistrySync;
   private pinGenerator = new PinGenerator();
+  private chatManager!: ChatManager;
+  private settingsManager!: SettingsManager;
+  private playerManager!: PlayerManager;
   private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
   
   // Performance monitoring
@@ -143,6 +149,21 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.guessManager = new GuessManager(this.state);
     this.roundManager = new RoundManager(this.state);
 
+    // Initialize feature managers
+    this.chatManager = new ChatManager(this.state);
+    this.settingsManager = new SettingsManager(
+      this.state,
+      () => { this.questionBufferManager.resetRecents(); this.questionBufferManager.clear(); },
+      () => this.updateRoomMetadata()
+    );
+    this.playerManager = new PlayerManager(
+      this.state,
+      () => this.resumeGame(),
+      () => this.pauseGame(),
+      () => this.disconnect(),
+      this.ROOM_DISPOSE_DELAY
+    );
+    
     // Set up message handlers
     this.setupMessageHandlers();
     
@@ -150,75 +171,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.startGameLoop();
   }
 
-  async onAuth(client: Client, options: any, req: any) {
-    // Add player to state before join
-    this.state.addPlayer(client.sessionId, options.playerName || `Player ${client.sessionId.slice(0, 6)}`);
-    return true;
-  }
+  async onAuth(client: Client, options: any, req: any) { return this.playerManager.onAuth(client, options); }
 
   onJoin(client: Client, options: any) {
     console.log(`Player ${client.sessionId} joined - Total players: ${this.state.players.size}`);
     
-    // Clear dispose timer if it exists (player rejoined)
-    if (this.disposeTimer) {
-      clearTimeout(this.disposeTimer);
-      this.disposeTimer = undefined;
-    }
-    
-    // If there's no host yet, make this player the host
-    if (!this.state.hostId) {
-      this.state.setHost(client.sessionId);
-    }
-
-    // If we have enough players and game hasn't started, allow starting
-    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) {
-      this.state.canStart = true;
-    }
-
-    // Resume paused game if we now have enough players
-    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) {
-      this.resumeGame();
-    }
-
-    // Update room metadata in registry
+    this.playerManager.onJoin(client);
     this.updateRoomMetadata();
   }
 
   onLeave(client: Client, consented: boolean) {
     console.log(`Player ${client.sessionId} left - Remaining: ${this.state.players.size - 1}`);
     
-    // Remove player from state
-    this.state.removePlayer(client.sessionId);
-    
-    // If host left, assign new host
-    if (this.state.hostId === client.sessionId && this.state.players.size > 0) {
-      const newHostId = Array.from(this.state.players.keys())[0];
-      this.state.setHost(newHostId);
-    }
-    
-    // If not enough players, pause game
-    if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) {
-      this.pauseGame();
-    }
-    
-    // Update can start status
-    this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
-    
-    // Update room metadata in registry
+    this.playerManager.onLeave(client);
     this.updateRoomMetadata();
-    
-    // If room is empty, schedule disposal with delay
-    if (this.state.players.size === 0) {
-      this.disposeTimer = setTimeout(() => {
-        this.disconnect();
-      }, this.ROOM_DISPOSE_DELAY);
-    } else {
-      // Clear dispose timer if players are still in the room
-      if (this.disposeTimer) {
-        clearTimeout(this.disposeTimer);
-        this.disposeTimer = undefined;
-      }
-    }
   }
 
   private updateRoomMetadata() {
@@ -313,35 +279,35 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Handle chat messages
     this.onMessage(MSG.CHAT, (client, message: ChatMessage) => {
       if (typeof message?.text === "string") {
-        this.handleChatMessage(client.sessionId, message.text);
+        this.chatManager.handleChatMessage(client.sessionId, message.text);
       }
     });
 
     // Handle room settings update
     this.onMessage(MSG.UPDATE_SETTINGS, (client, message: SettingsMessage) => {
       if (client.sessionId === this.state.hostId) {
-        this.updateRoomSettings(message);
+        this.settingsManager.updateRoomSettings(message);
       }
     });
 
     // Handle topic setting (host only)
     this.onMessage(MSG.SET_TOPIC, (client, message: TopicMessage) => {
       if (client.sessionId === this.state.hostId && typeof message?.topic === "string") {
-        this.setTopic(message.topic);
+        this.settingsManager.setTopic(message.topic);
       }
     });
 
     // Handle multiple topics setting (host only)
     this.onMessage(MSG.SET_TOPICS, (client, message: TopicsMessage) => {
       if (client.sessionId === this.state.hostId && Array.isArray(message?.topics)) {
-        this.setTopics(message.topics);
+        this.settingsManager.setTopics(message.topics);
       }
     });
 
     // Handle difficulty setting (host only)
     this.onMessage(MSG.SET_DIFFICULTY, (client, message: DifficultyMessage) => {
       if (client.sessionId === this.state.hostId && typeof message?.difficulty === "number") {
-        this.setDifficulty(message.difficulty);
+        this.settingsManager.setDifficulty(message.difficulty);
       }
     });
 
@@ -756,37 +722,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
   }
 
-  private handleChatMessage(playerId: string, text: string) {
-    // Basic chat moderation - filter inappropriate content
-    const sanitizedText = this.sanitizeChatMessage(text);
-    if (sanitizedText) {
-      this.state.addChatMessage(playerId, sanitizedText);
-    }
-  }
-
-  private updateRoomSettings(settings: Partial<RoomOptions>) {
-    if (settings.targetScore) {
-      this.state.targetScore = settings.targetScore;
-    }
-    if (settings.roundTime) {
-      this.state.roundTime = settings.roundTime;
-    }
-    if (settings.maxPlayers) {
-      this.state.maxPlayers = settings.maxPlayers;
-    }
-  }
-
   private normalizeAnswer(answer: string): string {
     return answer.toLowerCase().trim().replace(/\s+/g, ' ');
-  }
-
-  private sanitizeChatMessage(text: string): string {
-    // Basic sanitization - remove HTML and limit length
-    return text
-      .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags
-      .substring(0, 200)
-      .trim();
   }
 
   /**
