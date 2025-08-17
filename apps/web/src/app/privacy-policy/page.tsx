@@ -5,7 +5,7 @@ const PrivacyPolicyPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">
     <h1 className="text-3xl font-bold mb-4 text-white">Privacy Policy</h1>
     <p className="text-gray-600 mb-2">Last Updated: July 22, 2025</p>
-    <p className="mb-6 text-gray-400">Quizza.io (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our trivia services.</p>
+    <p className="mb-6 text-gray-400">Quivio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our trivia services.</p>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">1. Information We Collect</h2>
       <ul className="list-disc list-inside space-y-2 text-gray-400">
@@ -57,7 +57,7 @@ const PrivacyPolicyPage: React.FC = () => (
         <li>Data portability</li>
         <li>Withdraw consent</li>
       </ul>
-      <p className="text-gray-400 mt-2">To exercise these rights, contact us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>.</p>
+      <p className="text-gray-400 mt-2">To exercise these rights, contact us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>.</p>
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">7. Changes to This Policy</h2>
@@ -65,7 +65,7 @@ const PrivacyPolicyPage: React.FC = () => (
     </section>
     <section>
       <h2 className="text-xl font-semibold mb-2 text-gray-100">8. Contact Us</h2>
-      <p className="text-gray-400">If you have questions or comments about this Privacy Policy, please email us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>.</p>
+      <p className="text-gray-400">If you have questions or comments about this Privacy Policy, please email us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>.</p>
     </section>
   </main>
 );

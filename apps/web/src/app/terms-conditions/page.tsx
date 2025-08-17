@@ -7,7 +7,7 @@ const TermsAndConditionsPage: React.FC = () => (
     <p className="text-gray-600 mb-2">Last Updated: July 22, 2025</p>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">1. Acceptance of Terms</h2>
-      <p className="text-gray-400">By accessing or using the Quizza.io website (the &quot;Service&quot;), you agree to be bound by these Terms. If you disagree with any part, you may not access the Service.</p>
+      <p className="text-gray-400">By accessing or using the Quivio website (the &quot;Service&quot;), you agree to be bound by these Terms. If you disagree with any part, you may not access the Service.</p>
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">2. Accounts</h2>
@@ -19,7 +19,7 @@ const TermsAndConditionsPage: React.FC = () => (
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">3. Intellectual Property</h2>
-      <p className="text-gray-400">The Service and its original content are the exclusive property of Quizza.io and its licensors. Our trademarks and trade dress may not be used without written consent.</p>
+      <p className="text-gray-400">The Service and its original content are the exclusive property of Quivio and its licensors. Our trademarks and trade dress may not be used without written consent.</p>
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">4. Links to Other Websites</h2>
@@ -31,7 +31,7 @@ const TermsAndConditionsPage: React.FC = () => (
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">6. Limitation of Liability</h2>
-      <p className="text-gray-400">Quizza.io and its affiliates are not liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</p>
+      <p className="text-gray-400">Quivio and its affiliates are not liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</p>
     </section>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">7. Disclaimer</h2>
@@ -47,7 +47,7 @@ const TermsAndConditionsPage: React.FC = () => (
     </section>
     <section>
       <h2 className="text-xl font-semibold mb-2 text-gray-100">10. Contact Us</h2>
-      <p className="text-gray-400">If you have questions about these Terms, please email us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>.</p>
+      <p className="text-gray-400">If you have questions about these Terms, please email us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>.</p>
     </section>
   </main>
 );

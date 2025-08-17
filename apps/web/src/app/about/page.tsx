@@ -5,7 +5,7 @@ const AboutPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">
     <h1 className="text-3xl font-bold mb-4 text-white">About Us</h1>
     <p className="mb-6 text-lg text-gray-400">
-      Welcome to <span className="font-semibold">Quizza.io</span>, your ultimate destination for engaging and interactive trivia!
+      Welcome to <span className="font-semibold">Quivio</span>, your ultimate destination for engaging and interactive trivia!
     </p>
     <section className="mb-8">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">Our Mission</h2>
@@ -21,12 +21,12 @@ const AboutPage: React.FC = () => (
       </ul>
     </section>
     <section className="mb-8">
-      <h2 className="text-xl font-semibold mb-2 text-gray-100">Join the Quizza.io Community</h2>
+      <h2 className="text-xl font-semibold mb-2 text-gray-100">Join the Quivio Community</h2>
       <p className="text-gray-400">Embark on an exciting adventure of knowledge and fun! Whether you&apos;re a trivia enthusiast or just looking for a good time, there&apos;s a place for you here.</p>
     </section>
     <section>
       <h2 className="text-xl font-semibold mb-2 text-gray-100">Contact Us</h2>
-      <p className="text-gray-400">Have questions, suggestions, or just want to say hello? Visit our <a href="/contact" className="text-blue-400 underline">Contact</a> page or email us at <a href="mailto:support@quizza.io" className="text-blue-400 underline">support@quizza.io</a>.</p>
+      <p className="text-gray-400">Have questions, suggestions, or just want to say hello? Visit our <a href="/contact" className="text-blue-400 underline">Contact</a> page or email us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>.</p>
     </section>
   </main>
 );

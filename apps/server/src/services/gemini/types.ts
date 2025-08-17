@@ -1,0 +1,33 @@
+/**
+ * Shared types for Gemini-based trivia question generation.
+ */
+
+/**
+ * Structured output for a generated trivia question.
+ */
+export interface GeneratedQuestion {
+  /** The trivia question text. */
+  question: string;
+  /** The primary factual answer. */
+  correctAnswer: string;
+  /** All acceptable answer variants. */
+  acceptableAnswers: string[];
+  /** Broad category (Sports, History, Science, Film, etc.). */
+  category: string;
+  /** Difficulty on a 1-5 scale. */
+  difficulty: number;
+}
+
+/**
+ * Input describing a request to generate a trivia question.
+ */
+export interface QuestionRequest {
+  /** Topic or domain for the question. */
+  topic: string;
+  /** Desired difficulty on a 1-5 scale. */
+  difficulty: number;
+  /** Previous questions to avoid duplicates (concepts or wording). */
+  previousQuestions?: string[];
+}
+
+
