@@ -53,7 +53,7 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     });
 
     const text = response.text;
-    if (!response.text) {
+    if (!text) {
       throw new Error('Invalid response structure from Stage 2');
     }
     console.log(`Stage 2 response length: ${text.length} characters`);

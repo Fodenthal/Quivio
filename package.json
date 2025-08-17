@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"pnpm --filter @getmoney/server dev\" \"pnpm --filter quivio dev\"",
-    "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=web dev",
+    "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=quivio dev",
     "server": "pnpm --filter=@getmoney/server start",
-    "web": "pnpm --filter=web dev",
-    "build": "pnpm --filter=@shared run build && pnpm --filter=@getmoney/server run build && pnpm --filter=web run build",
+    "web": "pnpm --filter=quivio dev",
+    "build": "pnpm --filter=@shared run build && pnpm --filter=@getmoney/server run build && pnpm --filter=quivio run build",
     "build:server": "pnpm --filter=@getmoney/server run build",
     "test": "CI=1 pnpm -r --if-present run test",
     "test:parallel": "CI=1 pnpm -r --parallel --if-present run test",
-    "test:web:watch": "pnpm --filter=web run test:watch",
+    "test:web:watch": "pnpm --filter=quivio run test:watch",
     "fetch:questions": "pnpm --filter server exec tsx src/scripts/fetchQuestionsByTopic.ts",
     "vercel:set-branch-env": "node scripts/setVercelBranchEnv.mjs"
   },
