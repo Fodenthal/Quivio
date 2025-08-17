@@ -162,16 +162,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.startGameLoop();
   }
 
-  async onAuth(client: Client, options: any, req: any) { return this.playerManager.onAuth(client, options); }
+  async onAuth(client: Client, options: any, _req: any) { return this.playerManager.onAuth(client, options); }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, _options: any) {
     console.log(`Player ${client.sessionId} joined - Total players: ${this.state.players.size}`);
     
     this.playerManager.onJoin(client);
     this.updateRoomMetadata();
   }
 
-  onLeave(client: Client, consented: boolean) {
+  onLeave(client: Client, _consented: boolean) {
     console.log(`Player ${client.sessionId} left - Remaining: ${this.state.players.size - 1}`);
     
     this.playerManager.onLeave(client);
@@ -208,7 +208,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private setupMessageHandlers() {
     // Handle playground message types (development only)
-    this.onMessage("__playground_message_types", (client, message) => {
+    this.onMessage("__playground_message_types", (_client, message) => {
       // Ignore playground messages in production
       if (process.env.NODE_ENV === "production") {
         return;
@@ -603,42 +603,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Always return to lobby for host to configure and start new game
     this.returnToLobby();
-  }
-
-  private restartGame() {
-    console.log(`🔄 Restarting game with ${this.state.getParticipatingPlayerCount()} players`);
-    
-    // Get participating player IDs
-    const participatingPlayerIds = this.state.getParticipatingPlayerIds();
-    
-    // Disconnect non-participating players
-    for (const [playerId, player] of this.state.players) {
-      if (!this.state.participatingPlayers.has(playerId)) {
-        console.log(`👋 Disconnecting non-participating player: ${player.name} (${playerId})`);
-        // Find the client and disconnect them
-        const client = this.clients.find(c => c.sessionId === playerId);
-        if (client) {
-          client.leave(1000, "Did not join next game"); // Graceful disconnect with reason
-        }
-      } else {
-        // Reset scores and set as ready for participating players
-        player.score = 0;
-        player.ready = true;
-      }
-    }
-
-    // Clear restart system
-    this.state.clearRestartSystem();
-    
-    // Don't reset gameEnded yet - keep it true to avoid showing lobby
-    // We'll reset it atomically when we start the new game
-    this.state.winnerId = "";
-    this.state.canStart = true;
-
-    // Start the new game immediately - no delay needed since players already confirmed
-    this.startGame().catch(error => {
-      console.error("Failed to restart game:", error);
-    });
   }
 
   private returnToLobby() {
