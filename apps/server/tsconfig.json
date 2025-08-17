@@ -16,7 +16,9 @@
     "paths": {
       "@shared/*": ["../../packages/shared/*"]
     },
-    "types": ["mocha", "node"]
+    "types": ["mocha", "node"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": [
     "src",

@@ -12,9 +12,7 @@ export class GuessManager {
   /**
    * Set the current round's answer payload.
    */
-  setAnswerPayload(correctAnswer: string, acceptableAnswers: string[]): void {
-    // Keep for compatibility; state.currentPrompt.acceptableAnswers already contains these.
-  }
+  setAnswerPayload(_correctAnswer: string, _acceptableAnswers: string[]): void {}
 
   /**
    * Process an incoming guess. Returns true if handled, false if ignored.

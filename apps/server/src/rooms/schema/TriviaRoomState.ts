@@ -1,5 +1,5 @@
 import { Schema, type, MapSchema } from "@colyseus/schema";
-import { PlayerData, Prompt, Guess, ChatMessage, RoomSettings, GameStatus } from "@shared/index";
+import { GameStatus } from "@shared/index";
 
 export class PlayerState extends Schema {
   @type("string") id: string = "";

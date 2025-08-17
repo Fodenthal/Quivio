@@ -43,13 +43,7 @@ interface SettingsMessage {
   maxPlayers?: number;
 }
 
-interface StaticPrompt {
-  id: string;
-  text: string;
-  category: string;
-  difficulty: "easy" | "medium" | "hard";
-  answer: string;
-}
+// StaticPrompt type moved alongside static prompts
 
 export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8;
@@ -70,20 +64,17 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
   
   // Performance monitoring
-  private roundStartTimestamp: number = 0;
-  private roundTransitionMetrics: { duration: number; reason: string; playerCount: number; }[] = [];
+  // Round metrics moved into RoundManager
 
   // Question buffer system
-  private questionBuffer: GeneratedQuestion[] = [];
   private readonly QUESTION_BUFFER_SIZE = 2; // Keep 2 questions ahead
-  private isGeneratingQuestions = false; // Prevent concurrent generation
 
   private usedPrompts: Set<string> = new Set();
   private currentRoundAnswer: string = "";
-  private currentAcceptableAnswers: string[] = [];
+  // Acceptable answers are read from state.currentPrompt
   private geminiService: GeminiService;
   private questionDatabase: any; // Using any for now since both implementations have the same interface
-  private recentQuestions: string[] = []; // Track recent questions to avoid duplicates (migrated into manager)
+  // Recent questions handled by QuestionBufferManager
   private questionBufferManager!: QuestionBufferManager;
   private promptLoader!: PromptLoader;
   private guessManager!: GuessManager;
@@ -446,7 +437,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       console.log("⚙️ Development mode active. Loading static prompt.");
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
-      this.currentAcceptableAnswers = acceptableAnswers;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
       return;
     }
@@ -455,14 +445,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (generatedQuestion) {
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(generatedQuestion);
       this.currentRoundAnswer = correctAnswer;
-      this.currentAcceptableAnswers = acceptableAnswers;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
       console.log(`📝 Loaded question: "${generatedQuestion.question}" (Topic: ${this.state.currentTopic}, Answer: ${generatedQuestion.correctAnswer})`);
     } else {
       console.log("🔄 All question generation failed, falling back to static prompts...");
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
-      this.currentAcceptableAnswers = acceptableAnswers;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
     }
   }
@@ -722,91 +710,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
   }
 
-  private normalizeAnswer(answer: string): string {
-    return answer.toLowerCase().trim().replace(/\s+/g, ' ');
-  }
+  // normalizeAnswer no longer used; answer matching handled in GeminiService
 
   /**
    * Get performance metrics for monitoring and debugging.
    * Returns round transition metrics including duration, completion reason, and player count.
    */
   getPerformanceMetrics() {
-    const avgDuration = this.roundTransitionMetrics.length > 0 
-      ? this.roundTransitionMetrics.reduce((sum, m) => sum + m.duration, 0) / this.roundTransitionMetrics.length 
-      : 0;
-      
+    const metrics = this.roundManager.getMetrics();
     return {
-      recentRounds: this.roundTransitionMetrics,
-      averageRoundDuration: Math.round(avgDuration),
+      recentRounds: metrics.recentRounds,
+      averageRoundDuration: metrics.averageRoundDuration,
       currentPlayers: this.state.players.size,
       gameLoopInterval: this.GAME_LOOP_INTERVAL,
       timerUpdateThreshold: this.TIMER_UPDATE_THRESHOLD
     };
-  }
-
-  /**
-   * Set the topics for AI question generation (host only)
-   */
-  private setTopics(topics: string[]): void {
-    if (topics && topics.length > 0) {
-      const validTopics = topics.filter(t => t && t.trim().length > 0).map(t => t.trim());
-      if (validTopics.length > 0) {
-        this.state.topics = validTopics;
-        this.state.currentTopic = validTopics[0];
-        this.state.currentTopicIndex = 0;
-        console.log(`🎯 Topics set to: [${validTopics.join(", ")}]`);
-        
-        // Clear recent questions and buffer when topics change to allow fresh questions
-        this.questionBufferManager.resetRecents();
-        this.questionBufferManager.clear();
-        
-        // Update room metadata in registry
-        this.updateRoomMetadata();
-      }
-    }
-  }
-
-  /**
-   * Cycle to the next topic for equal distribution
-   */
-  private cycleToNextTopic(): void {
-    if (this.state.topics.length > 1) {
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % this.state.topics.length;
-      this.state.currentTopic = this.state.topics[this.state.currentTopicIndex];
-      console.log(`🔄 Cycled to next topic: "${this.state.currentTopic}" (${this.state.currentTopicIndex + 1}/${this.state.topics.length})`);
-    }
-  }
-
-  /**
-   * Set the topic for AI question generation (host only)
-   */
-  private setTopic(topic: string): void {
-    if (topic && topic.trim().length > 0) {
-      this.state.currentTopic = topic.trim();
-      console.log(`🎯 Topic set to: "${this.state.currentTopic}"`);
-      
-      // Clear recent questions and buffer when topic changes to allow fresh questions
-      this.questionBufferManager.resetRecents();
-      this.questionBufferManager.clear();
-      
-      // Update room metadata in registry
-      this.updateRoomMetadata();
-    }
-  }
-
-  /**
-   * Set the difficulty level for AI question generation (host only)
-   */
-  private setDifficulty(difficulty: number): void {
-    if (difficulty >= 1 && difficulty <= 5) {
-      this.state.currentDifficulty = difficulty;
-      console.log(`📊 Difficulty set to: ${this.state.currentDifficulty}/5`);
-      
-      // Clear question buffer since questions are for the old difficulty
-      this.questionBufferManager.clear();
-      
-      // Update room metadata in registry
-      this.updateRoomMetadata();
-    }
   }
 }
