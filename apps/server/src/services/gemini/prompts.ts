@@ -1,24 +1,29 @@
-/**
+import {Type} from "@google/genai";
+
+
+    /**
  * Prompt fragments and JSON schema used for Gemini question generation.
  */
 
-export const QUESTION_SCHEMA = `{
-  "type": "object",
-  "properties": {
-    "question": { "type": "string", "description": "The trivia question text." },
-    "correctAnswer": { "type": "string", "description": "The primary factual answer." },
-    "acceptableAnswers": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "All acceptable answer variants."
+export const QUESTION_SCHEMA_SDK = {
+    type: Type.OBJECT,
+    properties: {
+      question: { type: Type.STRING, description: "The trivia question text." },
+      correctAnswer: { type: Type.STRING, description: "The primary factual answer." },
+      acceptableAnswers: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "All acceptable answer variants."
+      },
+      category: {
+        type: Type.STRING,
+        description: "Broad category (Sports, History, Science, Film, etc.)."
+      }
     },
-    "category": {
-      "type": "string",
-      "description": "Broad category (Sports, History, Science, Film, etc.)."
-    }
-  },
-  "required": ["question", "correctAnswer", "acceptableAnswers", "category"]
-}`;
+    required: ["question", "correctAnswer", "acceptableAnswers", "category"],
+    // Keeps field order stable (recommended):
+    propertyOrdering: ["question", "correctAnswer", "acceptableAnswers", "category"]
+  } as const;
 
 export const CORE_INSTRUCTIONS = `
 
@@ -38,7 +43,7 @@ You are Quivio’s master trivia author. Output ONE JSON object only (no prose).
   – Probability (≈3/5): "A fair die is rolled 3 times. What is the expected value of the sum?" → 10.5
   – Geography (≈2/5): "What is the capital of Canada?" → Ottawa
   – Geometry (≈3/5): "What is the area of a circle with radius 5?" → 25π
-• If the topic refers to a specific entity or a time-sensitive/superlative, ask a direct factual question about that entity (e.g., date, number, record, winner).
+• If the topic refers to a specific entity or a time-sensitive/superlative, ask a direct factual question about that entity.
 
 ### Self-Check Before Returning
 Enforce the rules and ensure the question is not meta. Return ONLY the JSON object.`;

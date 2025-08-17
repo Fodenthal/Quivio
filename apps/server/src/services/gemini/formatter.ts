@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { CORE_INSTRUCTIONS, QUESTION_SCHEMA } from './prompts';
+import { CORE_INSTRUCTIONS, QUESTION_SCHEMA_SDK } from './prompts';
 import { GeneratedQuestion, QuestionRequest } from './types';
 import { parseResponse } from './parser';
 
@@ -8,8 +8,8 @@ import { parseResponse } from './parser';
  * Builds the prompt and calls the model, then parses with the same logic.
  */
 export async function formatQuestion(topic: string, facts: string, request: QuestionRequest, ai: GoogleGenAI): Promise<GeneratedQuestion> {
-  console.log(`🎯 Stage 2: Formatting question for topic: "${topic}"`);
-  console.log(`   📄 Using facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
+  console.log(`Stage 2: Formatting question for topic: "${topic}"`);
+  console.log(`Using facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
 
   const difficultyDescription = getDifficultyDescription(request.difficulty);
 
@@ -23,23 +23,25 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     sections.push(`Only use these facts if they make the question more precise; otherwise ignore.`);
   }
 
-  sections.push(`Now, generate a JSON object for the topic "${topic}" that conforms to this JSON schema:\n${QUESTION_SCHEMA}`);
+  sections.push(`Return only the JSON object; no extra text.`);
 
   if (request.previousQuestions && request.previousQuestions.length > 0) {
-    console.log(`   📝 Avoiding ${request.previousQuestions.length} previous questions`);
+    console.log(`Avoiding ${request.previousQuestions.length} previous questions`);
     sections.push(
       `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates as in these prior questions:\n${request.previousQuestions.join(", ")}`
     );
   }
 
   const prompt = sections.join('\n\n');
-  console.log(`   📏 Stage 2 prompt length: ${prompt.length} characters`);
+  console.log(`Stage 2 prompt length: ${prompt.length} characters`);
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
+        responseMimeType: 'application/json',
+        responseSchema: QUESTION_SCHEMA_SDK,
         temperature: 0.7,
         topP: 0.9,
         topK: 40,
@@ -50,12 +52,10 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
       }
     });
 
-    const candidate = response.candidates?.[0];
-    if (!candidate?.content?.parts?.[0]?.text) {
+    const text = response.text;
+    if (!response.text) {
       throw new Error('Invalid response structure from Stage 2');
     }
-
-    const text = candidate.content.parts[0].text;
     console.log(`Stage 2 response length: ${text.length} characters`);
 
     return parseResponse(text, request);

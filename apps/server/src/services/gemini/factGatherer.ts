@@ -39,7 +39,7 @@ Return ONLY the 1–2 sentence summary.`;
         temperature: 0,
         topP: 1.0,
         topK: 1.0,
-        maxOutputTokens: 512,
+        maxOutputTokens: 2048,
         thinkingConfig: {
           thinkingBudget: 128
         }
@@ -49,10 +49,10 @@ Return ONLY the 1–2 sentence summary.`;
       request.config.tools = [{ googleSearch: {} }];
     }
     const response = await ai.models.generateContent(request);
+    console.log(`Stage 1 response: ${JSON.stringify(response, null, 2)}`);
 
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts?.[0]?.text) {
-      console.warn("Raw Stage 1 response:", JSON.stringify(response, null, 2));
       return '';
     }
 
