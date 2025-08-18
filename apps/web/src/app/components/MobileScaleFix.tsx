@@ -25,7 +25,7 @@ export function MobileScaleFix(): null {
 
     lockScale();
 
-    // Prevent pinch-zoom
+    // Prevent pinch-zoom and bounce back to scale 1
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault();
@@ -42,6 +42,12 @@ export function MobileScaleFix(): null {
         lockScale();
       }
       lastTouch = now;
+    };
+
+    // If user manually zooms, try to bounce back by resetting viewport
+    const onGestureStart = (e: Event) => {
+      e.preventDefault();
+      lockScale();
     };
 
     // Ensure focused inputs don't trigger zoom by bumping font-size
@@ -65,12 +71,18 @@ export function MobileScaleFix(): null {
 
     document.addEventListener("wheel", onWheel, { passive: false });
     document.addEventListener("touchend", onTouchEnd, { passive: false });
+    document.addEventListener("gesturestart", onGestureStart as EventListener);
+    document.addEventListener("gesturechange", onGestureStart as EventListener);
+    document.addEventListener("gestureend", onGestureStart as EventListener);
     document.addEventListener("focus", onFocus, true);
 
     return () => {
-      document.removeEventListener("wheel", onWheel as any);
-      document.removeEventListener("touchend", onTouchEnd as any);
-      document.removeEventListener("focus", onFocus as any, true);
+      document.removeEventListener("wheel", onWheel as EventListener);
+      document.removeEventListener("touchend", onTouchEnd as EventListener);
+      document.removeEventListener("gesturestart", onGestureStart as EventListener);
+      document.removeEventListener("gesturechange", onGestureStart as EventListener);
+      document.removeEventListener("gestureend", onGestureStart as EventListener);
+      document.removeEventListener("focus", onFocus as EventListener, true);
     };
   }, []);
 

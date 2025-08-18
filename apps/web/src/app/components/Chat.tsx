@@ -24,18 +24,10 @@ export function Chat({
   disabled = false,
   shouldAutoFocus = false
 }: ChatProps) {
-  // Filter valid messages for accurate counting
-  const validMessages = messages.filter((message) => message && message.id && message.playerName && message.content);
+  // (header removed) keep structure minimal for mobile
   
   return (
     <div className="min-h-[50dvh] md:h-[600px] flex flex-col safe-bottom">
-      {/* Chat Header */}
-      <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-white/20">
-        <h3 className="text-xl font-bold text-text-main">Chat</h3>
-        <div className="text-sm text-text-secondary">
-          {validMessages.length > 0 ? `${validMessages.length} messages` : "No messages"}
-        </div>
-      </div>
 
       {/* Chat Messages - flex-1 takes remaining space with fixed height */}
       <div className="flex-1 py-4 min-h-0">
@@ -47,7 +39,7 @@ export function Chat({
       </div>
 
       {/* Chat Input - fixed at bottom */}
-      <div className="flex-shrink-0 pt-4 border-t border-white/20">
+      <div className="flex-shrink-0 pt-2">
         <ChatInput
           onSendMessage={onSendMessage}
           disabled={disabled}

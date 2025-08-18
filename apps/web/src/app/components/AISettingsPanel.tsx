@@ -154,7 +154,7 @@ export function AISettingsPanel({
           ))}
         </div>
         <div className="relative">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center min-w-0">
             <input
             type="text"
             value={newTopic}
@@ -162,7 +162,7 @@ export function AISettingsPanel({
             onKeyDown={handleNewTopicKeyDown}
             placeholder="Add a topic..."
             disabled={isReadOnly}
-            className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
+            className={`flex-1 min-w-0 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
               isReadOnly 
                 ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                 : "bg-white/10 border-white/20 text-text-main"

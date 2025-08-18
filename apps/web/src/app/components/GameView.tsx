@@ -84,9 +84,15 @@ export const GameView = memo(function GameView({
       await onSubmitGuess(currentGuess.trim());
       setCurrentGuess("");
       // Keep focus on input after submitting
+      // Refocus without causing scroll jumps
       setTimeout(() => {
-        if (guessInputRef.current && !chatHasFocus) {
-          guessInputRef.current.focus();
+        const input = guessInputRef.current;
+        if (input && !chatHasFocus) {
+          try {
+            (input as unknown as { focus: (opts?: { preventScroll?: boolean }) => void }).focus({ preventScroll: true });
+          } catch {
+            input.focus();
+          }
         }
       }, 100);
     } catch (error) {
@@ -173,8 +179,13 @@ export const GameView = memo(function GameView({
     // Focus guess input when round starts or when coming back from chat
     if (phase === "playing" && !hasPlayerGuessed && !chatHasFocus) {
       const timer = setTimeout(() => {
-        if (guessInputRef.current) {
-          guessInputRef.current.focus();
+        const input = guessInputRef.current;
+        if (input) {
+          try {
+            (input as unknown as { focus: (opts?: { preventScroll?: boolean }) => void }).focus({ preventScroll: true });
+          } catch {
+            input.focus();
+          }
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -512,6 +523,11 @@ export const GameView = memo(function GameView({
                       value={currentGuess}
                       onChange={(e) => setCurrentGuess(e.target.value)}
                       onKeyDown={handleGuessKeyDown}
+                      onFocus={(e) => {
+                        try {
+                          (e.target as HTMLInputElement).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                        } catch {}
+                      }}
                       placeholder="Enter your answer and press Enter..."
                       disabled={isSubmitting || phase === "paused"}
                       className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"

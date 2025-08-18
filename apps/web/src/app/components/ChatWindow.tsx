@@ -69,16 +69,7 @@ export function ChatWindow({
     scrollToBottom();
   }, []);
 
-  if (messages.length === 0) {
-    return (
-      <div className={`${height} bg-black/20 rounded-lg p-4 flex items-center justify-center`}>
-        <div className="text-center text-text-secondary">
-          <p className="text-sm">No messages yet</p>
-          <p className="text-xs mt-1">Start the conversation!</p>
-        </div>
-      </div>
-    );
-  }
+  // Always render an empty scrollable container to keep layout stable on mobile
 
   return (
     <div 
