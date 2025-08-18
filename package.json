@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"pnpm --filter @getmoney/server dev\" \"pnpm --filter quivio dev\"",
+    "dev": "concurrently -n server,web -c green,blue \"pnpm --filter @getmoney/server dev\" \"wait-on tcp:2567 && pnpm --filter quivio dev\"",
     "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=quivio dev",
     "server": "pnpm --filter=@getmoney/server start",
     "web": "pnpm --filter=quivio dev",
@@ -23,6 +23,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "wait-on": "^8.0.4"
   }
 }

@@ -34,6 +34,7 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
 
   const prompt = sections.join('\n\n');
   console.log(`Stage 2 prompt length: ${prompt.length} characters`);
+  console.log(`Stage 2 prompt: ${prompt}`);
 
   try {
     const response = await ai.models.generateContent({
