@@ -406,26 +406,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   /**
-   * Pre-generate questions to fill the buffer
-   */
-  // moved to QuestionBufferManager
-
-  /**
-   * Generate a single question and add it to the buffer
-   */
-  // moved to QuestionBufferManager
-
-  /**
-   * Refill the buffer in the background (non-blocking)
-   */
-  // moved to QuestionBufferManager
-
-  /**
-   * Clear the question buffer (e.g., when topic/difficulty changes)
-   */
-  // moved to QuestionBufferManager
-
-  /**
    * Get the next question from buffer or generate one if buffer is empty
    */
   private async getNextQuestion(): Promise<GeneratedQuestion | null> {
@@ -454,10 +434,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
     }
   }
-
-  // moved into PromptLoader
-
-  // moved into GuessManager
 
   /**
    * Checks if all active players in the game have answered correctly.
@@ -673,8 +649,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       }
     }
   }
-
-  // normalizeAnswer no longer used; answer matching handled in GeminiService
 
   /**
    * Get performance metrics for monitoring and debugging.
