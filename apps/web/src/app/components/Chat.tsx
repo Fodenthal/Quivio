@@ -24,10 +24,18 @@ export function Chat({
   disabled = false,
   shouldAutoFocus = false
 }: ChatProps) {
-  // (header removed) keep structure minimal for mobile
+  // Message count for desktop header; mobile stays minimal
+  const validMessages = messages.filter((m) => m && m.id && m.playerName && m.content);
   
   return (
     <div className="min-h-[50dvh] md:h-[600px] flex flex-col safe-bottom">
+      {/* Desktop header only */}
+      <div className="hidden md:flex items-center justify-between pb-4 border-b border-white/20">
+        <h3 className="text-xl font-bold text-text-main">Chat</h3>
+        <div className="text-sm text-text-secondary">
+          {validMessages.length > 0 ? `${validMessages.length} messages` : "No messages"}
+        </div>
+      </div>
 
       {/* Chat Messages - flex-1 takes remaining space with fixed height */}
       <div className="flex-1 min-h-0 overflow-hidden">
