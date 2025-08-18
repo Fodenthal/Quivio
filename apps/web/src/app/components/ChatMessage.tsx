@@ -60,7 +60,7 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
   }
 
   return (
-    <div className={`flex items-start space-x-3 py-2 px-3 rounded-lg transition-colors ${
+    <div className={`flex items-start space-x-2 md:space-x-3 py-2 pr-3 pl-1 md:pl-2 rounded-lg transition-colors ${
       isCurrentPlayer ? "" : "hover:bg-white/5"
     }`}>
       {getPlayerAvatar(message.playerName)}

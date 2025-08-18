@@ -38,7 +38,7 @@ export function Chat({
       </div>
 
       {/* Chat Messages - flex-1 takes remaining space with fixed height */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden md:mt-2">
         <ChatWindow 
           messages={messages}
           currentPlayerId={currentPlayerId}
