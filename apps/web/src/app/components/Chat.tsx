@@ -30,7 +30,7 @@ export function Chat({
     <div className="min-h-[50dvh] md:h-[600px] flex flex-col safe-bottom">
 
       {/* Chat Messages - flex-1 takes remaining space with fixed height */}
-      <div className="flex-1 py-4 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ChatWindow 
           messages={messages}
           currentPlayerId={currentPlayerId}
@@ -39,7 +39,7 @@ export function Chat({
       </div>
 
       {/* Chat Input - fixed at bottom */}
-      <div className="flex-shrink-0 pt-2">
+      <div className="flex-shrink-0 mt-2">
         <ChatInput
           onSendMessage={onSendMessage}
           disabled={disabled}

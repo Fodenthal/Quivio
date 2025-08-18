@@ -101,6 +101,12 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={() => {
+          try {
+            const y = window.scrollY;
+            setTimeout(() => window.scrollTo({ top: y }), 0);
+          } catch {}
+        }}
         placeholder={placeholder}
         disabled={disabled || isSubmitting}
         maxLength={maxLength}

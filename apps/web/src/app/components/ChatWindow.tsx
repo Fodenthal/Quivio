@@ -89,6 +89,14 @@ export function ChatWindow({
           ))}
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
+        {messages.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-text-secondary/70">
+              <p className="text-sm">No messages yet</p>
+              <p className="text-xs mt-1">Start the conversation!</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

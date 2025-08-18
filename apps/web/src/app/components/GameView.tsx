@@ -42,6 +42,7 @@ export const GameView = memo(function GameView({
   const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const chatScrollTopRef = useRef<number>(0);
+  const pageScrollYRef = useRef<number>(0);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -525,7 +526,11 @@ export const GameView = memo(function GameView({
                       onKeyDown={handleGuessKeyDown}
                       onFocus={(e) => {
                         try {
+                          // Remember current scroll and ask browser to keep the input near keyboard
+                          pageScrollYRef.current = window.scrollY;
                           (e.target as HTMLInputElement).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                          // Restore page scroll to avoid jumping the question off-screen
+                          setTimeout(() => window.scrollTo({ top: pageScrollYRef.current }), 0);
                         } catch {}
                       }}
                       placeholder="Enter your answer and press Enter..."
@@ -611,13 +616,13 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Phone controls: floating toggle for Players/Chat */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 md:hidden">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center space-x-1">
+      <div className="fixed bottom-4 left-0 right-0 px-3 z-10 md:hidden">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center gap-1 w-full">
           <button
             type="button"
             onClick={() => { setActivePanel('players'); setIsPhonePanelOpen(true); setChatHasFocus(false); }}
             aria-label="Show players"
-            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+            className={`flex-1 text-center px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
             Players
           </button>
@@ -625,7 +630,7 @@ export const GameView = memo(function GameView({
             type="button"
             onClick={() => { setActivePanel('chat'); setIsPhonePanelOpen(true); setChatHasFocus(true); }}
             aria-label="Show chat"
-            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+            className={`flex-1 text-center px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
             Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
           </button>
@@ -643,7 +648,7 @@ export const GameView = memo(function GameView({
           setTimeout(() => guessInputRef.current?.focus(), 50);
         }} />
         <div className="absolute left-3 right-3 bottom-3 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="px-4 py-3 border-b border-white/10">
             <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
               <button
                 type="button"
@@ -668,23 +673,8 @@ export const GameView = memo(function GameView({
                 Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
               </button>
             </div>
-            <button
-              type="button"
-              aria-label="Close panel"
-              className="px-3 py-1 text-sm text-text-secondary hover:text-text-main"
-              onClick={() => {
-                if (activePanel === 'chat') {
-                  const node = phoneSheetContentRef.current;
-                  if (node) chatScrollTopRef.current = node.scrollTop;
-                }
-                setIsPhonePanelOpen(false);
-                setTimeout(() => guessInputRef.current?.focus(), 50);
-              }}
-            >
-              Close
-            </button>
           </div>
-          <div ref={phoneSheetContentRef} className="flex-1 overflow-auto p-4">
+          <div ref={phoneSheetContentRef} className="flex-1 p-4 overflow-hidden">
             {activePanel === 'players' ? (
               <PlayerList 
                 gameState={gameState}
