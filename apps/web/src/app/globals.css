@@ -8,6 +8,13 @@ body {
   @apply bg-background text-text-main font-sans;
 }
 
+/* Ensure consistent text scaling and prevent accidental zooming */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
 /* Accessibility and motion preferences */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -29,8 +36,8 @@ body {
 .safe-left { padding-left: env(safe-area-inset-left); }
 .safe-right { padding-right: env(safe-area-inset-right); }
 
-/* Prevent iOS zoom on inputs */
-input, select, textarea { font-size: 16px; }
+/* Prevent iOS zoom on inputs (override utility classes) */
+input, select, textarea { font-size: 16px !important; }
 
 @layer components {
   /* Containers */
