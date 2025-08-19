@@ -62,9 +62,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private settingsManager!: SettingsManager;
   private playerManager!: PlayerManager;
   private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
-  
-  // Performance monitoring
-  // Round metrics moved into RoundManager
 
   // Question buffer system
   private readonly QUESTION_BUFFER_SIZE = 2; // Keep 2 questions ahead
