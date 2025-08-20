@@ -72,7 +72,7 @@ You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}
 OBJECTIVE
 - Use Google Search to find concrete, testable facts that are **memorable, surprising, and fun**.
 - Prefer vivid, real-life or story-like details over plain statistics.
-- Avoid dry numerical trivia (dates, counts, measurements) unless they make the fact striking.
+- Avoid dry numerical trivia (dates, counts, measurements) unless they make the fact striking.${previousQueriesContext}
 
 OUTPUT CONSTRAINTS
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
