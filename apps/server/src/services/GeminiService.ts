@@ -24,8 +24,8 @@ export class GeminiService {
   }
 
   // Stage 1 is delegated to gemini/factGatherer.ts
-  private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
-    return gatherFacts(topic, enableSearchTools, this.ai);
+  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = []): Promise<string> {
+    return gatherFacts(topic, enableSearchTools, this.ai, previousQueries);
   }
 
   /**
@@ -59,7 +59,7 @@ export class GeminiService {
       // Stage 1: Decide whether to search and gather facts accordingly
       const useSearch = this.shouldSearch(request.topic);
       console.log(`🔎 Search enabled: ${useSearch} (topic: "${request.topic}")`);
-      const facts = useSearch ? await this.gatherFacts(request.topic, true) : '';
+      const facts = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || []) : '';
       
       // Stage 2: Format question (deterministic)
       const generatedQuestion = await this.formatQuestion(request.topic, facts, request);

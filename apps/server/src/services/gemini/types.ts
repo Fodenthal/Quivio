@@ -28,6 +28,8 @@ export interface QuestionRequest {
   difficulty: number;
   /** Previous questions to avoid duplicates (concepts or wording). */
   previousQuestions?: string[];
+  /** Previous search queries to avoid duplicates in fact gathering. */
+  previousSearchQueries?: string[];
 }
 
 
