@@ -26,6 +26,7 @@ export class QuestionBufferManager {
   private questionBuffer: GeneratedQuestion[] = [];
   private isGeneratingQuestions = false;
   private recentQuestions: string[] = [];
+  private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
 
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates
@@ -55,6 +56,35 @@ export class QuestionBufferManager {
     this.questionBuffer = [];
     this.isGeneratingQuestions = false;
     this.log("🗑️ Question buffer cleared");
+  }
+
+  /**
+   * Get previous search queries for a specific topic.
+   * @param topic - The topic to get queries for
+   * @returns Array of previous search queries for this topic
+   */
+  private getTopicQueries(topic: string): string[] {
+    return this.topicQueries.get(topic) || [];
+  }
+
+  /**
+   * Add a search query to a topic's query history.
+   * @param topic - The topic to add the query to
+   * @param query - The search query to add
+   */
+  private addTopicQuery(topic: string, query: string): void {
+    if (!query || query.trim().length === 0) return;
+    
+    const queries = this.getTopicQueries(topic);
+    queries.push(query.trim());
+    
+    // Keep only the last 10 queries per topic to prevent unbounded growth
+    if (queries.length > 10) {
+      queries.shift();
+    }
+    
+    this.topicQueries.set(topic, queries);
+    this.log(`📝 Added query to topic "${topic}": "${query}" (${queries.length} total)`);
   }
 
   /**
@@ -230,14 +260,24 @@ export class QuestionBufferManager {
         }
       }
 
+      // Get topic-specific previous queries for enhanced fact gathering
+      const topicSpecificQueries = this.getTopicQueries(topic);
+      
       const questionRequest = {
         topic,
         difficulty,
-        previousQuestions: this.recentQuestions
+        previousQuestions: this.recentQuestions,
+        previousSearchQueries: topicSpecificQueries
       };
 
+      this.log(`🔍 Generating question for topic "${topic}" with ${topicSpecificQueries.length} previous search queries`);
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
+
+      // TODO: Capture the actual search query used by Gemini (from webSearchQueries metadata)
+      // For now, add a placeholder query based on the topic to demonstrate the flow
+      const placeholderQuery = `${topic} trivia facts`;
+      this.addTopicQuery(topic, placeholderQuery);
 
       this.questionBuffer.push(generatedQuestion);
       this.recentQuestions.push(generatedQuestion.question);
