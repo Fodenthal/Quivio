@@ -24,7 +24,7 @@ export class GeminiService {
   }
 
   // Stage 1 is delegated to gemini/factGatherer.ts
-  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = []): Promise<string> {
+  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = []): Promise<{facts: string, webSearchQueries: string[]}> {
     return gatherFacts(topic, enableSearchTools, this.ai, previousQueries);
   }
 
@@ -59,14 +59,18 @@ export class GeminiService {
       // Stage 1: Decide whether to search and gather facts accordingly
       const useSearch = this.shouldSearch(request.topic);
       console.log(`🔎 Search enabled: ${useSearch} (topic: "${request.topic}")`);
-      const facts = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || []) : '';
+      const gatherResult = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || []) : { facts: '', webSearchQueries: [] };
       
       // Stage 2: Format question (deterministic)
-      const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
+      const generatedQuestion = await this.formatQuestion(request.topic, gatherResult.facts, request);
+      
+      // Attach web search queries to the generated question
+      generatedQuestion.webSearchQueries = gatherResult.webSearchQueries;
       
       // Log success
       const totalTime = Date.now() - startTime;
       console.log(`✅ Two-stage generation completed in ${totalTime}ms`);
+      console.log(`   🔍 Web search queries: ${gatherResult.webSearchQueries.length > 0 ? gatherResult.webSearchQueries.join(', ') : 'None'}`);
       console.log(`   ❓ Question: "${generatedQuestion.question}"`);
       console.log(`   ✅ Correct answer: "${generatedQuestion.correctAnswer}"`);
       console.log(`   📋 Acceptable answers (${generatedQuestion.acceptableAnswers.length}): [${generatedQuestion.acceptableAnswers.join(', ')}]`);

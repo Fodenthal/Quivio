@@ -386,6 +386,14 @@ export class QuestionBufferManager {
 
       this.addTopicRecentQuestion(topic, generatedQuestion.question);
 
+      // Add actual web search queries if any were used
+      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
+        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
+        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
+      } else {
+        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
+      }
+
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];
 
@@ -453,10 +461,13 @@ export class QuestionBufferManager {
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
-      // TODO: Capture the actual search query used by Gemini (from webSearchQueries metadata)
-      // For now, add a placeholder query based on the topic to demonstrate the flow
-      const placeholderQuery = `${topic} trivia facts`;
-      this.addTopicQuery(topic, placeholderQuery);
+      // Add actual web search queries if any were used
+      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
+        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
+        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
+      } else {
+        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
+      }
 
       this.questionBuffer.push(generatedQuestion);
       this.addTopicRecentQuestion(topic, generatedQuestion.question);

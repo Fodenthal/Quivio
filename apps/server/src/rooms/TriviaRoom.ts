@@ -216,7 +216,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     // Handle player ready state
     this.onMessage(MSG.PLAYER_READY, (client, message: PlayerReadyMessage) => {
-      // ✅ Ignore malformed payloads
       if (typeof message?.ready === "boolean") {
         this.state.setPlayerReady(client.sessionId, message.ready);
         this.checkGameStart();

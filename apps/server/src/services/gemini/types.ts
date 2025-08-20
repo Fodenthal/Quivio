@@ -16,6 +16,8 @@ export interface GeneratedQuestion {
   category: string;
   /** Difficulty on a 1-5 scale. */
   difficulty: number;
+  /** Web search queries used during fact gathering (if any). */
+  webSearchQueries?: string[];
 }
 
 /**

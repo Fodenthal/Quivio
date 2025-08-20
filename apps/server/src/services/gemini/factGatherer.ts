@@ -53,7 +53,7 @@ export async function gatherFacts(
   enableSearchTools: boolean, 
   ai: GoogleGenAI,
   previousQueries: string[] = []
-): Promise<string> {
+): Promise<{facts: string, webSearchQueries: string[]}> {
   console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
 
   const CHAR_LIMIT = 400;
@@ -70,19 +70,21 @@ export async function gatherFacts(
 You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
 OBJECTIVE
-- Use the Google Search tool to find concrete, testable facts.
-- Prefer fresh, interesting angles over generic summaries.${previousQueriesContext}
+- Use Google Search to find concrete, testable facts that are **memorable, surprising, and fun**.
+- Prefer vivid, real-life or story-like details over plain statistics.
+- Avoid dry numerical trivia (dates, counts, measurements) unless they make the fact striking.
 
-OUTPUT CONSTRAINTS (hard):
+OUTPUT CONSTRAINTS
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
 - No lists/bullets/markdown/quotes/citations. No parentheticals unless part of a proper name.
 
 PROCEDURE
-1) Issue one or more search queries targeting different angles if needed.
-2) Skim results and extract 1–2 specific facts suitable for trivia.
+1) Search multiple angles if needed.
+2) Extract 1–2 specific, objectively checkable facts that feel quirky or story-driven.
 3) Synthesize into 1–2 sentences within the character cap.
 
-Return ONLY the 1–2 sentence summary.`;
+Return ONLY the 1–2 sentence summary.
+`;
 
   console.log(`Previous queries context: ${previousQueries.length} total, ${filteredPreviousQueries.length} after similarity filtering`);
   if (filteredPreviousQueries.length > 0) {
@@ -114,11 +116,11 @@ Return ONLY the 1–2 sentence summary.`;
 
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts?.[0]?.text) {
-      return '';
+      return { facts: '', webSearchQueries: [] };
     }
 
-    // Extract webSearchQueries from metadata if available
-    const webSearchQueries = (candidate as any)?.metadata?.webSearchQueries || [];
+    // Extract webSearchQueries from groundingMetadata if available
+    const webSearchQueries = (candidate as any)?.groundingMetadata?.webSearchQueries || [];
     if (webSearchQueries.length > 0) {
       console.log(`🔍 Extracted ${webSearchQueries.length} search queries:`, webSearchQueries);
       const firstQuery = webSearchQueries[0];
@@ -138,12 +140,12 @@ Return ONLY the 1–2 sentence summary.`;
     const raw = candidate.content.parts[0].text.trim().replace(/\s+/g, ' ');
     const clipped = raw.length > CHAR_LIMIT ? raw.slice(0, CHAR_LIMIT).trim() : raw;
     console.log(`   The raw response was: "${raw}"`);
-    console.log(`   Gathered facts (${clipped.length} chars, cap=${CHAR_LIMIT}): "${clipped}..."`);
-    return clipped;
+    console.log(`   Gathered facts (${clipped.length} chars, cap=${CHAR_LIMIT}): "${clipped}"`);
+    return { facts: clipped, webSearchQueries };
   } catch (error) {
     console.warn(` Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     console.log(`  Proceeding to Stage 2 without additional context`);
-    return '';
+    return { facts: '', webSearchQueries: [] };
   }
 }
 
