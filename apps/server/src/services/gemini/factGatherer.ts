@@ -1,4 +1,42 @@
 import { GoogleGenAI } from '@google/genai';
+import { distance } from 'fastest-levenshtein';
+
+/**
+ * Check if a query is too similar to any previous queries using Levenshtein distance.
+ * @param newQuery - The query to check
+ * @param previousQueries - Array of previous queries to compare against
+ * @param threshold - Minimum character difference required (default: 4)
+ * @returns true if the query is too similar to any previous query
+ */
+function isQueryTooSimilar(newQuery: string, previousQueries: string[], threshold: number = 4): boolean {
+  if (previousQueries.length === 0) return false;
+  
+  const normalizedNew = newQuery.trim().toLowerCase();
+  return previousQueries.some(prevQuery => {
+    const normalizedPrev = prevQuery.trim().toLowerCase();
+    const editDistance = distance(normalizedNew, normalizedPrev);
+    return editDistance < threshold;
+  });
+}
+
+/**
+ * Filter previous queries to only include those that are sufficiently different.
+ * This helps create a more diverse and efficient context for the prompt.
+ * @param queries - Array of previous queries
+ * @param minDifference - Minimum character difference between queries (default: 3)
+ * @returns Filtered array with only sufficiently different queries
+ */
+function filterSimilarQueries(queries: string[], minDifference: number = 3): string[] {
+  if (queries.length <= 1) return queries;
+  
+  const filtered: string[] = [];
+  for (const query of queries) {
+    if (!isQueryTooSimilar(query, filtered, minDifference)) {
+      filtered.push(query);
+    }
+  }
+  return filtered;
+}
 
 /**
  * Stage 1: Search-only factual context gathering with query tracking
@@ -20,9 +58,12 @@ export async function gatherFacts(
 
   const CHAR_LIMIT = 400;
   
+  // Filter previous queries to only include sufficiently different ones
+  const filteredPreviousQueries = filterSimilarQueries(previousQueries, 3);
+  
   // Build previous queries context if we have any
-  const previousQueriesContext = previousQueries.length > 0 
-    ? `\n\nPrevious search queries to avoid similar angles:\n${previousQueries.join(', ')}\n\nUse a different search approach that explores fresh aspects of "${topic}".`
+  const previousQueriesContext = filteredPreviousQueries.length > 0 
+    ? `\n\nPrevious search queries to avoid similar angles:\n${filteredPreviousQueries.join(', ')}\n\nUse a different search approach that explores fresh aspects of "${topic}".`
     : '';
 
   const factGatheringPrompt = `
@@ -43,9 +84,12 @@ PROCEDURE
 
 Return ONLY the 1–2 sentence summary.`;
 
-  console.log(`Previous queries context: ${previousQueries.length} queries to avoid`);
-  if (previousQueries.length > 0) {
-    console.log(`   Avoiding: ${previousQueries.slice(0, 3).join(', ')}${previousQueries.length > 3 ? '...' : ''}`);
+  console.log(`Previous queries context: ${previousQueries.length} total, ${filteredPreviousQueries.length} after similarity filtering`);
+  if (filteredPreviousQueries.length > 0) {
+    console.log(`   Avoiding: ${filteredPreviousQueries.slice(0, 3).join(', ')}${filteredPreviousQueries.length > 3 ? '...' : ''}`);
+  }
+  if (previousQueries.length > filteredPreviousQueries.length) {
+    console.log(`   Filtered out ${previousQueries.length - filteredPreviousQueries.length} similar queries`);
   }
 
   try {
@@ -77,7 +121,15 @@ Return ONLY the 1–2 sentence summary.`;
     const webSearchQueries = (candidate as any)?.metadata?.webSearchQueries || [];
     if (webSearchQueries.length > 0) {
       console.log(`🔍 Extracted ${webSearchQueries.length} search queries:`, webSearchQueries);
-      console.log(`   First query: "${webSearchQueries[0]}"`);
+      const firstQuery = webSearchQueries[0];
+      console.log(`   First query: "${firstQuery}"`);
+      
+      // Check if the generated query is too similar to previous ones
+      if (isQueryTooSimilar(firstQuery, previousQueries, 4)) {
+        console.log(`   ⚠️ Generated query is similar to previous ones (threshold: 4)`);
+      } else {
+        console.log(`   ✅ Generated query is sufficiently different from previous ones`);
+      }
     } else {
       console.log(`   No webSearchQueries found in metadata`);
     }
