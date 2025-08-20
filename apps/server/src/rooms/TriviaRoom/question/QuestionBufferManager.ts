@@ -121,7 +121,155 @@ export class QuestionBufferManager {
    */
   resetRecents(): void {
     this.topicRecentQuestions.clear();
-    this.log("🗑️ Cleared all topic recent questions");
+    this.topicQueries.clear();
+    this.log("🗑️ Cleared all topic recent questions and search queries");
+  }
+
+  /**
+   * Clear recent questions and queries for a specific topic.
+   * @param topic - The topic to clear
+   */
+  clearTopicHistory(topic: string): void {
+    const hadQuestions = this.topicRecentQuestions.has(topic);
+    const hadQueries = this.topicQueries.has(topic);
+    
+    this.topicRecentQuestions.delete(topic);
+    this.topicQueries.delete(topic);
+    
+    if (hadQuestions || hadQueries) {
+      this.log(`🗑️ Cleared history for topic "${topic}"`);
+    }
+  }
+
+  /**
+   * Clear recent questions and queries for multiple topics.
+   * @param topics - Array of topics to clear
+   */
+  clearTopicsHistory(topics: string[]): void {
+    let clearedCount = 0;
+    topics.forEach(topic => {
+      const hadData = this.topicRecentQuestions.has(topic) || this.topicQueries.has(topic);
+      if (hadData) {
+        this.topicRecentQuestions.delete(topic);
+        this.topicQueries.delete(topic);
+        clearedCount++;
+      }
+    });
+    
+    if (clearedCount > 0) {
+      this.log(`🗑️ Cleared history for ${clearedCount} topics: ${topics.join(', ')}`);
+    }
+  }
+
+  /**
+   * Remove stale topics that are no longer in the active topic list.
+   * Useful for cleanup when room topics are changed.
+   * @param activeTopics - Current active topics
+   */
+  cleanupStaleTopics(activeTopics: string[]): void {
+    const activeSet = new Set(activeTopics);
+    const staleTopics: string[] = [];
+    
+    // Find stale topics in recent questions
+    for (const topic of this.topicRecentQuestions.keys()) {
+      if (!activeSet.has(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    // Find stale topics in queries (might be different)
+    for (const topic of this.topicQueries.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    if (staleTopics.length > 0) {
+      this.clearTopicsHistory(staleTopics);
+      this.log(`🧹 Cleaned up ${staleTopics.length} stale topics`);
+    }
+  }
+
+  /**
+   * Get analytics about topic history state.
+   * @returns Object with topic statistics
+   */
+  getTopicAnalytics(): { 
+    totalTopics: number;
+    topicsWithQuestions: number;
+    topicsWithQueries: number;
+    totalQuestions: number;
+    totalQueries: number;
+    topicBreakdown: Array<{topic: string, questions: number, queries: number}>;
+  } {
+    const allTopics = new Set([
+      ...this.topicRecentQuestions.keys(),
+      ...this.topicQueries.keys()
+    ]);
+    
+    const topicBreakdown = Array.from(allTopics).map(topic => ({
+      topic,
+      questions: this.topicRecentQuestions.get(topic)?.length || 0,
+      queries: this.topicQueries.get(topic)?.length || 0
+    }));
+    
+    const totalQuestions = Array.from(this.topicRecentQuestions.values())
+      .reduce((sum, questions) => sum + questions.length, 0);
+    
+    const totalQueries = Array.from(this.topicQueries.values())
+      .reduce((sum, queries) => sum + queries.length, 0);
+    
+    return {
+      totalTopics: allTopics.size,
+      topicsWithQuestions: this.topicRecentQuestions.size,
+      topicsWithQueries: this.topicQueries.size,
+      totalQuestions,
+      totalQueries,
+      topicBreakdown
+    };
+  }
+
+  /**
+   * Perform automatic cleanup and maintenance.
+   * Removes stale topics and trims oversized histories.
+   * @param activeTopics - Current active topics list
+   * @param maxQuestionsPerTopic - Maximum questions to keep per topic (default: 10)
+   * @param maxQueriesPerTopic - Maximum queries to keep per topic (default: 10)
+   */
+  performMaintenance(
+    activeTopics: string[], 
+    maxQuestionsPerTopic: number = 10, 
+    maxQueriesPerTopic: number = 10
+  ): void {
+    // Clean up stale topics first
+    this.cleanupStaleTopics(activeTopics);
+    
+    let trimmedTopics = 0;
+    
+    // Trim oversized question histories
+    for (const [topic, questions] of this.topicRecentQuestions.entries()) {
+      if (questions.length > maxQuestionsPerTopic) {
+        const trimmed = questions.slice(-maxQuestionsPerTopic);
+        this.topicRecentQuestions.set(topic, trimmed);
+        trimmedTopics++;
+      }
+    }
+    
+    // Trim oversized query histories
+    for (const [topic, queries] of this.topicQueries.entries()) {
+      if (queries.length > maxQueriesPerTopic) {
+        const trimmed = queries.slice(-maxQueriesPerTopic);
+        this.topicQueries.set(topic, trimmed);
+        trimmedTopics++;
+      }
+    }
+    
+    if (trimmedTopics > 0) {
+      this.log(`🔧 Maintenance: Trimmed ${trimmedTopics} oversized topic histories`);
+    }
+    
+    const analytics = this.getTopicAnalytics();
+    this.log(`📊 Post-maintenance: ${analytics.totalTopics} topics, ${analytics.totalQuestions} questions, ${analytics.totalQueries} queries`);
   }
 
   /**
@@ -222,6 +370,8 @@ export class QuestionBufferManager {
     try {
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
       const topicSpecificQueries = this.getTopicQueries(topic);
+
+      this.log(topicRecentQuestions)
       
       const questionRequest = {
         topic,
