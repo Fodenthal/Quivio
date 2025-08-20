@@ -25,7 +25,7 @@ export class QuestionBufferManager {
 
   private questionBuffer: GeneratedQuestion[] = [];
   private isGeneratingQuestions = false;
-  private recentQuestions: string[] = [];
+  private topicRecentQuestions: Map<string, string[]> = new Map(); // Track recent questions per topic
   private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
 
   /**
@@ -88,10 +88,40 @@ export class QuestionBufferManager {
   }
 
   /**
+   * Get recent questions for a specific topic.
+   * @param topic - The topic to get recent questions for
+   * @returns Array of recent questions for this topic
+   */
+  private getTopicRecentQuestions(topic: string): string[] {
+    return this.topicRecentQuestions.get(topic) || [];
+  }
+
+  /**
+   * Add a question to a topic's recent questions history.
+   * @param topic - The topic to add the question to
+   * @param question - The question text to add
+   */
+  private addTopicRecentQuestion(topic: string, question: string): void {
+    if (!question || question.trim().length === 0) return;
+    
+    const questions = this.getTopicRecentQuestions(topic);
+    questions.push(question.trim());
+    
+    // Keep only the last 10 questions per topic
+    if (questions.length > 10) {
+      questions.shift();
+    }
+    
+    this.topicRecentQuestions.set(topic, questions);
+    this.log(`📝 Added question to topic "${topic}" recent history (${questions.length}/5 questions)`);
+  }
+
+  /**
    * Clears the recent questions list to allow questions to repeat after topic changes.
    */
   resetRecents(): void {
-    this.recentQuestions = [];
+    this.topicRecentQuestions.clear();
+    this.log("🗑️ Cleared all topic recent questions");
   }
 
   /**
@@ -118,9 +148,10 @@ export class QuestionBufferManager {
 
     for (const cachedQuestion of dbQuestions) {
       if (this.questionBuffer.length >= this.questionBufferSize) break;
-      if (!this.recentQuestions.includes(cachedQuestion.question)) {
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      if (!topicRecentQuestions.includes(cachedQuestion.question)) {
         this.questionBuffer.push(cachedQuestion);
-        this.recentQuestions.push(cachedQuestion.question);
+        this.addTopicRecentQuestion(topic, cachedQuestion.question);
         this.log(`📦 Pre-filled with cached question: "${cachedQuestion.question}"`);
       }
     }
@@ -168,15 +199,13 @@ export class QuestionBufferManager {
     this.log("⚠️ Question buffer empty, checking database...");
 
     const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 5);
-    const availableDbQuestions = dbQuestions.filter((q: any) => !this.recentQuestions.includes(q.question));
+    const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+    const availableDbQuestions = dbQuestions.filter((q: any) => !topicRecentQuestions.includes(q.question));
 
     if (availableDbQuestions.length > 0) {
       const question = availableDbQuestions[0];
 
-      this.recentQuestions.push(question.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
+      this.addTopicRecentQuestion(topic, question.question);
 
       await this.questionDatabase.markQuestionAsUsed(question.question);
 
@@ -191,20 +220,21 @@ export class QuestionBufferManager {
     this.log("⚠️ No suitable questions in database, generating question directly...");
 
     try {
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      const topicSpecificQueries = this.getTopicQueries(topic);
+      
       const questionRequest = {
         topic,
         difficulty,
-        previousQuestions: this.recentQuestions
+        previousQuestions: topicRecentQuestions,
+        previousSearchQueries: topicSpecificQueries
       };
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
 
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
+      this.addTopicRecentQuestion(topic, generatedQuestion.question);
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];
@@ -247,12 +277,10 @@ export class QuestionBufferManager {
       const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 1);
       if (dbQuestions.length > 0) {
         const cachedQuestion = dbQuestions[0];
-        if (!this.recentQuestions.includes(cachedQuestion.question)) {
+        const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+        if (!topicRecentQuestions.includes(cachedQuestion.question)) {
           this.questionBuffer.push(cachedQuestion);
-          this.recentQuestions.push(cachedQuestion.question);
-          if (this.recentQuestions.length > 50) {
-            this.recentQuestions.shift();
-          }
+          this.addTopicRecentQuestion(topic, cachedQuestion.question);
           this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
           this.state.currentTopic = allTopics[this.state.currentTopicIndex];
           this.log(`📦 Added cached question to buffer: "${cachedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.questionBufferSize})`);
@@ -260,17 +288,18 @@ export class QuestionBufferManager {
         }
       }
 
-      // Get topic-specific previous queries for enhanced fact gathering
+      // Get topic-specific previous queries and questions for enhanced generation
       const topicSpecificQueries = this.getTopicQueries(topic);
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
       
       const questionRequest = {
         topic,
         difficulty,
-        previousQuestions: this.recentQuestions,
+        previousQuestions: topicRecentQuestions,
         previousSearchQueries: topicSpecificQueries
       };
 
-      this.log(`🔍 Generating question for topic "${topic}" with ${topicSpecificQueries.length} previous search queries`);
+      this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions and ${topicSpecificQueries.length} previous search queries`);
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
@@ -280,10 +309,7 @@ export class QuestionBufferManager {
       this.addTopicQuery(topic, placeholderQuery);
 
       this.questionBuffer.push(generatedQuestion);
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
+      this.addTopicRecentQuestion(topic, generatedQuestion.question);
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];

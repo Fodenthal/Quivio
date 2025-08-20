@@ -57,6 +57,7 @@
     "cohere-ai": "^7.18.0",
     "colyseus": "^0.16.4",
     "colyseus.js": "^0.16.19",
+    "compromise": "^14.14.4",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "fastest-levenshtein": "^1.0.16",
