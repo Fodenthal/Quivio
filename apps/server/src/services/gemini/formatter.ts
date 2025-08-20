@@ -8,14 +8,16 @@ import { parseResponse } from './parser';
  * Builds the prompt and calls the model, then parses with the same logic.
  */
 export async function formatQuestion(topic: string, facts: string, request: QuestionRequest, ai: GoogleGenAI): Promise<GeneratedQuestion> {
-  console.log(`Stage 2: Formatting question for topic: "${topic}"`);
-  console.log(`Using facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
+  console.log(`📝 Stage 2: Formatting question for topic: "${topic}"`);
+  console.log(`   Facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
+  console.log(`   Previous questions for this topic: ${request.previousQuestions?.length || 0}`);
 
   const difficultyDescription = getDifficultyDescription(request.difficulty);
 
   const sections: string[] = [
     CORE_INSTRUCTIONS,
-    `Your task is to generate a single, specific, **non-meta** trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
+    `Your task is to generate a single, specific, **non-meta** trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`,
+    `Focus on unique aspects of "${topic}" that haven't been covered in recent questions for this topic.`
   ];
 
   if (facts && facts.trim()) {
@@ -26,9 +28,13 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
   sections.push(`Return only the JSON object; no extra text.`);
 
   if (request.previousQuestions && request.previousQuestions.length > 0) {
-    console.log(`Avoiding ${request.previousQuestions.length} previous questions`);
+    console.log(`Avoiding ${request.previousQuestions.length} previous questions for topic "${topic}"`);
     sections.push(
-      `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates as in these prior questions:\n${request.previousQuestions.join(", ")}`
+      `**Critical - Avoid duplicates**: You have ${request.previousQuestions.length} previous "${topic}" questions to avoid. Do NOT repeat:\n` +
+      `• Same factual concepts/answers\n` +
+      `• Similar question structures or wording\n` +
+      `• Related subtopics already covered\n\n` +
+      `Previous "${topic}" questions: ${request.previousQuestions.join(" | ")}`
     );
   }
 
