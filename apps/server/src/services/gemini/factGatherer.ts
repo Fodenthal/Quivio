@@ -90,7 +90,7 @@ PROCEDURE
 2) From that first query’s results, extract 1–2 specific, checkable facts that meet the QUALITY BAR.
 3) If the first query’s results cannot meet the QUALITY BAR, perform ONE (and only one) additional search query targeted to the missing detail.
 4) Synthesize into 1–2 sentences within the character cap.
-5) If still inadequate after two queries, choose the best single specific fact you can support from what you found and state it plainly.
+5) If still inadequate after two queries, choose the best single specific fact you can support from what you found and state it.
 
 Return ONLY the 1–2 sentence summary.
 `;
