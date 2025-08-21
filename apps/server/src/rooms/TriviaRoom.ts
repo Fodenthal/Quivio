@@ -141,7 +141,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.chatManager = new ChatManager(this.state);
     this.settingsManager = new SettingsManager(
       this.state,
-      () => { this.questionBufferManager.resetRecents(); this.questionBufferManager.clear(); },
+      () => { 
+        // FIXED: Smart cleanup instead of nuclear resetRecents()
+        // Only removes topics that are no longer active, preserves existing topic data
+        this.questionBufferManager.cleanupStaleTopics(this.state.topics || []);
+        this.questionBufferManager.clear(); 
+      },
       () => this.updateRoomMetadata()
     );
     this.playerManager = new PlayerManager(
@@ -184,6 +189,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Remove room from game pin registry
     this.registrySync.remove();
+    
+    // FIXED: Final cleanup with analytics for debugging
+    // Shows exactly how much data we're cleaning up when room ends
+    const analytics = this.questionBufferManager.getTopicAnalytics();
+    console.log(`🗑️ Room disposal cleanup: ${analytics.totalTopics} topics, ${analytics.totalQuestions} questions, ${analytics.totalQueries} queries`);
+    this.questionBufferManager.resetRecents(); // Clear all data on disposal
     
     // Clean up timers
     if (this.roundTimer) {
@@ -579,6 +590,11 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private returnToLobby() {
     console.log(`🏠 Returning to lobby - keeping all players for new game`);
+    
+    // FIXED: Periodic maintenance to prevent memory bloat
+    // Trims oversized topic histories (>10 questions/queries per topic)
+    // and removes any stale topics not in current active list
+    this.questionBufferManager.performMaintenance(this.state.topics || []);
     
     // Keep all players but reset their scores and ready states for new game
     for (const player of this.state.players.values()) {
