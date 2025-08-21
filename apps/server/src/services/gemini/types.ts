@@ -32,6 +32,8 @@ export interface QuestionRequest {
   previousQuestions?: string[];
   /** Previous search queries to avoid duplicates in fact gathering. */
   previousSearchQueries?: string[];
+  /** Previous answers to encourage fact diversity beyond just query variation. */
+  previousAnswers?: string[];
 }
 
 

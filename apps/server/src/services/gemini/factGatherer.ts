@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { distance } from 'fastest-levenshtein';
+import { Logger } from '../../utils/logger';
 
 /**
  * Check if a query is too similar to any previous queries using Levenshtein distance.
@@ -49,12 +50,13 @@ function filterSimilarQueries(queries: string[], minDifference: number = 3): str
  * @returns Concise factual summary (1–2 sentences)
  */
 export async function gatherFacts(
-  topic: string, 
-  enableSearchTools: boolean, 
+  topic: string,
+  enableSearchTools: boolean,
   ai: GoogleGenAI,
-  previousQueries: string[] = []
+  previousQueries: string[] = [],
+  previousAnswers: string[] = []
 ): Promise<{facts: string, webSearchQueries: string[]}> {
-  console.log(`🔍 Stage 1: Gathering facts for topic: "${topic}"`);
+  Logger.ai('Starting fact gathering', { topic, enableSearchTools });
 
   const CHAR_LIMIT = 400;
   
@@ -64,6 +66,11 @@ export async function gatherFacts(
   // Build previous queries context if we have any
   const previousQueriesContext = filteredPreviousQueries.length > 0 
     ? `\n\nPrevious search queries to avoid similar angles:\n${filteredPreviousQueries.join(', ')}\n\nUse a different search approach that explores fresh aspects of "${topic}".`
+    : '';
+
+  // Build previous answers context for fact diversity
+  const previousAnswersContext = previousAnswers.length > 0
+    ? `\n\nPrevious answers from this topic to ensure fact diversity:\n${previousAnswers.join(', ')}\n\nFind facts that would lead to DIFFERENT answers than these. Focus on different aspects, time periods, people, or angles within "${topic}".`
     : '';
 
     const factGatheringPrompt = `
@@ -79,7 +86,7 @@ QUALITY BAR FOR “ADEQUATE” (stop after one query if these are satisfied)
 - Contains at least one concrete, objectively verifiable detail (proper noun, named place/event/object, or uniquely identifiable description).
 - Feels vivid/quirky/story-like (not a generic definition or bland statistic).
 - Avoid dry numbers unless they make the fact striking.
-- No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}
+- No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}${previousAnswersContext}
 
 OUTPUT CONSTRAINTS
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
@@ -96,13 +103,13 @@ Return ONLY the 1–2 sentence summary.
 `;
 
 
-  console.log(`Previous queries context: ${previousQueries.length} total, ${filteredPreviousQueries.length} after similarity filtering`);
-  if (filteredPreviousQueries.length > 0) {
-    console.log(`   Avoiding: ${filteredPreviousQueries.join(', ')}${filteredPreviousQueries.length > 3 ? '...' : ''}`);
-  }
-  if (previousQueries.length > filteredPreviousQueries.length) {
-    console.log(`   Filtered out ${previousQueries.length - filteredPreviousQueries.length} similar queries`);
-  }
+  Logger.aiDebug('Query filtering results', {
+    topic,
+    totalQueries: previousQueries.length,
+    filteredQueries: filteredPreviousQueries.length,
+    avoidingQueries: filteredPreviousQueries.slice(0, 3).join(', ') + (filteredPreviousQueries.length > 3 ? '...' : ''),
+    filteredOutCount: previousQueries.length - filteredPreviousQueries.length
+  });
 
   try {
     const request: any = {
@@ -122,39 +129,61 @@ Return ONLY the 1–2 sentence summary.
       request.config.tools = [{ googleSearch: {} }];
     }
     const response = await ai.models.generateContent(request);
-    console.log(`Stage 1 response: ${JSON.stringify(response, null, 2)}`);
+    
+    // Log the entire response object and web search data as requested
+    Logger.aiDebug('Complete fact gathering response', {
+      topic,
+      response: response,
+      rawResponseJson: JSON.stringify(response, null, 2)
+    });
 
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts?.[0]?.text) {
+      Logger.ai('No content found in response', { topic });
       return { facts: '', webSearchQueries: [] };
     }
 
     // Extract webSearchQueries from groundingMetadata if available
     const webSearchQueries = (candidate as any)?.groundingMetadata?.webSearchQueries || [];
+    
+    // Log web search information as requested
     if (webSearchQueries.length > 0) {
-      console.log(`🔍 Extracted ${webSearchQueries.length} search queries:`, webSearchQueries);
-      const firstQuery = webSearchQueries[0];
-      console.log(`   First query: "${firstQuery}"`);
+      Logger.ai('Web search queries extracted', {
+        topic,
+        queryCount: webSearchQueries.length,
+        queries: webSearchQueries,
+        firstQuery: webSearchQueries[0]
+      });
       
-      // Check if the generated query is too similar to previous ones
-      if (isQueryTooSimilar(firstQuery, previousQueries, 4)) {
-        console.log(`   ⚠️ Generated query is similar to previous ones (threshold: 4)`);
-      } else {
-        console.log(`   ✅ Generated query is sufficiently different from previous ones`);
-      }
+      const firstQuery = webSearchQueries[0];
+      const isSimilar = isQueryTooSimilar(firstQuery, previousQueries, 4);
+      Logger.aiDebug('Query similarity check', {
+        topic,
+        newQuery: firstQuery,
+        isSimilarToPrevious: isSimilar,
+        threshold: 4
+      });
     } else {
-      console.log(`   No webSearchQueries found in metadata`);
+      Logger.aiDebug('No web search queries found', { topic });
     }
 
     // Normalize whitespace and enforce character cap strictly
     const raw = candidate.content.parts[0].text.trim().replace(/\s+/g, ' ');
     const clipped = raw.length > CHAR_LIMIT ? raw.slice(0, CHAR_LIMIT).trim() : raw;
-    console.log(`   The raw response was: "${raw}"`);
-    console.log(`   Gathered facts (${clipped.length} chars, cap=${CHAR_LIMIT}): "${clipped}"`);
+    
+    Logger.ai('Facts gathered successfully', {
+      topic,
+      factsLength: clipped.length,
+      characterCap: CHAR_LIMIT,
+      wasClipped: raw.length > CHAR_LIMIT,
+      webSearchCount: webSearchQueries.length
+    });
+    
+    Logger.aiDebug('Raw fact response', { topic, rawResponse: raw, finalFacts: clipped });
+    
     return { facts: clipped, webSearchQueries };
   } catch (error) {
-    console.warn(` Stage 1 error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    console.log(`  Proceeding to Stage 2 without additional context`);
+    Logger.error('Fact gathering failed', error instanceof Error ? error : new Error(String(error)), { topic });
     return { facts: '', webSearchQueries: [] };
   }
 }

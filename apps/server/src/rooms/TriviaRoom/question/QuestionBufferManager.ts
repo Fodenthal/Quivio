@@ -27,6 +27,7 @@ export class QuestionBufferManager {
   private isGeneratingQuestions = false;
   private topicRecentQuestions: Map<string, string[]> = new Map(); // Track recent questions per topic
   private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
+  private topicAnswers: Map<string, string[]> = new Map(); // Track previous answers per topic
 
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates
@@ -68,6 +69,31 @@ export class QuestionBufferManager {
   }
 
   /**
+   * Get previous answers for a specific topic.
+   * @param topic - The topic to get previous answers for
+   * @returns Array of previous answers for this topic
+   */
+  private getTopicAnswers(topic: string): string[] {
+    return this.topicAnswers.get(topic) || [];
+  }
+
+  /**
+   * Add an answer to a topic's previous answers history.
+   * @param topic - The topic to add the answer to
+   * @param answer - The answer text to add
+   */
+  private addTopicAnswer(topic: string, answer: string): void {
+    if (!answer || answer.trim().length === 0) return;
+    
+    const answers = this.getTopicAnswers(topic);
+    answers.push(answer.trim());
+    
+    // No artificial cap - natural session length limits growth
+    this.topicAnswers.set(topic, answers);
+    this.log(`📝 Added answer to topic "${topic}": "${answer}" (${answers.length} total)`);
+  }
+
+  /**
    * Add a search query to a topic's query history.
    * @param topic - The topic to add the query to
    * @param query - The search query to add
@@ -78,11 +104,7 @@ export class QuestionBufferManager {
     const queries = this.getTopicQueries(topic);
     queries.push(query.trim());
     
-    // Keep only the last 10 queries per topic to prevent unbounded growth
-    if (queries.length > 10) {
-      queries.shift();
-    }
-    
+    // No artificial cap - natural session length limits growth
     this.topicQueries.set(topic, queries);
     this.log(`📝 Added query to topic "${topic}": "${query}" (${queries.length} total)`);
   }
@@ -107,13 +129,9 @@ export class QuestionBufferManager {
     const questions = this.getTopicRecentQuestions(topic);
     questions.push(question.trim());
     
-    // Keep only the last 10 questions per topic
-    if (questions.length > 10) {
-      questions.shift();
-    }
-    
+    // No artificial cap - natural session length limits growth
     this.topicRecentQuestions.set(topic, questions);
-    this.log(`📝 Added question to topic "${topic}" recent history (${questions.length}/5 questions)`);
+    this.log(`📝 Added question to topic "${topic}" recent history (${questions.length} questions)`);
   }
 
   /**
@@ -122,7 +140,8 @@ export class QuestionBufferManager {
   resetRecents(): void {
     this.topicRecentQuestions.clear();
     this.topicQueries.clear();
-    this.log("🗑️ Cleared all topic recent questions and search queries");
+    this.topicAnswers.clear();
+    this.log("🗑️ Cleared all topic recent questions, search queries, and answers");
   }
 
   /**
@@ -132,11 +151,13 @@ export class QuestionBufferManager {
   clearTopicHistory(topic: string): void {
     const hadQuestions = this.topicRecentQuestions.has(topic);
     const hadQueries = this.topicQueries.has(topic);
+    const hadAnswers = this.topicAnswers.has(topic);
     
     this.topicRecentQuestions.delete(topic);
     this.topicQueries.delete(topic);
+    this.topicAnswers.delete(topic);
     
-    if (hadQuestions || hadQueries) {
+    if (hadQuestions || hadQueries || hadAnswers) {
       this.log(`🗑️ Cleared history for topic "${topic}"`);
     }
   }
@@ -148,10 +169,11 @@ export class QuestionBufferManager {
   clearTopicsHistory(topics: string[]): void {
     let clearedCount = 0;
     topics.forEach(topic => {
-      const hadData = this.topicRecentQuestions.has(topic) || this.topicQueries.has(topic);
+      const hadData = this.topicRecentQuestions.has(topic) || this.topicQueries.has(topic) || this.topicAnswers.has(topic);
       if (hadData) {
         this.topicRecentQuestions.delete(topic);
         this.topicQueries.delete(topic);
+        this.topicAnswers.delete(topic);
         clearedCount++;
       }
     });
@@ -179,6 +201,13 @@ export class QuestionBufferManager {
     
     // Find stale topics in queries (might be different)
     for (const topic of this.topicQueries.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    // Find stale topics in answers (might be different)
+    for (const topic of this.topicAnswers.keys()) {
       if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
         staleTopics.push(topic);
       }
@@ -370,6 +399,7 @@ export class QuestionBufferManager {
     try {
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
       const topicSpecificQueries = this.getTopicQueries(topic);
+      const topicPreviousAnswers = this.getTopicAnswers(topic);
 
       this.log(topicRecentQuestions)
       
@@ -377,7 +407,8 @@ export class QuestionBufferManager {
         topic,
         difficulty,
         previousQuestions: topicRecentQuestions,
-        previousSearchQueries: topicSpecificQueries
+        previousSearchQueries: topicSpecificQueries,
+        previousAnswers: topicPreviousAnswers
       };
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
@@ -385,6 +416,7 @@ export class QuestionBufferManager {
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
       this.addTopicRecentQuestion(topic, generatedQuestion.question);
+      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
 
       // Add actual web search queries if any were used
       if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
@@ -446,18 +478,20 @@ export class QuestionBufferManager {
         }
       }
 
-      // Get topic-specific previous queries and questions for enhanced generation
+      // Get topic-specific previous queries, questions, and answers for enhanced generation
       const topicSpecificQueries = this.getTopicQueries(topic);
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      const topicPreviousAnswers = this.getTopicAnswers(topic);
       
       const questionRequest = {
         topic,
         difficulty,
         previousQuestions: topicRecentQuestions,
-        previousSearchQueries: topicSpecificQueries
+        previousSearchQueries: topicSpecificQueries,
+        previousAnswers: topicPreviousAnswers
       };
 
-      this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions and ${topicSpecificQueries.length} previous search queries`);
+      this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions, ${topicSpecificQueries.length} previous search queries, and ${topicPreviousAnswers.length} previous answers`);
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
@@ -471,6 +505,7 @@ export class QuestionBufferManager {
 
       this.questionBuffer.push(generatedQuestion);
       this.addTopicRecentQuestion(topic, generatedQuestion.question);
+      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];
