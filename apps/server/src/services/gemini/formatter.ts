@@ -39,13 +39,8 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     // 5) Difficulty calibration (explicit)
     `DIFFICULTY: ${request.difficulty}/5 — ${difficultyDescription}. Calibrate specificity, required knowledge, and distractor pressure accordingly.`,
   
-    // 6) Selection rubric (push away from numbers/dates)
-    `SELECTION RUBRIC (in order): 
-     1) Real-life quirks, anecdotes, firsts, bans, reversals, or unlikely connections tied to "${topic}".
-     2) Concrete artifacts (places, titles, objects, lines of dialogue, design choices) with a single verifiable answer.
-     3) Only include numbers/dates if they make the fact striking or are intrinsic to the concept; otherwise avoid numerical factoids.`,
   
-    // 7) Always-True Rules (tightened)
+    // 6) Always-True Rules (tightened)
     `Always-True Rules:
      1) Non-meta: no definitions, origins, overviews, or “about the field”.
      2) Clarity & brevity: ≤65 tokens, one unambiguous answer, fact-checkable.
@@ -54,13 +49,13 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
      5) Vary phrasing over time; avoid repeating templates.
      6) Category: use a sensible broad label (e.g., Sports, History, Science).`,
   
-    // 8) Topic handling (kept but trimmed)
+    // 7) Topic handling (kept but trimmed)
     `Topic Handling: If "${topic}" is broad, instantiate a specific, self-contained question in that domain (no definitions). If it’s a specific entity or time-sensitive claim, ask a direct factual question about that entity.`,
   
-    // 9) Internal selection instruction (silent)
+    // 8) Internal selection instruction (silent)
     `Internally draft 2–3 candidate questions, pick the most vivid yet testable one, and discard the rest.`,
   
-    // 10) Output constraint
+    // 9) Output constraint
     `Return only the JSON object; no extra text.`
   ];
   

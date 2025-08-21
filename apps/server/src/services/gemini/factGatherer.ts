@@ -66,29 +66,39 @@ export async function gatherFacts(
     ? `\n\nPrevious search queries to avoid similar angles:\n${filteredPreviousQueries.join(', ')}\n\nUse a different search approach that explores fresh aspects of "${topic}".`
     : '';
 
-  const factGatheringPrompt = `
+    const factGatheringPrompt = `
 You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
-OBJECTIVE
-- Use Google Search to find concrete, testable facts that are **memorable, surprising, and fun**.
-- Prefer vivid, real-life or story-like details over plain statistics.
-- Avoid dry numerical trivia (dates, counts, measurements) unless they make the fact striking.${previousQueriesContext}
+SEARCH DISCIPLINE (very important)
+- Run EXACTLY ONE web search query first. Do not chain or batch multiple queries.
+- Try to produce the final 1–2 sentence output using ONLY results from that single query.
+- If—and only if—you cannot produce an adequate, specific, checkable 1–2 sentence fact that meets the quality bar below, you may run AT MOST ONE additional search query to fill the gap.
+- Never exceed TWO total web search queries. If the first query is sufficient, STOP and produce the answer.
+
+QUALITY BAR FOR “ADEQUATE” (stop after one query if these are satisfied)
+- Contains at least one concrete, objectively verifiable detail (proper noun, named place/event/object, or uniquely identifiable description).
+- Feels vivid/quirky/story-like (not a generic definition or bland statistic).
+- Avoid dry numbers unless they make the fact striking.
+- No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}
 
 OUTPUT CONSTRAINTS
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
 - No lists/bullets/markdown/quotes/citations. No parentheticals unless part of a proper name.
 
 PROCEDURE
-1) Search multiple angles if needed.
-2) Extract 1–2 specific, objectively checkable facts that feel quirky or story-driven.
-3) Synthesize into 1–2 sentences within the character cap.
+1) Perform ONE search query about "${topic}" from a fresh angle.
+2) From that first query’s results, extract 1–2 specific, checkable facts that meet the QUALITY BAR.
+3) If the first query’s results cannot meet the QUALITY BAR, perform ONE (and only one) additional search query targeted to the missing detail.
+4) Synthesize into 1–2 sentences within the character cap.
+5) If still inadequate after two queries, choose the best single specific fact you can support from what you found and state it plainly.
 
 Return ONLY the 1–2 sentence summary.
 `;
 
+
   console.log(`Previous queries context: ${previousQueries.length} total, ${filteredPreviousQueries.length} after similarity filtering`);
   if (filteredPreviousQueries.length > 0) {
-    console.log(`   Avoiding: ${filteredPreviousQueries.slice(0, 3).join(', ')}${filteredPreviousQueries.length > 3 ? '...' : ''}`);
+    console.log(`   Avoiding: ${filteredPreviousQueries.join(', ')}${filteredPreviousQueries.length > 3 ? '...' : ''}`);
   }
   if (previousQueries.length > filteredPreviousQueries.length) {
     console.log(`   Filtered out ${previousQueries.length - filteredPreviousQueries.length} similar queries`);
@@ -99,9 +109,9 @@ Return ONLY the 1–2 sentence summary.
       model: 'gemini-2.5-flash',
       contents: factGatheringPrompt,
       config: {
-        temperature: 0,
-        topP: 1.0,
-        topK: 1.0,
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
         maxOutputTokens: 2048,
         thinkingConfig: {
           thinkingBudget: 128
