@@ -215,7 +215,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.log.system("Room disposal cleanup", {
       totalTopics: analytics.totalTopics,
       totalQuestions: analytics.totalQuestions,
-      totalQueries: analytics.totalQueries
+      totalQueries: analytics.totalQueries,
+      totalRawResponses: analytics.totalRawResponses
     });
     this.questionBufferManager.resetRecents(); // Clear all data on disposal
     

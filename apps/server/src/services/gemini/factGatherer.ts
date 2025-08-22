@@ -40,6 +40,73 @@ function filterSimilarQueries(queries: string[], minDifference: number = 3): str
 }
 
 /**
+ * Split text into sentences for similarity analysis.
+ * Uses simple sentence boundary detection for factual content.
+ * @param text - Text to split into sentences
+ * @returns Array of cleaned sentences
+ */
+function splitIntoSentences(text: string): string[] {
+  if (!text || text.trim().length === 0) return [];
+  
+  // Split on sentence boundaries: period, exclamation, question mark followed by space or end
+  const sentences = text
+    .split(/[.!?]+\s+|[.!?]+$/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10); // Filter out very short fragments
+  
+  return sentences;
+}
+
+/**
+ * Check if a sentence is too similar to any sentence in a list.
+ * @param sentence - The sentence to check
+ * @param existingSentences - Array of existing sentences to compare against
+ * @param threshold - Maximum allowed edit distance for similarity (default: 0.7 = 30% similarity required for match)
+ * @returns true if the sentence is too similar to any existing sentence
+ */
+function isSentenceTooSimilar(sentence: string, existingSentences: string[], threshold: number = 0.7): boolean {
+  if (existingSentences.length === 0) return false;
+  
+  const normalizedSentence = sentence.trim().toLowerCase();
+  
+  return existingSentences.some(existing => {
+    const normalizedExisting = existing.trim().toLowerCase();
+    const editDistance = distance(normalizedSentence, normalizedExisting);
+    const maxLength = Math.max(normalizedSentence.length, normalizedExisting.length);
+    
+    // Calculate similarity ratio (0 = identical, 1 = completely different)
+    const similarityRatio = editDistance / maxLength;
+    
+    return similarityRatio <= threshold;
+  });
+}
+
+/**
+ * Detect repeated content between a new response and previous responses.
+ * Returns sentences from the new response that are too similar to previous content.
+ * @param newResponse - The new raw response to check
+ * @param previousResponses - Array of previous raw responses
+ * @param threshold - Similarity threshold (default: 0.7 = 30% similarity required for match)
+ * @returns Array of repeated sentences that should be avoided
+ */
+function detectRepeatedContent(newResponse: string, previousResponses: string[], threshold: number = 0.7): string[] {
+  if (!newResponse || previousResponses.length === 0) return [];
+  
+  const newSentences = splitIntoSentences(newResponse);
+  const allPreviousSentences = previousResponses.flatMap(splitIntoSentences);
+  
+  const repeatedSentences: string[] = [];
+  
+  for (const sentence of newSentences) {
+    if (isSentenceTooSimilar(sentence, allPreviousSentences, threshold)) {
+      repeatedSentences.push(sentence);
+    }
+  }
+  
+  return repeatedSentences;
+}
+
+/**
  * Stage 1: Search-only factual context gathering with uniqueness tracking
  * Focuses on generating unique trivia content rather than avoiding search terms.
  *

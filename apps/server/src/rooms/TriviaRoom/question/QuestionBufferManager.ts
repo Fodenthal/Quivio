@@ -79,6 +79,15 @@ export class QuestionBufferManager {
   }
 
   /**
+   * Get previous raw fact-gathering responses for a specific topic.
+   * @param topic - The topic to get previous raw responses for
+   * @returns Array of previous raw responses for this topic
+   */
+  private getTopicRawResponses(topic: string): string[] {
+    return this.topicRawResponses.get(topic) || [];
+  }
+
+  /**
    * Add an answer to a topic's previous answers history.
    * @param topic - The topic to add the answer to
    * @param answer - The answer text to add
@@ -92,6 +101,27 @@ export class QuestionBufferManager {
     // No artificial cap - natural session length limits growth
     this.topicAnswers.set(topic, answers);
     this.log(`📝 Added answer to topic "${topic}": "${answer}" (${answers.length} total)`);
+  }
+
+  /**
+   * Add a raw fact-gathering response to a topic's history for similarity detection.
+   * @param topic - The topic to add the raw response to
+   * @param rawResponse - The raw fact-gathering response text to add
+   */
+  private addTopicRawResponse(topic: string, rawResponse: string): void {
+    if (!rawResponse || rawResponse.trim().length === 0) return;
+    
+    const rawResponses = this.getTopicRawResponses(topic);
+    rawResponses.push(rawResponse.trim());
+    
+    // Cap at reasonable limit to prevent memory bloat
+    const MAX_RAW_RESPONSES = 10;
+    if (rawResponses.length > MAX_RAW_RESPONSES) {
+      rawResponses.shift(); // Remove oldest
+    }
+    
+    this.topicRawResponses.set(topic, rawResponses);
+    this.log(`🔍 Added raw response to topic "${topic}" (${rawResponses.length} total, ${rawResponse.length} chars)`);
   }
 
   /**
@@ -142,7 +172,8 @@ export class QuestionBufferManager {
     this.topicRecentQuestions.clear();
     this.topicQueries.clear();
     this.topicAnswers.clear();
-    this.log("🗑️ Cleared all topic recent questions, search queries, and answers");
+    this.topicRawResponses.clear();
+    this.log("🗑️ Cleared all topic recent questions, search queries, answers, and raw responses");
   }
 
   /**
@@ -153,12 +184,14 @@ export class QuestionBufferManager {
     const hadQuestions = this.topicRecentQuestions.has(topic);
     const hadQueries = this.topicQueries.has(topic);
     const hadAnswers = this.topicAnswers.has(topic);
+    const hadRawResponses = this.topicRawResponses.has(topic);
     
     this.topicRecentQuestions.delete(topic);
     this.topicQueries.delete(topic);
     this.topicAnswers.delete(topic);
+    this.topicRawResponses.delete(topic);
     
-    if (hadQuestions || hadQueries || hadAnswers) {
+    if (hadQuestions || hadQueries || hadAnswers || hadRawResponses) {
       this.log(`🗑️ Cleared history for topic "${topic}"`);
     }
   }
@@ -214,6 +247,13 @@ export class QuestionBufferManager {
       }
     }
     
+    // Find stale topics in raw responses (might be different)
+    for (const topic of this.topicRawResponses.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
     if (staleTopics.length > 0) {
       this.clearTopicsHistory(staleTopics);
       this.log(`🧹 Cleaned up ${staleTopics.length} stale topics`);
@@ -228,19 +268,23 @@ export class QuestionBufferManager {
     totalTopics: number;
     topicsWithQuestions: number;
     topicsWithQueries: number;
+    topicsWithRawResponses: number;
     totalQuestions: number;
     totalQueries: number;
-    topicBreakdown: Array<{topic: string, questions: number, queries: number}>;
+    totalRawResponses: number;
+    topicBreakdown: Array<{topic: string, questions: number, queries: number, rawResponses: number}>;
   } {
     const allTopics = new Set([
       ...this.topicRecentQuestions.keys(),
-      ...this.topicQueries.keys()
+      ...this.topicQueries.keys(),
+      ...this.topicRawResponses.keys()
     ]);
     
     const topicBreakdown = Array.from(allTopics).map(topic => ({
       topic,
       questions: this.topicRecentQuestions.get(topic)?.length || 0,
-      queries: this.topicQueries.get(topic)?.length || 0
+      queries: this.topicQueries.get(topic)?.length || 0,
+      rawResponses: this.topicRawResponses.get(topic)?.length || 0
     }));
     
     const totalQuestions = Array.from(this.topicRecentQuestions.values())
@@ -249,12 +293,17 @@ export class QuestionBufferManager {
     const totalQueries = Array.from(this.topicQueries.values())
       .reduce((sum, queries) => sum + queries.length, 0);
     
+    const totalRawResponses = Array.from(this.topicRawResponses.values())
+      .reduce((sum, responses) => sum + responses.length, 0);
+    
     return {
       totalTopics: allTopics.size,
       topicsWithQuestions: this.topicRecentQuestions.size,
       topicsWithQueries: this.topicQueries.size,
+      topicsWithRawResponses: this.topicRawResponses.size,
       totalQuestions,
       totalQueries,
+      totalRawResponses,
       topicBreakdown
     };
   }
