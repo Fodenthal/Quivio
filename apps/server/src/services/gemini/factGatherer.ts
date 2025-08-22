@@ -109,21 +109,24 @@ function detectRepeatedContent(newResponse: string, previousResponses: string[],
 /**
  * Stage 1: Search-only factual context gathering with uniqueness tracking
  * Focuses on generating unique trivia content rather than avoiding search terms.
+ * Implements auto-append first response + post-hoc similarity detection strategy.
  *
  * @param topic - The topic to research (search is required for this call)
  * @param enableSearchTools - If true, allow model to use Google Search tool; otherwise, skip tools
  * @param ai - Pre-configured GoogleGenAI client
  * @param previousQueries - Previous search queries for reference (may be reused for different angles)
  * @param previousAnswers - Previous answers to ensure completely different content
- * @returns Concise factual summary (1–2 sentences) and the search queries used
+ * @param previousRawResponses - Previous raw fact-gathering responses for repetition detection
+ * @returns Object with facts, search queries used, and any detected repeated content
  */
 export async function gatherFacts(
   topic: string,
   enableSearchTools: boolean,
   ai: GoogleGenAI,
   previousQueries: string[] = [],
-  previousAnswers: string[] = []
-): Promise<{facts: string, webSearchQueries: string[]}> {
+  previousAnswers: string[] = [],
+  previousRawResponses: string[] = []
+): Promise<{facts: string, webSearchQueries: string[], repeatedContent?: string[]}> {
   Logger.ai('Starting fact gathering', { topic, enableSearchTools });
 
   const CHAR_LIMIT = 400;
@@ -141,6 +144,28 @@ export async function gatherFacts(
     ? `\n\nPrevious answers from this topic to ensure uniqueness:\n${previousAnswers.join(', ')}\n\nIMPORTANT: Find facts that would lead to COMPLETELY DIFFERENT answers than these. Focus on different aspects, time periods, people, places, or angles within "${topic}". The goal is unique trivia questions, not avoiding search terms.`
     : '';
 
+  // Build raw response avoidance context - auto-append first response + detected repetitions
+  let rawResponseAvoidanceContext = '';
+  if (previousRawResponses.length > 0) {
+    // Always include first raw response as reference (your heuristic)
+    const firstRawResponse = previousRawResponses[0];
+    rawResponseAvoidanceContext = `\n\nPrevious fact-gathering attempt for reference (avoid repeating this content):\n"${firstRawResponse}"\n\nFind completely different factual information about "${topic}".`;
+    
+    // If we have multiple responses, check for additional repetitions to avoid
+    if (previousRawResponses.length > 1) {
+      const allPreviousContent = previousRawResponses.slice(1); // Skip first (already included above)
+      const repeatedSentences = allPreviousContent.flatMap(response => 
+        splitIntoSentences(response)
+      ).filter((sentence, index, array) => 
+        array.findIndex(s => isSentenceTooSimilar(sentence, [s], 0.7)) !== index
+      );
+      
+      if (repeatedSentences.length > 0) {
+        rawResponseAvoidanceContext += `\n\nAlso avoid repeating this specific content:\n${repeatedSentences.map(s => `- "${s}"`).join('\n')}`;
+      }
+    }
+  }
+
     const factGatheringPrompt = `
 You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
@@ -151,11 +176,11 @@ SEARCH DISCIPLINE
 - If you need additional context or want to find a more compelling angle, use a SECOND search query.
 - Maximum TWO searches total. Use them strategically to find the most interesting trivia-worthy information.
 
-QUALITY BAR FOR “ADEQUATE” (stop after one query if these are satisfied)
+QUALITY BAR FOR "ADEQUATE" (stop after one query if these are satisfied)
 - Contains at least one concrete, objectively verifiable detail (proper noun, named place/event/object, or uniquely identifiable description).
 - Feels vivid/quirky/story-like (not a generic definition or bland statistic).
 - Avoid dry numbers unless they make the fact striking.
-- No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}${previousAnswersContext}
+- No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}${previousAnswersContext}${rawResponseAvoidanceContext}
 
 OUTPUT CONSTRAINTS
 - EXACTLY 1–2 sentences, plain text only, TOTAL ≤ ${CHAR_LIMIT} characters.
@@ -176,8 +201,12 @@ Return ONLY the 1–2 sentence summary.
     topic,
     totalQueries: previousQueries.length,
     filteredQueries: filteredPreviousQueries.length,
-    referenceQueries: filteredPreviousQueries.slice(0, 3).join(', ') + (filteredPreviousQueries.length > 3 ? '...' : ''),
-    previousAnswerCount: previousAnswers.length
+    referenceQueries: filteredPreviousQueries.join(', '),
+    previousAnswerCount: previousAnswers.length,
+    previousAnswers: previousAnswers.join(', '),
+    previousRawResponseCount: previousRawResponses.length,
+    rawResponseAvoidanceContext: rawResponseAvoidanceContext,
+    avoidanceStrategy: previousRawResponses.length > 0 ? 'auto_append_first_response' : 'none'
   });
 
   try {
@@ -238,17 +267,35 @@ Return ONLY the 1–2 sentence summary.
     const raw = candidate.content.parts[0].text.trim().replace(/\s+/g, ' ');
     const clipped = raw.length > CHAR_LIMIT ? raw.slice(0, CHAR_LIMIT).trim() : raw;
     
+    // Post-response similarity detection (your heuristic)
+    const repeatedContent = previousRawResponses.length > 0 
+      ? detectRepeatedContent(raw, previousRawResponses)
+      : [];
+    
     Logger.ai('Facts gathered successfully', {
       topic,
       factsLength: clipped.length,
       characterCap: CHAR_LIMIT,
       wasClipped: raw.length > CHAR_LIMIT,
-      webSearchCount: webSearchQueries.length
+      webSearchCount: webSearchQueries.length,
+      repeatedContentCount: repeatedContent.length
     });
+    
+    if (repeatedContent.length > 0) {
+      Logger.ai('Repetition detected in raw response', {
+        topic,
+        repeatedSentences: repeatedContent.length,
+        repeatedContent: repeatedContent.slice(0, 2) // Log first 2 for brevity
+      });
+    }
     
     Logger.aiDebug('Raw fact response', { topic, rawResponse: raw, finalFacts: clipped });
     
-    return { facts: clipped, webSearchQueries };
+    return { 
+      facts: clipped, 
+      webSearchQueries, 
+      repeatedContent: repeatedContent.length > 0 ? repeatedContent : undefined 
+    };
   } catch (error) {
     Logger.error('Fact gathering failed', error instanceof Error ? error : new Error(String(error)), { topic });
     return { facts: '', webSearchQueries: [] };
