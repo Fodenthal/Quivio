@@ -28,6 +28,7 @@ export class QuestionBufferManager {
   private topicRecentQuestions: Map<string, string[]> = new Map(); // Track recent questions per topic
   private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
   private topicAnswers: Map<string, string[]> = new Map(); // Track previous answers per topic
+  private topicRawResponses: Map<string, string[]> = new Map(); // Track raw fact-gathering responses per topic
 
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates

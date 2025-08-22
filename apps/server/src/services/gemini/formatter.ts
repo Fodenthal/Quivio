@@ -37,7 +37,7 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
       : []),
   
     // 5) Difficulty calibration (explicit)
-    `DIFFICULTY: ${request.difficulty}/5 — ${difficultyDescription}. Calibrate specificity, required knowledge, and distractor pressure accordingly.`,
+
   
   
     // 6) Always-True Rules (tightened)

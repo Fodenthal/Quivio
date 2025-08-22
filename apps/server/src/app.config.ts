@@ -117,8 +117,6 @@ export default config({
                 const registry = GamePinRegistry.getInstance();
                 const activeRooms = registry.listAvailableRooms();
                 
-                console.log(`🔍 Active rooms API called: returning ${activeRooms.length} rooms`);
-                
                 res.json({
                     rooms: activeRooms,
                     totalRooms: activeRooms.length,

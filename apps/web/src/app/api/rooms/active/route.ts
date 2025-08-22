@@ -16,8 +16,6 @@ export async function GET(): Promise<NextResponse> {
     
     const apiUrl = `${httpServerUrl}/api/rooms/active`;
     
-    console.log(`🔍 Fetching active rooms from: ${apiUrl}`);
-    
     // Fetch active rooms from the Colyseus server
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -42,8 +40,6 @@ export async function GET(): Promise<NextResponse> {
     }
     
     const data = await response.json();
-    
-    console.log(`✅ Successfully fetched ${data.totalRooms || 0} active rooms`);
     
     // Return the data from the Colyseus server
     return NextResponse.json(data);

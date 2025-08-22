@@ -40,14 +40,15 @@ function filterSimilarQueries(queries: string[], minDifference: number = 3): str
 }
 
 /**
- * Stage 1: Search-only factual context gathering with query tracking
- * Enhanced to track web search queries and avoid duplicates.
+ * Stage 1: Search-only factual context gathering with uniqueness tracking
+ * Focuses on generating unique trivia content rather than avoiding search terms.
  *
  * @param topic - The topic to research (search is required for this call)
  * @param enableSearchTools - If true, allow model to use Google Search tool; otherwise, skip tools
  * @param ai - Pre-configured GoogleGenAI client
- * @param previousQueries - Previous search queries to avoid duplicates (optional)
- * @returns Concise factual summary (1–2 sentences)
+ * @param previousQueries - Previous search queries for reference (may be reused for different angles)
+ * @param previousAnswers - Previous answers to ensure completely different content
+ * @returns Concise factual summary (1–2 sentences) and the search queries used
  */
 export async function gatherFacts(
   topic: string,
@@ -63,24 +64,25 @@ export async function gatherFacts(
   // Filter previous queries to only include sufficiently different ones
   const filteredPreviousQueries = filterSimilarQueries(previousQueries, 3);
   
-  // Build previous queries context if we have any
+  // Build previous queries context as guidance (not restrictions)
   const previousQueriesContext = filteredPreviousQueries.length > 0 
-    ? `\n\nPrevious search queries to avoid similar angles:\n${filteredPreviousQueries.join(', ')}\n\nUse a different search approach that explores fresh aspects of "${topic}".`
+    ? `\n\nPrevious search queries for reference (you may reuse these terms but aim for different specific information):\n${filteredPreviousQueries.join(', ')}`
     : '';
 
-  // Build previous answers context for fact diversity
+  // Build previous answers context for fact diversity - this is the key constraint
   const previousAnswersContext = previousAnswers.length > 0
-    ? `\n\nPrevious answers from this topic to ensure fact diversity:\n${previousAnswers.join(', ')}\n\nFind facts that would lead to DIFFERENT answers than these. Focus on different aspects, time periods, people, or angles within "${topic}".`
+    ? `\n\nPrevious answers from this topic to ensure uniqueness:\n${previousAnswers.join(', ')}\n\nIMPORTANT: Find facts that would lead to COMPLETELY DIFFERENT answers than these. Focus on different aspects, time periods, people, places, or angles within "${topic}". The goal is unique trivia questions, not avoiding search terms.`
     : '';
 
     const factGatheringPrompt = `
 You are a master researcher for a trivia game. SEARCH IS REQUIRED for: "${topic}".
 
-SEARCH DISCIPLINE (very important)
-- Run EXACTLY ONE web search query first. Do not chain or batch multiple queries.
-- Try to produce the final 1–2 sentence output using ONLY results from that single query.
-- If—and only if—you cannot produce an adequate, specific, checkable 1–2 sentence fact that meets the quality bar below, you may run AT MOST ONE additional search query to fill the gap.
-- Never exceed TWO total web search queries. If the first query is sufficient, STOP and produce the answer.
+SEARCH DISCIPLINE
+- You may use up to TWO web search queries to gather comprehensive information.
+- Start with ONE strategic search query that targets the most promising angle.
+- If the first query provides sufficient specific, interesting facts that meet the quality bar below, you may stop there.
+- If you need additional context or want to find a more compelling angle, use a SECOND search query.
+- Maximum TWO searches total. Use them strategically to find the most interesting trivia-worthy information.
 
 QUALITY BAR FOR “ADEQUATE” (stop after one query if these are satisfied)
 - Contains at least one concrete, objectively verifiable detail (proper noun, named place/event/object, or uniquely identifiable description).
@@ -93,22 +95,22 @@ OUTPUT CONSTRAINTS
 - No lists/bullets/markdown/quotes/citations. No parentheticals unless part of a proper name.
 
 PROCEDURE
-1) Perform ONE search query about "${topic}" from a fresh angle.
-2) From that first query’s results, extract 1–2 specific, checkable facts that meet the QUALITY BAR.
-3) If the first query’s results cannot meet the QUALITY BAR, perform ONE (and only one) additional search query targeted to the missing detail.
-4) Synthesize into 1–2 sentences within the character cap.
-5) If still inadequate after two queries, choose the best single specific fact you can support from what you found and state it.
+1) Perform your FIRST search query about "${topic}" targeting the most promising angle.
+2) Evaluate if the results provide compelling, specific facts that meet the QUALITY BAR.
+3) If satisfied with interesting, unique content, synthesize into 1–2 sentences and stop.
+4) If you want richer context or a more compelling angle, perform a SECOND strategic search.
+5) Synthesize the best findings from your search(es) into 1–2 sentences within the character cap.
 
 Return ONLY the 1–2 sentence summary.
 `;
 
 
-  Logger.aiDebug('Query filtering results', {
+  Logger.aiDebug('Previous context for uniqueness', {
     topic,
     totalQueries: previousQueries.length,
     filteredQueries: filteredPreviousQueries.length,
-    avoidingQueries: filteredPreviousQueries.slice(0, 3).join(', ') + (filteredPreviousQueries.length > 3 ? '...' : ''),
-    filteredOutCount: previousQueries.length - filteredPreviousQueries.length
+    referenceQueries: filteredPreviousQueries.slice(0, 3).join(', ') + (filteredPreviousQueries.length > 3 ? '...' : ''),
+    previousAnswerCount: previousAnswers.length
   });
 
   try {
@@ -155,13 +157,11 @@ Return ONLY the 1–2 sentence summary.
         firstQuery: webSearchQueries[0]
       });
       
-      const firstQuery = webSearchQueries[0];
-      const isSimilar = isQueryTooSimilar(firstQuery, previousQueries, 4);
-      Logger.aiDebug('Query similarity check', {
+      Logger.aiDebug('Search strategy analysis', {
         topic,
-        newQuery: firstQuery,
-        isSimilarToPrevious: isSimilar,
-        threshold: 4
+        queriesUsed: webSearchQueries,
+        searchCount: webSearchQueries.length,
+        approach: webSearchQueries.length === 1 ? 'single_focused_search' : 'dual_search_strategy'
       });
     } else {
       Logger.aiDebug('No web search queries found', { topic });

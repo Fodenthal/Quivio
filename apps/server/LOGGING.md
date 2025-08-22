@@ -109,12 +109,13 @@ class TriviaRoom {
 
 ## AI Response Logging
 
-As requested, the fact gatherer now logs:
+The fact gatherer implements intelligent logging:
 - **Complete response object** (debug level only)
-- **Web search queries and metadata** (info level)
+- **Web search queries and strategy analysis** (info level)
 - **Raw response text** (debug level only)
+- **Search approach tracking** (single vs dual search strategy)
 
-This means in production, you'll see clean web search information without verbose AI responses cluttering the output.
+The system now prioritizes unique trivia content over avoiding search term repetition, allowing the model to naturally use 1-2 searches as needed while ensuring question diversity through previous answer tracking.
 
 ## Migration from console.log
 
