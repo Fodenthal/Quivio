@@ -25,8 +25,8 @@ export class GeminiService {
   }
 
   // Stage 1 is delegated to gemini/factGatherer.ts
-  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = [], previousAnswers: string[] = []): Promise<{facts: string, webSearchQueries: string[]}> {
-    return gatherFacts(topic, enableSearchTools, this.ai, previousQueries, previousAnswers);
+  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = [], previousAnswers: string[] = [], previousRawResponses: string[] = []): Promise<{facts: string, webSearchQueries: string[], repeatedContent?: string[]}> {
+    return gatherFacts(topic, enableSearchTools, this.ai, previousQueries, previousAnswers, previousRawResponses);
   }
 
   /**
@@ -65,13 +65,14 @@ export class GeminiService {
       const useSearch = this.shouldSearch(request.topic);
       Logger.ai('Search decision made', { useSearch, topic: request.topic });
       
-      const gatherResult = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || [], request.previousAnswers || []) : { facts: '', webSearchQueries: [] };
+      const gatherResult = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || [], request.previousAnswers || [], request.previousRawResponses || []) : { facts: '', webSearchQueries: [] };
       
       // Stage 2: Format question (deterministic)
       const generatedQuestion = await this.formatQuestion(request.topic, gatherResult.facts, request);
       
-      // Attach web search queries to the generated question
+      // Attach web search queries and raw response to the generated question
       generatedQuestion.webSearchQueries = gatherResult.webSearchQueries;
+      generatedQuestion.rawFactResponse = gatherResult.facts;
       
       // Log successful completion
       const totalTime = Date.now() - startTime;

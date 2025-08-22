@@ -450,6 +450,7 @@ export class QuestionBufferManager {
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
       const topicSpecificQueries = this.getTopicQueries(topic);
       const topicPreviousAnswers = this.getTopicAnswers(topic);
+      const topicRawResponses = this.getTopicRawResponses(topic);
 
       this.log(topicRecentQuestions)
       
@@ -458,7 +459,8 @@ export class QuestionBufferManager {
         difficulty,
         previousQuestions: topicRecentQuestions,
         previousSearchQueries: topicSpecificQueries,
-        previousAnswers: topicPreviousAnswers
+        previousAnswers: topicPreviousAnswers,
+        previousRawResponses: topicRawResponses
       };
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
@@ -467,6 +469,11 @@ export class QuestionBufferManager {
 
       this.addTopicRecentQuestion(topic, generatedQuestion.question);
       this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
+
+      // Add raw fact response if available
+      if (generatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
+      }
 
       // Add actual web search queries if any were used
       if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
@@ -532,13 +539,15 @@ export class QuestionBufferManager {
       const topicSpecificQueries = this.getTopicQueries(topic);
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
       const topicPreviousAnswers = this.getTopicAnswers(topic);
+      const topicRawResponses = this.getTopicRawResponses(topic);
       
       const questionRequest = {
         topic,
         difficulty,
         previousQuestions: topicRecentQuestions,
         previousSearchQueries: topicSpecificQueries,
-        previousAnswers: topicPreviousAnswers
+        previousAnswers: topicPreviousAnswers,
+        previousRawResponses: topicRawResponses
       };
 
       this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions, ${topicSpecificQueries.length} previous search queries, and ${topicPreviousAnswers.length} previous answers`);
@@ -556,6 +565,11 @@ export class QuestionBufferManager {
       this.questionBuffer.push(generatedQuestion);
       this.addTopicRecentQuestion(topic, generatedQuestion.question);
       this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
+
+      // Add raw fact response if available
+      if (generatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
+      }
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];

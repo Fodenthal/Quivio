@@ -18,6 +18,8 @@ export interface GeneratedQuestion {
   difficulty: number;
   /** Web search queries used during fact gathering (if any). */
   webSearchQueries?: string[];
+  /** Raw fact-gathering response for similarity detection. */
+  rawFactResponse?: string;
 }
 
 /**
@@ -34,6 +36,8 @@ export interface QuestionRequest {
   previousSearchQueries?: string[];
   /** Previous answers to encourage fact diversity beyond just query variation. */
   previousAnswers?: string[];
+  /** Previous raw fact-gathering responses for repetition detection. */
+  previousRawResponses?: string[];
 }
 
 
