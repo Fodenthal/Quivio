@@ -151,19 +151,8 @@ export async function gatherFacts(
     const firstRawResponse = previousRawResponses[0];
     rawResponseAvoidanceContext = `\n\nPrevious fact-gathering attempt for reference (avoid repeating this content):\n"${firstRawResponse}"\n\nFind completely different factual information about "${topic}".`;
     
-    // If we have multiple responses, check for additional repetitions to avoid
-    if (previousRawResponses.length > 1) {
-      const allPreviousContent = previousRawResponses.slice(1); // Skip first (already included above)
-      const repeatedSentences = allPreviousContent.flatMap(response => 
-        splitIntoSentences(response)
-      ).filter((sentence, index, array) => 
-        array.findIndex(s => isSentenceTooSimilar(sentence, [s], 0.7)) !== index
-      );
-      
-      if (repeatedSentences.length > 0) {
-        rawResponseAvoidanceContext += `\n\nAlso avoid repeating this specific content:\n${repeatedSentences.map(s => `- "${s}"`).join('\n')}`;
-      }
-    }
+    // Don't add individual sentence avoidance - the first response guidance is sufficient
+    // Adding too many specific sentence restrictions can over-constrain the model
   }
 
     const factGatheringPrompt = `
@@ -197,16 +186,14 @@ Return ONLY the 1–2 sentence summary.
 `;
 
 
-  Logger.aiDebug('Previous context for uniqueness', {
+  Logger.ai('Fact gathering strategy', {
     topic,
-    totalQueries: previousQueries.length,
-    filteredQueries: filteredPreviousQueries.length,
-    referenceQueries: filteredPreviousQueries.join(', '),
-    previousAnswerCount: previousAnswers.length,
-    previousAnswers: previousAnswers.join(', '),
-    previousRawResponseCount: previousRawResponses.length,
-    rawResponseAvoidanceContext: rawResponseAvoidanceContext,
-    avoidanceStrategy: previousRawResponses.length > 0 ? 'auto_append_first_response' : 'none'
+    hasAvoidanceContext: previousRawResponses.length > 0,
+    previousContextCount: {
+      queries: previousQueries.length,
+      answers: previousAnswers.length,
+      rawResponses: previousRawResponses.length
+    }
   });
 
   try {
@@ -253,11 +240,10 @@ Return ONLY the 1–2 sentence summary.
         firstQuery: webSearchQueries[0]
       });
       
-      Logger.aiDebug('Search strategy analysis', {
+      Logger.ai('Search strategy', {
         topic,
-        queriesUsed: webSearchQueries,
         searchCount: webSearchQueries.length,
-        approach: webSearchQueries.length === 1 ? 'single_focused_search' : 'dual_search_strategy'
+        approach: webSearchQueries.length === 1 ? 'focused' : 'comprehensive'
       });
     } else {
       Logger.aiDebug('No web search queries found', { topic });
@@ -275,19 +261,10 @@ Return ONLY the 1–2 sentence summary.
     Logger.ai('Facts gathered successfully', {
       topic,
       factsLength: clipped.length,
-      characterCap: CHAR_LIMIT,
-      wasClipped: raw.length > CHAR_LIMIT,
       webSearchCount: webSearchQueries.length,
-      repeatedContentCount: repeatedContent.length
+      hasRepetition: repeatedContent.length > 0,
+      uniquenessScore: previousRawResponses.length > 0 ? `${Math.max(0, 100 - (repeatedContent.length * 25))}%` : 'N/A'
     });
-    
-    if (repeatedContent.length > 0) {
-      Logger.ai('Repetition detected in raw response', {
-        topic,
-        repeatedSentences: repeatedContent.length,
-        repeatedContent: repeatedContent.slice(0, 2) // Log first 2 for brevity
-      });
-    }
     
     Logger.aiDebug('Raw fact response', { topic, rawResponse: raw, finalFacts: clipped });
     
