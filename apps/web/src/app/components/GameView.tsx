@@ -30,7 +30,6 @@ export const GameView = memo(function GameView({
   onSendChatMessage,
   onStartGame,
   onSetTopics,
-  onSetDifficulty,
   onSetTargetScore,
   onSetRoundTime,
   onSetMaxPlayers
@@ -345,8 +344,8 @@ export const GameView = memo(function GameView({
           const isHost = currentPlayer?.isHost || false;
           const playerCount = gameState.players.size;
           const hasMinPlayers = playerCount >= 2;
-          const hasTopics = gameState.topics && gameState.topics.length > 0 && gameState.topics.some(topic => topic.trim().length > 0);
-          const canStartGame = hasMinPlayers && hasTopics && isHost;
+          const hasMinTopics = gameState.topics && gameState.topics.length >= 3 && gameState.topics.filter(topic => topic.trim().length > 0).length >= 3;
+          const canStartGame = hasMinPlayers && hasMinTopics && isHost;
 
           return (
             <div className="flex flex-col h-full">
@@ -363,7 +362,6 @@ export const GameView = memo(function GameView({
                     gameState={gameState}
                     isReadOnly={!isHost}
                     onSetTopics={isHost ? onSetTopics : undefined}
-                    onSetDifficulty={isHost ? onSetDifficulty : undefined}
                     onSetTargetScore={isHost ? onSetTargetScore : undefined}
                     onSetRoundTime={isHost ? onSetRoundTime : undefined}
                     onSetMaxPlayers={isHost ? onSetMaxPlayers : undefined}
@@ -390,11 +388,7 @@ export const GameView = memo(function GameView({
                           Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start.
                         </p>
                       )}
-                      {!hasTopics && (
-                        <p className="text-yellow-300 text-sm">
-                          Please set at least one topic to start the game.
-                        </p>
-                      )}
+
                     </div>
                   </div>
                 )}
