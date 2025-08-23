@@ -193,7 +193,11 @@ Return ONLY the 1–2 sentence summary.
       queries: previousQueries.length,
       answers: previousAnswers.length,
       rawResponses: previousRawResponses.length
-    }
+    },
+    previousQueries: previousQueries,
+    previousAnswers: previousAnswers,
+    filteredPreviousQueries: filteredPreviousQueries,
+    firstPreviousRawResponse: previousRawResponses.length > 0 ? previousRawResponses[0] : null
   });
 
   try {
