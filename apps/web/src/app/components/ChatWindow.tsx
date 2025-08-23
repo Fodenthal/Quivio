@@ -69,24 +69,15 @@ export function ChatWindow({
     scrollToBottom();
   }, []);
 
-  if (messages.length === 0) {
-    return (
-      <div className={`${height} bg-black/20 rounded-lg p-4 flex items-center justify-center`}>
-        <div className="text-center text-text-secondary">
-          <p className="text-sm">No messages yet</p>
-          <p className="text-xs mt-1">Start the conversation!</p>
-        </div>
-      </div>
-    );
-  }
+  // Always render an empty scrollable container to keep layout stable on mobile
 
   return (
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${height} bg-black/20 rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
+      className={`${height} bg-black/20 rounded-lg md:rounded-xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
     >
-      <div className="p-2 space-y-1">
+      <div className="p-2 space-y-1 md:p-4 md:space-y-2">
         {messages
           .filter((message) => message && message.id && message.playerName)
           .map((message) => (
@@ -98,6 +89,14 @@ export function ChatWindow({
           ))}
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
+        {messages.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-text-secondary/70">
+              <p className="text-sm">No messages yet</p>
+              <p className="text-xs mt-1">Start the conversation!</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

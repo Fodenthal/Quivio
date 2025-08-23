@@ -8,33 +8,60 @@ import { parseResponse } from './parser';
  * Builds the prompt and calls the model, then parses with the same logic.
  */
 export async function formatQuestion(topic: string, facts: string, request: QuestionRequest, ai: GoogleGenAI): Promise<GeneratedQuestion> {
-  console.log(`Stage 2: Formatting question for topic: "${topic}"`);
-  console.log(`Using facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
+  console.log(`📝 Stage 2: Formatting question for topic: "${topic}"`);
+  console.log(`   Facts: ${facts ? `"${facts}..."` : 'None (basic prompt)'}`);
+  console.log(`   Previous questions for this topic: ${request.previousQuestions?.length || 0}`);
 
   const difficultyDescription = getDifficultyDescription(request.difficulty);
 
   const sections: string[] = [
-    CORE_INSTRUCTIONS,
-    `Your task is to generate a single, specific, **non-meta** trivia question about "${topic}" with ${difficultyDescription} difficulty (${request.difficulty}/5).`
+    // 1) Role & output
+    `You are Quivio’s master trivia author. Output ONE JSON object only (no prose).`,
+  
+    // 2) Goal & taste (put first)
+    `GOAL: Ask a single, concrete, **non-meta** trivia question about "${topic}" that is **memorable, vivid, and objectively checkable**. Prefer real-world, story-like details or surprising connections over dry stats.`,
+  
+    // 3) Context facts (highest priority signal)
+    ...(facts && facts.trim()
+      ? [
+          `CONTEXT FACTS (highest priority; use only if they sharpen the question): ${facts}`
+        ]
+      : []),
+  
+    // 4) Duplicate avoidance (second priority)
+    ...(request.previousQuestions?.length
+      ? [
+          `CRITICAL: Avoid duplicates with prior "${topic}" questions—do NOT reuse the same factual idea/answer, closely similar wording, or subtopics already covered.`,
+          `Previous "${topic}" questions: ${request.previousQuestions.join(" | ")}`
+        ]
+      : []),
+  
+    // 5) Difficulty calibration (explicit)
+
+  
+  
+    // 6) Always-True Rules (tightened)
+    `Always-True Rules:
+     1) Non-meta: no definitions, origins, overviews, or “about the field”.
+     2) Clarity & brevity: ≤65 tokens, one unambiguous answer, fact-checkable.
+     3) If the answer is a bare number or year, ensure it’s inherently interesting (≥3 digits, non-round, or carries meaning) **and** the question contains a vivid hook; otherwise reframe to a concrete noun or action.
+     4) Include common variants as acceptable answers (abbreviations, spellings, number/word forms, punctuation).
+     5) Vary phrasing over time; avoid repeating templates.
+     6) Category: use a sensible broad label (e.g., Sports, History, Science).`,
+  
+    // 7) Topic handling (kept but trimmed)
+    `Topic Handling: If "${topic}" is broad, instantiate a specific, self-contained question in that domain (no definitions). If it’s a specific entity or time-sensitive claim, ask a direct factual question about that entity.`,
+  
+    // 8) Internal selection instruction (silent)
+    `Internally draft 2–3 candidate questions, pick the most vivid yet testable one, and discard the rest.`,
+  
+    // 9) Output constraint
+    `Return only the JSON object; no extra text.`
   ];
-
-  if (facts && facts.trim()) {
-    sections.push(`**Context facts**: ${facts}`);
-    sections.push(`Only use these facts if they make the question more precise; otherwise ignore.`);
-  }
-
-  sections.push(`Return only the JSON object; no extra text.`);
-
-  if (request.previousQuestions && request.previousQuestions.length > 0) {
-    console.log(`Avoiding ${request.previousQuestions.length} previous questions`);
-    sections.push(
-      `**Avoid repeating**: (a) the same fact/answer concepts, and (b) highly similar wording or templates as in these prior questions:\n${request.previousQuestions.join(", ")}`
-    );
-  }
-
+  
   const prompt = sections.join('\n\n');
+  
   console.log(`Stage 2 prompt length: ${prompt.length} characters`);
-  console.log(`Stage 2 prompt: ${prompt}`);
 
   try {
     const response = await ai.models.generateContent({

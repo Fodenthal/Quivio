@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -n server,web -c green,blue \"pnpm --filter @getmoney/server dev\" \"wait-on tcp:2567 && pnpm --filter quivio dev\"",
+    "dev": "concurrently -n server,web -c green,blue \"HOST=0.0.0.0 pnpm --filter @getmoney/server dev\" \"wait-on tcp:2567 && pnpm --filter quivio dev\"",
     "start": "pnpm --parallel --filter=@getmoney/server start & pnpm --filter=quivio dev",
     "server": "pnpm --filter=@getmoney/server start",
     "web": "pnpm --filter=quivio dev",

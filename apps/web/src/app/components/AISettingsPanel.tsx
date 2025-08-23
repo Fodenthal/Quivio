@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { GameState } from "@shared/index";
-import { DifficultySlider } from "./DifficultySlider";
+
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 import { usePopularTopics } from "../../hooks/usePopularTopics";
 
@@ -10,7 +10,7 @@ interface AISettingsPanelProps {
   gameState: GameState;
   isReadOnly?: boolean;
   onSetTopics?: (topics: string[]) => void;
-  onSetDifficulty?: (difficulty: number) => void;
+
   onSetTargetScore?: (score: number) => void;
   onSetRoundTime?: (seconds: number) => void;
   onSetMaxPlayers?: (maxPlayers: number) => void;
@@ -20,7 +20,6 @@ export function AISettingsPanel({
   gameState, 
   isReadOnly = false,
   onSetTopics,
-  onSetDifficulty,
   onSetTargetScore,
   onSetRoundTime,
   onSetMaxPlayers
@@ -29,9 +28,7 @@ export function AISettingsPanel({
   const [newTopic, setNewTopic] = useState("");
   const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   
-  // Use 5-tier difficulty system directly (1-5)
-  const currentDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty)); // Already 1-5 scale
-  const [difficulty, setDifficulty] = useState(currentDifficulty);
+
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
   const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
   const [maxPlayers, setMaxPlayers] = useState(gameState.maxPlayers || 8);
@@ -41,10 +38,7 @@ export function AISettingsPanel({
     setTopics(gameState.topics || [gameState.currentTopic || ""]);
   }, [gameState.topics, gameState.currentTopic]);
 
-  useEffect(() => {
-    const newDifficulty = Math.min(5, Math.max(1, gameState.currentDifficulty));
-    setDifficulty(newDifficulty);
-  }, [gameState.currentDifficulty]);
+
 
   useEffect(() => {
     setTargetScore(gameState.targetScore || 10);
@@ -95,13 +89,7 @@ export function AISettingsPanel({
     }
   };
 
-  const handleDifficultyChange = (value: number) => {
-    setDifficulty(value);
-    
-    if (onSetDifficulty && value !== gameState.currentDifficulty) {
-      onSetDifficulty(value);
-    }
-  };
+
 
   const handleTargetScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(1, Math.min(100, Number(e.target.value)));
@@ -120,16 +108,7 @@ export function AISettingsPanel({
     if (onSetMaxPlayers) onSetMaxPlayers(value);
   };
 
-  const getDifficultyLabel = (diff: number): string => {
-    switch(diff) {
-      case 1: return "Very Easy";
-      case 2: return "Easy";
-      case 3: return "Medium";
-      case 4: return "Hard";
-      case 5: return "Very Hard";
-      default: return "Medium";
-    }
-  };
+
 
   return (
     <div className="bg-white/10 rounded-2xl shadow-lg p-4 border border-white/20 max-w-xl w-full mx-auto space-y-4">
@@ -154,7 +133,7 @@ export function AISettingsPanel({
           ))}
         </div>
         <div className="relative">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center min-w-0">
             <input
             type="text"
             value={newTopic}
@@ -162,7 +141,7 @@ export function AISettingsPanel({
             onKeyDown={handleNewTopicKeyDown}
             placeholder="Add a topic..."
             disabled={isReadOnly}
-            className={`flex-1 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
+            className={`flex-1 min-w-0 px-3 py-2 text-sm border rounded-md placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary ${
               isReadOnly 
                 ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                 : "bg-white/10 border-white/20 text-text-main"
@@ -178,6 +157,13 @@ export function AISettingsPanel({
               </button>
             )}
           </div>
+          
+          {/* Topic validation error message */}
+          {!isReadOnly && validTopics.length < 3 && (
+            <p className="text-yellow-300 text-sm mt-2">
+              Please add at least 3 topics to start the game.
+            </p>
+          )}
 
           <div className="mt-3">
             <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
@@ -225,20 +211,6 @@ export function AISettingsPanel({
           </div>
         </div>
         {/* Read-only hint removed per request */}
-      </section>
-      <div className="my-4 border-t border-white/10" />
-      {/* Difficulty Section */}
-      <section>
-        <h3 className="text-lg font-semibold text-text-main mb-2">Difficulty Level</h3>
-        <div className="space-y-2">
-          <DifficultySlider
-            value={difficulty}
-            onChange={handleDifficultyChange}
-            getDifficultyLabel={getDifficultyLabel}
-            disabled={isReadOnly}
-          />
-          {/* Read-only hint removed per request */}
-        </div>
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section */}

@@ -5,6 +5,7 @@ import { gatherFacts } from './gemini/factGatherer';
 import { formatQuestion } from './gemini/formatter';
 import { isAnswerAcceptable as acceptAnswer, normalizeAnswer as normalizeAns } from './gemini/answerMatching';
 import type { GeneratedQuestion, QuestionRequest } from './gemini/types';
+import { Logger } from '../utils/logger';
 export type { GeneratedQuestion, QuestionRequest };
 
 /**
@@ -24,8 +25,8 @@ export class GeminiService {
   }
 
   // Stage 1 is delegated to gemini/factGatherer.ts
-  private async gatherFacts(topic: string, enableSearchTools: boolean): Promise<string> {
-    return gatherFacts(topic, enableSearchTools, this.ai);
+  private async gatherFacts(topic: string, enableSearchTools: boolean, previousQueries: string[] = [], previousAnswers: string[] = [], previousRawResponses: string[] = []): Promise<{facts: string, webSearchQueries: string[], repeatedContent?: string[]}> {
+    return gatherFacts(topic, enableSearchTools, this.ai, previousQueries, previousAnswers, previousRawResponses);
   }
 
   /**
@@ -52,37 +53,57 @@ export class GeminiService {
    */
   async generateQuestion(request: QuestionRequest): Promise<GeneratedQuestion> {
     const startTime = Date.now();
-    console.log(`Starting two-stage question generation for topic: "${request.topic}"`);
-    console.log(`Difficulty: ${request.difficulty}/5 (${this.getDifficultyDescription(request.difficulty)})`);
+    
+    Logger.ai('Starting question generation', {
+      topic: request.topic,
+      difficulty: request.difficulty,
+      difficultyDescription: this.getDifficultyDescription(request.difficulty)
+    });
     
     try {
       // Stage 1: Decide whether to search and gather facts accordingly
       const useSearch = this.shouldSearch(request.topic);
-      console.log(`🔎 Search enabled: ${useSearch} (topic: "${request.topic}")`);
-      const facts = useSearch ? await this.gatherFacts(request.topic, true) : '';
+      Logger.ai('Search decision made', { useSearch, topic: request.topic });
+      
+      const gatherResult = useSearch ? await this.gatherFacts(request.topic, true, request.previousSearchQueries || [], request.previousAnswers || [], request.previousRawResponses || []) : { facts: '', webSearchQueries: [] };
       
       // Stage 2: Format question (deterministic)
-      const generatedQuestion = await this.formatQuestion(request.topic, facts, request);
+      const generatedQuestion = await this.formatQuestion(request.topic, gatherResult.facts, request);
       
-      // Log success
+      // Attach web search queries and raw response to the generated question
+      generatedQuestion.webSearchQueries = gatherResult.webSearchQueries;
+      generatedQuestion.rawFactResponse = gatherResult.facts;
+      
+      // Log successful completion
       const totalTime = Date.now() - startTime;
-      console.log(`✅ Two-stage generation completed in ${totalTime}ms`);
-      console.log(`   ❓ Question: "${generatedQuestion.question}"`);
-      console.log(`   ✅ Correct answer: "${generatedQuestion.correctAnswer}"`);
-      console.log(`   📋 Acceptable answers (${generatedQuestion.acceptableAnswers.length}): [${generatedQuestion.acceptableAnswers.join(', ')}]`);
-      console.log(`   🏷️  Category: ${generatedQuestion.category}`);
-      console.log(`   📊 Difficulty: ${generatedQuestion.difficulty}/5`);
-      
-      // Log question quality metrics
       const questionTokens = GeminiService.tokenizer.tokenize(generatedQuestion.question) || [];
-      console.log(`   📏 Question length: ${questionTokens.length} tokens (target: ≤65)`);
-      console.log(`   🎯 Question quality: ${questionTokens.length <= 65 ? '✅ Within token limit' : '⚠️ Exceeds token limit'}`);
+      
+      Logger.ai('Question generation completed', {
+        topic: request.topic,
+        duration: totalTime,
+        webSearchQueryCount: gatherResult.webSearchQueries.length,
+        acceptableAnswerCount: generatedQuestion.acceptableAnswers.length,
+        questionCategory: generatedQuestion.category,
+        difficulty: generatedQuestion.difficulty,
+        questionTokens: questionTokens.length,
+        withinTokenLimit: questionTokens.length <= 65
+      });
+      
+      // Log detailed question info at debug level only
+      Logger.aiDebug('Question generation details', {
+        topic: request.topic,
+        question: generatedQuestion.question,
+        correctAnswer: generatedQuestion.correctAnswer,
+        acceptableAnswers: generatedQuestion.acceptableAnswers,
+        webSearchQueries: gatherResult.webSearchQueries
+      });
       
       return generatedQuestion;
     } catch (error) {
-      console.error("❌ Error in two-stage question generation:", error);
-      console.error(`   🔍 Error details: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      console.error(`   📊 Request context: topic="${request.topic}", difficulty=${request.difficulty}`);
+      Logger.error('Question generation failed', error instanceof Error ? error : new Error(String(error)), { 
+        topic: request.topic, 
+        difficulty: request.difficulty 
+      });
       throw new Error(`Failed to generate question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

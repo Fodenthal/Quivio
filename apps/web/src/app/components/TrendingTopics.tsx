@@ -67,15 +67,14 @@ export const TrendingTopics = () => {
       { topic: "Alternative medicine and holistic healing", category: "Health", popularity: 345 }
     ];
 
-    // Shuffle and return a subset with trend data
+    // Deterministic order and neutral trend to avoid hydration mismatches
     return sampleTopics
-      .sort(() => Math.random() - 0.5)
       .slice(0, 48)
       .map((topic, index) => ({
         id: `topic-${index}`,
         ...topic,
-        trending: Math.random() > 0.5 ? "rising" : "falling" as "rising" | "falling",
-        change: Math.round((Math.random() * 30 - 15) * 100) / 100 // Random change between -15% to +15%
+        trending: "rising" as "rising" | "falling",
+        change: 0
       }));
   };
 

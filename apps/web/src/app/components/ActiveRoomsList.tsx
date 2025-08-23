@@ -45,13 +45,10 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [privateRoomsCount, setPrivateRoomsCount] = useState<number>(() => {
-    // Initialize between 3 and 10 inclusive
-    return Math.floor(Math.random() * (10 - 3 + 1)) + 3;
-  });
-  const nextPrivateRoomsChangeAtRef = useRef<number>(
-    Date.now() + (Math.floor(Math.random() * (180 - 60 + 1)) + 60) * 1000
-  );
+  // Deterministic initial value to avoid SSR/client hydration mismatch.
+  const [privateRoomsCount, setPrivateRoomsCount] = useState<number>(5);
+  // Initialize on client after mount to avoid SSR/non-deterministic mismatch.
+  const nextPrivateRoomsChangeAtRef = useRef<number>(0);
 
   /**
    * Calculate the next private rooms display count.
@@ -194,6 +191,10 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
   // Fetch rooms on component mount and set up auto-refresh
   useEffect(() => {
+    // Client-only initialization of randomized counters/timers
+    setPrivateRoomsCount(Math.floor(Math.random() * (10 - 3 + 1)) + 3);
+    nextPrivateRoomsChangeAtRef.current = scheduleNextPrivateRoomsChange();
+
     fetchActiveRooms();
     
     // Auto-refresh every 10 seconds

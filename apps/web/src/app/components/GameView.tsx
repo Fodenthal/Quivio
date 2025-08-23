@@ -30,7 +30,6 @@ export const GameView = memo(function GameView({
   onSendChatMessage,
   onStartGame,
   onSetTopics,
-  onSetDifficulty,
   onSetTargetScore,
   onSetRoundTime,
   onSetMaxPlayers
@@ -42,6 +41,7 @@ export const GameView = memo(function GameView({
   const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const chatScrollTopRef = useRef<number>(0);
+  const pageScrollYRef = useRef<number>(0);
   
   const guessInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -84,9 +84,15 @@ export const GameView = memo(function GameView({
       await onSubmitGuess(currentGuess.trim());
       setCurrentGuess("");
       // Keep focus on input after submitting
+      // Refocus without causing scroll jumps
       setTimeout(() => {
-        if (guessInputRef.current && !chatHasFocus) {
-          guessInputRef.current.focus();
+        const input = guessInputRef.current;
+        if (input && !chatHasFocus) {
+          try {
+            (input as unknown as { focus: (opts?: { preventScroll?: boolean }) => void }).focus({ preventScroll: true });
+          } catch {
+            input.focus();
+          }
         }
       }, 100);
     } catch (error) {
@@ -173,8 +179,13 @@ export const GameView = memo(function GameView({
     // Focus guess input when round starts or when coming back from chat
     if (phase === "playing" && !hasPlayerGuessed && !chatHasFocus) {
       const timer = setTimeout(() => {
-        if (guessInputRef.current) {
-          guessInputRef.current.focus();
+        const input = guessInputRef.current;
+        if (input) {
+          try {
+            (input as unknown as { focus: (opts?: { preventScroll?: boolean }) => void }).focus({ preventScroll: true });
+          } catch {
+            input.focus();
+          }
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -333,8 +344,8 @@ export const GameView = memo(function GameView({
           const isHost = currentPlayer?.isHost || false;
           const playerCount = gameState.players.size;
           const hasMinPlayers = playerCount >= 2;
-          const hasTopics = gameState.topics && gameState.topics.length > 0 && gameState.topics.some(topic => topic.trim().length > 0);
-          const canStartGame = hasMinPlayers && hasTopics && isHost;
+          const hasMinTopics = gameState.topics && gameState.topics.length >= 3 && gameState.topics.filter(topic => topic.trim().length > 0).length >= 3;
+          const canStartGame = hasMinPlayers && hasMinTopics && isHost;
 
           return (
             <div className="flex flex-col h-full">
@@ -351,7 +362,6 @@ export const GameView = memo(function GameView({
                     gameState={gameState}
                     isReadOnly={!isHost}
                     onSetTopics={isHost ? onSetTopics : undefined}
-                    onSetDifficulty={isHost ? onSetDifficulty : undefined}
                     onSetTargetScore={isHost ? onSetTargetScore : undefined}
                     onSetRoundTime={isHost ? onSetRoundTime : undefined}
                     onSetMaxPlayers={isHost ? onSetMaxPlayers : undefined}
@@ -378,11 +388,7 @@ export const GameView = memo(function GameView({
                           Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start.
                         </p>
                       )}
-                      {!hasTopics && (
-                        <p className="text-yellow-300 text-sm">
-                          Please set at least one topic to start the game.
-                        </p>
-                      )}
+
                     </div>
                   </div>
                 )}
@@ -512,6 +518,15 @@ export const GameView = memo(function GameView({
                       value={currentGuess}
                       onChange={(e) => setCurrentGuess(e.target.value)}
                       onKeyDown={handleGuessKeyDown}
+                      onFocus={(e) => {
+                        try {
+                          // Remember current scroll and ask browser to keep the input near keyboard
+                          pageScrollYRef.current = window.scrollY;
+                          (e.target as HTMLInputElement).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                          // Restore page scroll to avoid jumping the question off-screen
+                          setTimeout(() => window.scrollTo({ top: pageScrollYRef.current }), 0);
+                        } catch {}
+                      }}
                       placeholder="Enter your answer and press Enter..."
                       disabled={isSubmitting || phase === "paused"}
                       className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
@@ -595,13 +610,13 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Phone controls: floating toggle for Players/Chat */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 md:hidden">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center space-x-1">
+      <div className="fixed bottom-4 left-0 right-0 px-3 z-10 md:hidden">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center gap-1 w-full">
           <button
             type="button"
             onClick={() => { setActivePanel('players'); setIsPhonePanelOpen(true); setChatHasFocus(false); }}
             aria-label="Show players"
-            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+            className={`flex-1 text-center px-3 py-2 text-sm rounded-full ${activePanel === 'players' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
             Players
           </button>
@@ -609,7 +624,7 @@ export const GameView = memo(function GameView({
             type="button"
             onClick={() => { setActivePanel('chat'); setIsPhonePanelOpen(true); setChatHasFocus(true); }}
             aria-label="Show chat"
-            className={`px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
+            className={`flex-1 text-center px-3 py-2 text-sm rounded-full ${activePanel === 'chat' ? 'bg-white/20 text-text-main' : 'text-text-secondary'}`}
           >
             Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
           </button>
@@ -627,7 +642,7 @@ export const GameView = memo(function GameView({
           setTimeout(() => guessInputRef.current?.focus(), 50);
         }} />
         <div className="absolute left-3 right-3 bottom-3 bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-2xl h-[85dvh] safe-top safe-bottom shadow-glass flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="px-4 py-3 border-b border-white/10">
             <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
               <button
                 type="button"
@@ -652,23 +667,8 @@ export const GameView = memo(function GameView({
                 Chat{unreadChatCount > 0 ? ` (${unreadChatCount})` : ''}
               </button>
             </div>
-            <button
-              type="button"
-              aria-label="Close panel"
-              className="px-3 py-1 text-sm text-text-secondary hover:text-text-main"
-              onClick={() => {
-                if (activePanel === 'chat') {
-                  const node = phoneSheetContentRef.current;
-                  if (node) chatScrollTopRef.current = node.scrollTop;
-                }
-                setIsPhonePanelOpen(false);
-                setTimeout(() => guessInputRef.current?.focus(), 50);
-              }}
-            >
-              Close
-            </button>
           </div>
-          <div ref={phoneSheetContentRef} className="flex-1 overflow-auto p-4">
+          <div ref={phoneSheetContentRef} className="flex-1 p-4 overflow-hidden">
             {activePanel === 'players' ? (
               <PlayerList 
                 gameState={gameState}

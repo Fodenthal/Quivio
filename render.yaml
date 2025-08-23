@@ -9,6 +9,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+        # For debugging, change to 'development' - but remember to change back before final deployment
       - key: GEMINI_API_KEY
         sync: false
       - key: SUPABASE_URL

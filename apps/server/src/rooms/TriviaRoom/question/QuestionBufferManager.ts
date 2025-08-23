@@ -25,7 +25,10 @@ export class QuestionBufferManager {
 
   private questionBuffer: GeneratedQuestion[] = [];
   private isGeneratingQuestions = false;
-  private recentQuestions: string[] = [];
+  private topicRecentQuestions: Map<string, string[]> = new Map(); // Track recent questions per topic
+  private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
+  private topicAnswers: Map<string, string[]> = new Map(); // Track previous answers per topic
+  private topicRawResponses: Map<string, string[]> = new Map(); // Track raw fact-gathering responses per topic
 
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates
@@ -58,10 +61,294 @@ export class QuestionBufferManager {
   }
 
   /**
+   * Get previous search queries for a specific topic.
+   * @param topic - The topic to get queries for
+   * @returns Array of previous search queries for this topic
+   */
+  private getTopicQueries(topic: string): string[] {
+    return this.topicQueries.get(topic) || [];
+  }
+
+  /**
+   * Get previous answers for a specific topic.
+   * @param topic - The topic to get previous answers for
+   * @returns Array of previous answers for this topic
+   */
+  private getTopicAnswers(topic: string): string[] {
+    return this.topicAnswers.get(topic) || [];
+  }
+
+  /**
+   * Get previous raw fact-gathering responses for a specific topic.
+   * @param topic - The topic to get previous raw responses for
+   * @returns Array of previous raw responses for this topic
+   */
+  private getTopicRawResponses(topic: string): string[] {
+    return this.topicRawResponses.get(topic) || [];
+  }
+
+  /**
+   * Add an answer to a topic's previous answers history.
+   * @param topic - The topic to add the answer to
+   * @param answer - The answer text to add
+   */
+  private addTopicAnswer(topic: string, answer: string): void {
+    if (!answer || answer.trim().length === 0) return;
+    
+    const answers = this.getTopicAnswers(topic);
+    answers.push(answer.trim());
+    
+    // No artificial cap - natural session length limits growth
+    this.topicAnswers.set(topic, answers);
+    this.log(`📝 Added answer to topic "${topic}": "${answer}" (${answers.length} total)`);
+  }
+
+  /**
+   * Add a raw fact-gathering response to a topic's history for similarity detection.
+   * @param topic - The topic to add the raw response to
+   * @param rawResponse - The raw fact-gathering response text to add
+   */
+  private addTopicRawResponse(topic: string, rawResponse: string): void {
+    if (!rawResponse || rawResponse.trim().length === 0) return;
+    
+    const rawResponses = this.getTopicRawResponses(topic);
+    rawResponses.push(rawResponse.trim());
+    
+    // Cap at reasonable limit to prevent memory bloat
+    const MAX_RAW_RESPONSES = 10;
+    if (rawResponses.length > MAX_RAW_RESPONSES) {
+      rawResponses.shift(); // Remove oldest
+    }
+    
+    this.topicRawResponses.set(topic, rawResponses);
+    this.log(`🔍 Added raw response to topic "${topic}" (${rawResponses.length} total, ${rawResponse.length} chars)`);
+  }
+
+  /**
+   * Add a search query to a topic's query history.
+   * @param topic - The topic to add the query to
+   * @param query - The search query to add
+   */
+  private addTopicQuery(topic: string, query: string): void {
+    if (!query || query.trim().length === 0) return;
+    
+    const queries = this.getTopicQueries(topic);
+    queries.push(query.trim());
+    
+    // No artificial cap - natural session length limits growth
+    this.topicQueries.set(topic, queries);
+    this.log(`📝 Added query to topic "${topic}": "${query}" (${queries.length} total)`);
+  }
+
+  /**
+   * Get recent questions for a specific topic.
+   * @param topic - The topic to get recent questions for
+   * @returns Array of recent questions for this topic
+   */
+  private getTopicRecentQuestions(topic: string): string[] {
+    return this.topicRecentQuestions.get(topic) || [];
+  }
+
+  /**
+   * Add a question to a topic's recent questions history.
+   * @param topic - The topic to add the question to
+   * @param question - The question text to add
+   */
+  private addTopicRecentQuestion(topic: string, question: string): void {
+    if (!question || question.trim().length === 0) return;
+    
+    const questions = this.getTopicRecentQuestions(topic);
+    questions.push(question.trim());
+    
+    // No artificial cap - natural session length limits growth
+    this.topicRecentQuestions.set(topic, questions);
+    this.log(`📝 Added question to topic "${topic}" recent history (${questions.length} questions)`);
+  }
+
+  /**
    * Clears the recent questions list to allow questions to repeat after topic changes.
    */
   resetRecents(): void {
-    this.recentQuestions = [];
+    this.topicRecentQuestions.clear();
+    this.topicQueries.clear();
+    this.topicAnswers.clear();
+    this.topicRawResponses.clear();
+    this.log("🗑️ Cleared all topic recent questions, search queries, answers, and raw responses");
+  }
+
+  /**
+   * Clear recent questions and queries for a specific topic.
+   * @param topic - The topic to clear
+   */
+  clearTopicHistory(topic: string): void {
+    const hadQuestions = this.topicRecentQuestions.has(topic);
+    const hadQueries = this.topicQueries.has(topic);
+    const hadAnswers = this.topicAnswers.has(topic);
+    const hadRawResponses = this.topicRawResponses.has(topic);
+    
+    this.topicRecentQuestions.delete(topic);
+    this.topicQueries.delete(topic);
+    this.topicAnswers.delete(topic);
+    this.topicRawResponses.delete(topic);
+    
+    if (hadQuestions || hadQueries || hadAnswers || hadRawResponses) {
+      this.log(`🗑️ Cleared history for topic "${topic}"`);
+    }
+  }
+
+  /**
+   * Clear recent questions and queries for multiple topics.
+   * @param topics - Array of topics to clear
+   */
+  clearTopicsHistory(topics: string[]): void {
+    let clearedCount = 0;
+    topics.forEach(topic => {
+      const hadData = this.topicRecentQuestions.has(topic) || this.topicQueries.has(topic) || this.topicAnswers.has(topic);
+      if (hadData) {
+        this.topicRecentQuestions.delete(topic);
+        this.topicQueries.delete(topic);
+        this.topicAnswers.delete(topic);
+        clearedCount++;
+      }
+    });
+    
+    if (clearedCount > 0) {
+      this.log(`🗑️ Cleared history for ${clearedCount} topics: ${topics.join(', ')}`);
+    }
+  }
+
+  /**
+   * Remove stale topics that are no longer in the active topic list.
+   * Useful for cleanup when room topics are changed.
+   * @param activeTopics - Current active topics
+   */
+  cleanupStaleTopics(activeTopics: string[]): void {
+    const activeSet = new Set(activeTopics);
+    const staleTopics: string[] = [];
+    
+    // Find stale topics in recent questions
+    for (const topic of this.topicRecentQuestions.keys()) {
+      if (!activeSet.has(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    // Find stale topics in queries (might be different)
+    for (const topic of this.topicQueries.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    // Find stale topics in answers (might be different)
+    for (const topic of this.topicAnswers.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    // Find stale topics in raw responses (might be different)
+    for (const topic of this.topicRawResponses.keys()) {
+      if (!activeSet.has(topic) && !staleTopics.includes(topic)) {
+        staleTopics.push(topic);
+      }
+    }
+    
+    if (staleTopics.length > 0) {
+      this.clearTopicsHistory(staleTopics);
+      this.log(`🧹 Cleaned up ${staleTopics.length} stale topics`);
+    }
+  }
+
+  /**
+   * Get analytics about topic history state.
+   * @returns Object with topic statistics
+   */
+  getTopicAnalytics(): { 
+    totalTopics: number;
+    topicsWithQuestions: number;
+    topicsWithQueries: number;
+    topicsWithRawResponses: number;
+    totalQuestions: number;
+    totalQueries: number;
+    totalRawResponses: number;
+    topicBreakdown: Array<{topic: string, questions: number, queries: number, rawResponses: number}>;
+  } {
+    const allTopics = new Set([
+      ...this.topicRecentQuestions.keys(),
+      ...this.topicQueries.keys(),
+      ...this.topicRawResponses.keys()
+    ]);
+    
+    const topicBreakdown = Array.from(allTopics).map(topic => ({
+      topic,
+      questions: this.topicRecentQuestions.get(topic)?.length || 0,
+      queries: this.topicQueries.get(topic)?.length || 0,
+      rawResponses: this.topicRawResponses.get(topic)?.length || 0
+    }));
+    
+    const totalQuestions = Array.from(this.topicRecentQuestions.values())
+      .reduce((sum, questions) => sum + questions.length, 0);
+    
+    const totalQueries = Array.from(this.topicQueries.values())
+      .reduce((sum, queries) => sum + queries.length, 0);
+    
+    const totalRawResponses = Array.from(this.topicRawResponses.values())
+      .reduce((sum, responses) => sum + responses.length, 0);
+    
+    return {
+      totalTopics: allTopics.size,
+      topicsWithQuestions: this.topicRecentQuestions.size,
+      topicsWithQueries: this.topicQueries.size,
+      topicsWithRawResponses: this.topicRawResponses.size,
+      totalQuestions,
+      totalQueries,
+      totalRawResponses,
+      topicBreakdown
+    };
+  }
+
+  /**
+   * Perform automatic cleanup and maintenance.
+   * Removes stale topics and trims oversized histories.
+   * @param activeTopics - Current active topics list
+   * @param maxQuestionsPerTopic - Maximum questions to keep per topic (default: 10)
+   * @param maxQueriesPerTopic - Maximum queries to keep per topic (default: 10)
+   */
+  performMaintenance(
+    activeTopics: string[], 
+    maxQuestionsPerTopic: number = 10, 
+    maxQueriesPerTopic: number = 10
+  ): void {
+    // Clean up stale topics first
+    this.cleanupStaleTopics(activeTopics);
+    
+    let trimmedTopics = 0;
+    
+    // Trim oversized question histories
+    for (const [topic, questions] of this.topicRecentQuestions.entries()) {
+      if (questions.length > maxQuestionsPerTopic) {
+        const trimmed = questions.slice(-maxQuestionsPerTopic);
+        this.topicRecentQuestions.set(topic, trimmed);
+        trimmedTopics++;
+      }
+    }
+    
+    // Trim oversized query histories
+    for (const [topic, queries] of this.topicQueries.entries()) {
+      if (queries.length > maxQueriesPerTopic) {
+        const trimmed = queries.slice(-maxQueriesPerTopic);
+        this.topicQueries.set(topic, trimmed);
+        trimmedTopics++;
+      }
+    }
+    
+    if (trimmedTopics > 0) {
+      this.log(`🔧 Maintenance: Trimmed ${trimmedTopics} oversized topic histories`);
+    }
+    
+    const analytics = this.getTopicAnalytics();
+    this.log(`📊 Post-maintenance: ${analytics.totalTopics} topics, ${analytics.totalQuestions} questions, ${analytics.totalQueries} queries`);
   }
 
   /**
@@ -88,9 +375,10 @@ export class QuestionBufferManager {
 
     for (const cachedQuestion of dbQuestions) {
       if (this.questionBuffer.length >= this.questionBufferSize) break;
-      if (!this.recentQuestions.includes(cachedQuestion.question)) {
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      if (!topicRecentQuestions.includes(cachedQuestion.question)) {
         this.questionBuffer.push(cachedQuestion);
-        this.recentQuestions.push(cachedQuestion.question);
+        this.addTopicRecentQuestion(topic, cachedQuestion.question);
         this.log(`📦 Pre-filled with cached question: "${cachedQuestion.question}"`);
       }
     }
@@ -138,15 +426,13 @@ export class QuestionBufferManager {
     this.log("⚠️ Question buffer empty, checking database...");
 
     const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 5);
-    const availableDbQuestions = dbQuestions.filter((q: any) => !this.recentQuestions.includes(q.question));
+    const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+    const availableDbQuestions = dbQuestions.filter((q: any) => !topicRecentQuestions.includes(q.question));
 
     if (availableDbQuestions.length > 0) {
       const question = availableDbQuestions[0];
 
-      this.recentQuestions.push(question.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
-      }
+      this.addTopicRecentQuestion(topic, question.question);
 
       await this.questionDatabase.markQuestionAsUsed(question.question);
 
@@ -161,19 +447,40 @@ export class QuestionBufferManager {
     this.log("⚠️ No suitable questions in database, generating question directly...");
 
     try {
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      const topicSpecificQueries = this.getTopicQueries(topic);
+      const topicPreviousAnswers = this.getTopicAnswers(topic);
+      const topicRawResponses = this.getTopicRawResponses(topic);
+
+      this.log(topicRecentQuestions)
+      
       const questionRequest = {
         topic,
         difficulty,
-        previousQuestions: this.recentQuestions
+        previousQuestions: topicRecentQuestions,
+        previousSearchQueries: topicSpecificQueries,
+        previousAnswers: topicPreviousAnswers,
+        previousRawResponses: topicRawResponses
       };
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
 
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
+      this.addTopicRecentQuestion(topic, generatedQuestion.question);
+      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
+
+      // Add raw fact response if available
+      if (generatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
+      }
+
+      // Add actual web search queries if any were used
+      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
+        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
+        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
+      } else {
+        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
       }
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
@@ -217,12 +524,10 @@ export class QuestionBufferManager {
       const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 1);
       if (dbQuestions.length > 0) {
         const cachedQuestion = dbQuestions[0];
-        if (!this.recentQuestions.includes(cachedQuestion.question)) {
+        const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+        if (!topicRecentQuestions.includes(cachedQuestion.question)) {
           this.questionBuffer.push(cachedQuestion);
-          this.recentQuestions.push(cachedQuestion.question);
-          if (this.recentQuestions.length > 50) {
-            this.recentQuestions.shift();
-          }
+          this.addTopicRecentQuestion(topic, cachedQuestion.question);
           this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
           this.state.currentTopic = allTopics[this.state.currentTopicIndex];
           this.log(`📦 Added cached question to buffer: "${cachedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.questionBufferSize})`);
@@ -230,19 +535,40 @@ export class QuestionBufferManager {
         }
       }
 
+      // Get topic-specific previous queries, questions, and answers for enhanced generation
+      const topicSpecificQueries = this.getTopicQueries(topic);
+      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
+      const topicPreviousAnswers = this.getTopicAnswers(topic);
+      const topicRawResponses = this.getTopicRawResponses(topic);
+      
       const questionRequest = {
         topic,
         difficulty,
-        previousQuestions: this.recentQuestions
+        previousQuestions: topicRecentQuestions,
+        previousSearchQueries: topicSpecificQueries,
+        previousAnswers: topicPreviousAnswers,
+        previousRawResponses: topicRawResponses
       };
 
+      this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions, ${topicSpecificQueries.length} previous search queries, and ${topicPreviousAnswers.length} previous answers`);
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
       await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
 
+      // Add actual web search queries if any were used
+      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
+        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
+        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
+      } else {
+        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
+      }
+
       this.questionBuffer.push(generatedQuestion);
-      this.recentQuestions.push(generatedQuestion.question);
-      if (this.recentQuestions.length > 50) {
-        this.recentQuestions.shift();
+      this.addTopicRecentQuestion(topic, generatedQuestion.question);
+      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
+
+      // Add raw fact response if available
+      if (generatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
       }
 
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
