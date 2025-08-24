@@ -54,9 +54,13 @@ export default function RootLayout({
           <div className="container-app">
             <Link href="/about" className="hover:underline mx-2">About</Link>
             <span className="mx-1">|</span>
+            <Link href="/blog" className="hover:underline mx-2">Blog</Link>
+            <span className="mx-1">|</span>
             <Link href="/privacy-policy" className="hover:underline mx-2">Privacy Policy</Link>
             <span className="mx-1">|</span>
             <Link href="/terms-conditions" className="hover:underline mx-2">Terms & Conditions</Link>
+            <span className="mx-1">|</span>
+            <Link href="/community-guidelines" className="hover:underline mx-2">Community Guidelines</Link>
             <span className="mx-1">|</span>
             <Link href="/contact" className="hover:underline mx-2">Contact</Link>
           </div>
