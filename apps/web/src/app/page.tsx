@@ -1,11 +1,14 @@
 "use client";
 
-import { useGameConnection } from "@/hooks/useGameConnection";
+import React from "react";
+import { useRouter } from "next/navigation";
+import { useGameConnectionContext } from "@/contexts/GameConnectionContext";
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameLayout } from "./components/GameLayout";
 import { Homepage } from "./components/Homepage";
 
 export default function Home() {
+  const router = useRouter();
   const { 
     connectionStatus, 
     gameState,
@@ -21,15 +24,38 @@ export default function Home() {
     setRoundTime,
     setMaxPlayers,
     sendChatMessage
-  } = useGameConnection();
+  } = useGameConnectionContext();
 
-  // Adapter functions to match Homepage prop types
+  // Adapter functions that handle room joining/creation and navigation
   const handleJoinRoom = async (playerName: string, gamePin: string) => {
-    await joinRoom({ playerName, gamePin });
+    try {
+      await joinRoom({ playerName, gamePin });
+      // Navigate to game page with URL parameters
+      router.push(`/game/${gamePin}?player=${encodeURIComponent(playerName)}`);
+    } catch (error) {
+      // Stay on homepage if join fails - error will be shown by Homepage component
+      throw error;
+    }
   };
+
   const handleCreateRoom = async (roomName: string, hostName: string, topics: string[], difficulty: number, isPrivate: boolean) => {
-    await createRoom({ roomName, hostName, topics, difficulty, isPrivate });
+    try {
+      await createRoom({ roomName, hostName, topics, difficulty, isPrivate });
+      // Room creation will trigger navigation in the effect below
+    } catch (error) {
+      // Stay on homepage if creation fails - error will be shown by Homepage component  
+      throw error;
+    }
   };
+
+  // Navigate to game page when successfully connected and have game state
+  React.useEffect(() => {
+    if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
+      // Extract player name from current state or use a default
+      const playerName = Array.from(gameState.players.values()).find(p => p.id === currentPlayerId)?.name || "Player";
+      router.push(`/game/${gameState.gamePin}?player=${encodeURIComponent(playerName)}`);
+    }
+  }, [connectionStatus, gameState?.gamePin, currentPlayerId, router, gameState?.players]);
 
   // Show Homepage when disconnected, GameLayout when connected
   if (connectionStatus === ConnectionStatus.DISCONNECTED) {
@@ -41,13 +67,19 @@ export default function Home() {
     );
   }
 
+  // Handle leaving game from homepage (should redirect if connected)
+  const handleLeaveGameFromHome = async () => {
+    await leaveRoom();
+    // Already on homepage, just refresh state
+  };
+
   return (
     <GameLayout 
       connectionStatus={connectionStatus}
       gameState={gameState}
       currentPlayerId={currentPlayerId}
       // Actions
-      onLeaveGame={leaveRoom}
+      onLeaveGame={handleLeaveGameFromHome}
       onStartGame={startGame}
       onSubmitGuess={submitGuess}
       onSetTopics={setTopics}

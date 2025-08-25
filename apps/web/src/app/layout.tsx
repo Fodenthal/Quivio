@@ -4,6 +4,7 @@ import "./globals.css";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import Link from "next/link";
 import { DisplayNameProvider } from "../contexts/DisplayNameContext";
+import { GameConnectionProvider } from "../contexts/GameConnectionContext";
 import { MobileScaleFix } from "./components/MobileScaleFix";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
@@ -47,8 +48,10 @@ export default function RootLayout({
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <MobileScaleFix />
         <DisplayNameProvider>
-          <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
-          {children}
+          <GameConnectionProvider>
+            <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+            {children}
+          </GameConnectionProvider>
         </DisplayNameProvider>
         <footer className="w-full border-t mt-8 py-4 text-center text-sm text-text-secondary bg-white/10 backdrop-blur-xl safe-bottom">
           <div className="container-app">
