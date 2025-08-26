@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 import { GameConnectionProvider } from "../contexts/GameConnectionContext";
 import { MobileScaleFix } from "./components/MobileScaleFix";
+import { DebugTools } from "./components/DebugTools";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -50,6 +51,7 @@ export default function RootLayout({
         <DisplayNameProvider>
           <GameConnectionProvider>
             <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+            <DebugTools />
             {children}
           </GameConnectionProvider>
         </DisplayNameProvider>
