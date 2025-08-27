@@ -292,24 +292,39 @@ export function useGameConnection(): UseGameConnectionReturn {
 
   // Session management functions
   const attemptReconnection = useCallback(async (): Promise<boolean> => {
+    const reconnectionData = GameSessionStorage.getReconnectionData();
+    
     try {
-      const reconnectionData = GameSessionStorage.getReconnectionData();
       if (!reconnectionData) {
         console.log("No stored session data for reconnection");
         return false;
       }
 
-      console.log(`Attempting reconnection to game ${reconnectionData.gamePin} as ${reconnectionData.playerName}`);
+      console.log(`🔄 Attempting reconnection to game ${reconnectionData.gamePin} as ${reconnectionData.playerName}`);
       await joinRoom({
         gamePin: reconnectionData.gamePin,
         playerName: reconnectionData.playerName
       });
       
+      console.log(`✅ Reconnection successful to ${reconnectionData.gamePin}`);
       return true;
     } catch (error) {
-      console.error("Reconnection failed:", error);
-      // Clear invalid session data
-      GameSessionStorage.clearCurrentSession();
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const gamePin = reconnectionData?.gamePin || 'unknown';
+      console.error(`❌ Reconnection failed for ${gamePin}:`, errorMessage);
+      
+      // Enhanced error handling for specific cases
+      if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
+        console.log("🗑️ Room appears to have been disposed - clearing stale session data");
+        GameSessionStorage.clearCurrentSession();
+      } else if (errorMessage.includes('full') || errorMessage.includes('capacity')) {
+        console.log("🚫 Room is full - keeping session data for retry");
+        // Don't clear session data for full rooms - user might want to retry
+      } else {
+        console.log("🧹 Clearing session data due to unknown reconnection error");
+        GameSessionStorage.clearCurrentSession();
+      }
+      
       return false;
     }
   }, [joinRoom]);

@@ -47,7 +47,8 @@ interface SettingsMessage {
 // StaticPrompt type moved alongside static prompts
 
 export class TriviaRoom extends Room<TriviaRoomState> {
-  maxClients = 8;
+  maxClients = 8
+  autoDispose = false // Disable automatic disposal when room becomes empty
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
