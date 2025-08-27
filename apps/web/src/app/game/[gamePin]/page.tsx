@@ -38,6 +38,7 @@ export default function GamePage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
   const [isLeavingGame, setIsLeavingGame] = useState(false);
+  const [userIntentionallyLeft, setUserIntentionallyLeft] = useState(false);
 
   // Extract player name from URL parameters or use stored display name
   const playerNameFromUrl = searchParams.get('player');
@@ -46,6 +47,7 @@ export default function GamePage() {
   const handleLeaveGame = useCallback(async () => {
     try {
       setIsLeavingGame(true);
+      setUserIntentionallyLeft(true); // Mark as intentional leave
       console.log("🚪 User explicitly leaving game");
       
       await leaveRoom();
@@ -74,26 +76,39 @@ export default function GamePage() {
       }
     };
 
-    const handlePopState = (e: PopStateEvent) => {
-      // Prevent back button navigation while in active game
+    // Add history entry to trap back button navigation
+    const preventBackNavigation = () => {
       if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
-        e.preventDefault();
+        // Push current state to history to "trap" the user
+        window.history.pushState({ gameRoom: gamePin }, '', window.location.href);
+      }
+    };
+
+    const handlePopState = () => {
+      // Only intercept if we're connected to a game
+      if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
+        console.log('🔙 Back button pressed while in game, showing confirmation');
         
-        // Show browser confirmation dialog
+        // Show confirmation dialog
         const confirmLeave = window.confirm(
           `You are currently in game ${gameState.gamePin} with other players.\n\nLeaving will disconnect you from the room.\n\nAre you sure you want to leave?`
         );
         
         if (confirmLeave) {
-          // User confirmed - leave the game properly
+          // User confirmed - leave the game properly (don't prevent navigation)
+          console.log('🚪 User confirmed leaving game via back button');
           handleLeaveGame();
         } else {
-          // User cancelled - stay in game, push current state back
-          window.history.pushState(null, '', `/game/${gamePin}${window.location.search}`);
+          // User cancelled - stay in game, push state back
+          console.log('🚫 User cancelled leaving game, staying in room');
+          window.history.pushState({ gameRoom: gamePin }, '', `/game/${gamePin}${window.location.search}`);
         }
       }
     };
 
+    // Set up navigation trapping when connected
+    preventBackNavigation();
+    
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
 
@@ -125,8 +140,8 @@ export default function GamePage() {
 
   // Auto-join logic - runs when page loads with disconnected state
   useEffect(() => {
-    // Only attempt auto-join once per page load, and not if user is leaving
-    if (connectionStatus === ConnectionStatus.DISCONNECTED && !hasAttemptedJoin && !isAttemptingJoin && !isLeavingGame) {
+    // Only attempt auto-join once per page load, and not if user is leaving or intentionally left
+    if (connectionStatus === ConnectionStatus.DISCONNECTED && !hasAttemptedJoin && !isAttemptingJoin && !isLeavingGame && !userIntentionallyLeft) {
       setHasAttemptedJoin(true);
       setIsAttemptingJoin(true);
       setJoinError(null);
@@ -170,7 +185,7 @@ export default function GamePage() {
       // Small delay to avoid race conditions with context initialization
       setTimeout(attemptAutoJoin, 100);
     }
-  }, [connectionStatus, gamePin, playerNameFromUrl, displayName, hasAttemptedJoin, isAttemptingJoin, isLeavingGame, attemptReconnection, joinRoom]);
+  }, [connectionStatus, gamePin, playerNameFromUrl, displayName, hasAttemptedJoin, isAttemptingJoin, isLeavingGame, userIntentionallyLeft, attemptReconnection, joinRoom]);
 
   // Reset join state when connection status changes to non-disconnected
   useEffect(() => {
