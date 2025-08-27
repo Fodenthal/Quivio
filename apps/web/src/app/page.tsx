@@ -15,8 +15,22 @@ export default function Home() {
     gameState,
     currentPlayerId,
     joinRoom, 
-    createRoom
+    createRoom,
+    leaveRoom
   } = useGameConnectionContext();
+
+  // Homepage cleanup effect - leave room if user navigated back to homepage via browser navigation
+  useEffect(() => {
+    // Only cleanup if we're connected to a game but landed on homepage
+    // This handles back button navigation from game page
+    if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
+      console.log(`🔙 User navigated to homepage while connected to ${gameState.gamePin}, leaving room`);
+      leaveRoom().catch(error => {
+        console.error("Failed to leave room during homepage cleanup:", error);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run once on mount to handle browser navigation
 
   // Navigation effect for room creation - navigates when room is ready
   useEffect(() => {

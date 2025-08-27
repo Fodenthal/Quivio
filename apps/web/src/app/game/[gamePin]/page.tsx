@@ -42,6 +42,25 @@ export default function GamePage() {
   // Extract player name from URL parameters or use stored display name
   const playerNameFromUrl = searchParams.get('player');
 
+  // Game pin validation - ensure we're connected to the correct room
+  useEffect(() => {
+    // If we're connected but to the wrong game pin, leave and rejoin the correct one
+    if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin && gameState.gamePin !== gamePin && !isLeavingGame) {
+      console.log(`🔄 Connected to wrong game (${gameState.gamePin} vs ${gamePin}), switching rooms`);
+      setIsLeavingGame(true);
+      leaveRoom().then(() => {
+        // Reset flags to allow auto-join to the correct room
+        setHasAttemptedJoin(false);
+        setIsAttemptingJoin(false);
+        setIsLeavingGame(false);
+        setJoinError(null);
+      }).catch(error => {
+        console.error("Failed to leave wrong room:", error);
+        setIsLeavingGame(false);
+      });
+    }
+  }, [connectionStatus, gameState?.gamePin, gamePin, isLeavingGame, leaveRoom]);
+
   // Auto-join logic - runs when page loads with disconnected state
   useEffect(() => {
     // Only attempt auto-join once per page load, and not if user is leaving
