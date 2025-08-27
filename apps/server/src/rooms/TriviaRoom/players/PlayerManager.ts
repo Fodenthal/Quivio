@@ -8,6 +8,7 @@ import { GameStatus } from "@shared/index";
 export class PlayerManager {
   private disposeTimer?: NodeJS.Timeout;
   private lastPlayerCount: number = 0;
+  private peakPlayerCount: number = 0; // Track the maximum number of players this room has ever had
   private singlePlayerGracePeriodMs: number;
   
   constructor(
@@ -35,6 +36,9 @@ export class PlayerManager {
     
     console.log(`👤 Player joined: ${client.sessionId.slice(0, 6)}, total players: ${this.state.players.size}`);
     
+    // Track peak player count for disposal logic
+    this.peakPlayerCount = Math.max(this.peakPlayerCount, this.state.players.size);
+    
     // Host assignment and game state management
     if (!this.state.hostId) this.state.setHost(client.sessionId);
     if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) this.state.canStart = true;
@@ -61,17 +65,24 @@ export class PlayerManager {
     if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) this.onPause();
     this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
     
-    // Smart disposal logic based on room history and player count
+    // Smart disposal logic based on room history and peak player count
     if (this.state.players.size === 0) {
-      const wasLikelySinglePlayerRoom = this.lastPlayerCount === 1;
-      const disposalDelay = wasLikelySinglePlayerRoom ? this.singlePlayerGracePeriodMs : this.disposeDelayMs;
+      const wasAlwaysSinglePlayer = this.peakPlayerCount <= 1;
       
-      console.log(`📅 Room empty - scheduling disposal in ${disposalDelay/1000}s (was single player: ${wasLikelySinglePlayerRoom}, lastPlayerCount was: ${this.lastPlayerCount})`);
-      
-      this.disposeTimer = setTimeout(() => {
-        console.log(`🗑️ Disposing room after ${disposalDelay/1000}s grace period`);
+      if (wasAlwaysSinglePlayer) {
+        // Room that never had more than 1 player: Give grace period for page refresh
+        const disposalDelay = this.singlePlayerGracePeriodMs;
+        console.log(`📅 Single-player room empty - scheduling disposal in ${disposalDelay/1000}s for potential reconnection (peak: ${this.peakPlayerCount})`);
+        
+        this.disposeTimer = setTimeout(() => {
+          console.log(`🗑️ Disposing single-player room after ${disposalDelay/1000}s grace period`);
+          this.onDispose();
+        }, disposalDelay);
+      } else {
+        // Room that had multiple players at some point: Dispose immediately when empty
+        console.log(`🚀 Multi-player room empty - disposing immediately (peak was ${this.peakPlayerCount} players)`);
         this.onDispose();
-      }, disposalDelay);
+      }
     } else if (this.disposeTimer) {
       // Cancel disposal if players rejoin
       clearTimeout(this.disposeTimer);
