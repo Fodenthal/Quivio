@@ -126,10 +126,18 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [connectionStatus, gameState, currentPlayerId]);
 
-  // Clear session data when disconnected
+  // Clear session data when disconnected (with delay to allow for reconnection attempts)
   useEffect(() => {
     if (connectionStatus === ConnectionStatus.DISCONNECTED) {
-      GameSessionStorage.clearCurrentSession();
+      // Delay session clearing to allow for page refreshes and temporary disconnections
+      const clearDelay = setTimeout(() => {
+        if (connectionStatus === ConnectionStatus.DISCONNECTED) {
+          console.log("🗑️ Clearing session storage after disconnection timeout");
+          GameSessionStorage.clearCurrentSession();
+        }
+      }, 5000); // 5 second delay
+      
+      return () => clearTimeout(clearDelay);
     }
   }, [connectionStatus]);
 

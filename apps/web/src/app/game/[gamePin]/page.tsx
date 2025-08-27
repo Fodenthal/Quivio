@@ -37,14 +37,15 @@ export default function GamePage() {
   const [isAttemptingJoin, setIsAttemptingJoin] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
+  const [isLeavingGame, setIsLeavingGame] = useState(false);
 
   // Extract player name from URL parameters or use stored display name
   const playerNameFromUrl = searchParams.get('player');
 
   // Auto-join logic - runs when page loads with disconnected state
   useEffect(() => {
-    // Only attempt auto-join once per page load
-    if (connectionStatus === ConnectionStatus.DISCONNECTED && !hasAttemptedJoin && !isAttemptingJoin) {
+    // Only attempt auto-join once per page load, and not if user is leaving
+    if (connectionStatus === ConnectionStatus.DISCONNECTED && !hasAttemptedJoin && !isAttemptingJoin && !isLeavingGame) {
       setHasAttemptedJoin(true);
       setIsAttemptingJoin(true);
       setJoinError(null);
@@ -88,7 +89,7 @@ export default function GamePage() {
       // Small delay to avoid race conditions with context initialization
       setTimeout(attemptAutoJoin, 100);
     }
-  }, [connectionStatus, gamePin, playerNameFromUrl, displayName, hasAttemptedJoin, isAttemptingJoin, attemptReconnection, joinRoom]);
+  }, [connectionStatus, gamePin, playerNameFromUrl, displayName, hasAttemptedJoin, isAttemptingJoin, isLeavingGame, attemptReconnection, joinRoom]);
 
   // Reset join state when connection status changes to non-disconnected
   useEffect(() => {
@@ -100,8 +101,23 @@ export default function GamePage() {
 
   // Handle leaving game - navigate back to home
   const handleLeaveGame = async () => {
-    await leaveRoom();
-    router.push('/');
+    try {
+      setIsLeavingGame(true);
+      console.log("🚪 User explicitly leaving game");
+      
+      await leaveRoom();
+      
+      // Clear any auto-join flags to prevent re-entry
+      setHasAttemptedJoin(true);
+      setIsAttemptingJoin(false);
+      setJoinError(null);
+      
+      // Navigate to homepage
+      router.push('/');
+    } catch (error) {
+      console.error("Failed to leave game:", error);
+      setIsLeavingGame(false);
+    }
   };
 
   // Handle retry attempt
