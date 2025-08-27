@@ -19,7 +19,7 @@ export class PlayerManager {
     private readonly disposeDelayMs: number
   ) {
     // Extended grace period for single player rooms to handle page refreshes
-    this.singlePlayerGracePeriodMs = disposeDelayMs * 3; // 3x longer for single player (180 seconds vs 60)
+    this.singlePlayerGracePeriodMs = disposeDelayMs; // Same as normal disposal delay (60 seconds)
   }
 
   onAuth(client: Client, options: any): boolean {
@@ -72,7 +72,7 @@ export class PlayerManager {
       if (wasAlwaysSinglePlayer) {
         // Room that never had more than 1 player: Give grace period for page refresh
         const disposalDelay = this.singlePlayerGracePeriodMs;
-        console.log(`📅 Single-player room empty - scheduling disposal in ${disposalDelay/1000}s for potential reconnection (peak: ${this.peakPlayerCount})`);
+        console.log(`📅 Single-player room empty - scheduling disposal in ${disposalDelay/1000}s grace period for potential reconnection (peak: ${this.peakPlayerCount})`);
         
         this.disposeTimer = setTimeout(() => {
           console.log(`🗑️ Disposing single-player room after ${disposalDelay/1000}s grace period`);
