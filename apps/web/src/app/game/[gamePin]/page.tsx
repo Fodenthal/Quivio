@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useGameConnectionContext } from "@/contexts/GameConnectionContext";
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameLayout } from "../../components/GameLayout";
@@ -41,6 +41,68 @@ export default function GamePage() {
 
   // Extract player name from URL parameters or use stored display name
   const playerNameFromUrl = searchParams.get('player');
+
+  // Handle leaving game - navigate back to home
+  const handleLeaveGame = useCallback(async () => {
+    try {
+      setIsLeavingGame(true);
+      console.log("🚪 User explicitly leaving game");
+      
+      await leaveRoom();
+      
+      // Clear any auto-join flags to prevent re-entry
+      setHasAttemptedJoin(true);
+      setIsAttemptingJoin(false);
+      setJoinError(null);
+      
+      // Navigate to homepage
+      router.push('/');
+    } catch (error) {
+      console.error("Failed to leave game:", error);
+      setIsLeavingGame(false);
+    }
+  }, [leaveRoom, router]);
+
+  // Browser navigation prevention - warn users before leaving active game
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only show warning if actually connected to a game
+      if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
+        e.preventDefault();
+        e.returnValue = 'You are currently in a game. Leaving will disconnect you from the room.';
+        return e.returnValue;
+      }
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      // Prevent back button navigation while in active game
+      if (connectionStatus === ConnectionStatus.CONNECTED && gameState?.gamePin) {
+        e.preventDefault();
+        
+        // Show browser confirmation dialog
+        const confirmLeave = window.confirm(
+          `You are currently in game ${gameState.gamePin} with other players.\n\nLeaving will disconnect you from the room.\n\nAre you sure you want to leave?`
+        );
+        
+        if (confirmLeave) {
+          // User confirmed - leave the game properly
+          handleLeaveGame();
+        } else {
+          // User cancelled - stay in game, push current state back
+          window.history.pushState(null, '', `/game/${gamePin}${window.location.search}`);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [connectionStatus, gameState?.gamePin, gamePin, handleLeaveGame]);
 
   // Game pin validation - ensure we're connected to the correct room
   useEffect(() => {
@@ -117,27 +179,6 @@ export default function GamePage() {
       setJoinError(null);
     }
   }, [connectionStatus]);
-
-  // Handle leaving game - navigate back to home
-  const handleLeaveGame = async () => {
-    try {
-      setIsLeavingGame(true);
-      console.log("🚪 User explicitly leaving game");
-      
-      await leaveRoom();
-      
-      // Clear any auto-join flags to prevent re-entry
-      setHasAttemptedJoin(true);
-      setIsAttemptingJoin(false);
-      setJoinError(null);
-      
-      // Navigate to homepage
-      router.push('/');
-    } catch (error) {
-      console.error("Failed to leave game:", error);
-      setIsLeavingGame(false);
-    }
-  };
 
   // Handle retry attempt
   const handleRetry = () => {
