@@ -168,8 +168,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.state,
       () => this.resumeGame(),
       () => this.pauseGame(),
-      () => this.disconnect(),
-      this.ROOM_DISPOSE_DELAY
+      () => this.disconnect()
     );
     
     // Set up message handlers
@@ -191,14 +190,44 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.updateRoomMetadata();
   }
 
-  onLeave(client: Client, _consented: boolean) {
-    this.log.player("Player left", { 
+  async onLeave(client: Client, consented?: boolean) {
+    this.log.player("Player disconnected", { 
       playerId: client.sessionId,
+      consented: !!consented,
       remainingPlayers: this.state.players.size - 1
     });
-    
-    this.playerManager.onLeave(client);
-    this.updateRoomMetadata();
+
+    try {
+      if (consented) {
+        // User explicitly left (clicked leave button) - no reconnection allowed
+        console.log(`🚪 Player ${client.sessionId.slice(0, 6)} left voluntarily - no reconnection`);
+        throw new Error("Consented leave - no reconnection allowed");
+      }
+
+      // Unintended disconnect - allow reconnection with 20 second window
+      console.log(`🔄 Allowing reconnection for ${client.sessionId.slice(0, 6)} (20s window)`);
+      await this.allowReconnection(client, 20);
+
+      // Client successfully reconnected
+      console.log(`✅ Player ${client.sessionId.slice(0, 6)} reconnected successfully`);
+      this.log.player("Player reconnected", { 
+        playerId: client.sessionId,
+        totalPlayers: this.state.players.size
+      });
+      
+    } catch (e) {
+      // Client didn't reconnect in time OR it was a consented leave
+      console.log(`❌ Player ${client.sessionId.slice(0, 6)} did not reconnect: ${e instanceof Error ? e.message : String(e)}`);
+      this.log.player("Player removed", { 
+        playerId: client.sessionId,
+        reason: consented ? "voluntary_leave" : "reconnection_timeout",
+        remainingPlayers: this.state.players.size - 1
+      });
+      
+      // Now handle the actual removal (host reassignment, disposal logic, etc.)
+      this.playerManager.handlePlayerRemoval(client);
+      this.updateRoomMetadata();
+    }
   }
 
   private updateRoomMetadata() {

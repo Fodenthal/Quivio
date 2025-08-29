@@ -6,20 +6,13 @@ import { GameStatus } from "@shared/index";
  * Manages join/leave, host assignment, readiness, and pause/resume decisions.
  */
 export class PlayerManager {
-  private disposeTimer?: NodeJS.Timeout;
-  private lastPlayerCount: number = 0;
-  private peakPlayerCount: number = 0; // Track the maximum number of players this room has ever had
-  private singlePlayerGracePeriodMs: number;
-  
   constructor(
     private readonly state: TriviaRoomState, 
     private readonly onResume: () => void, 
     private readonly onPause: () => void, 
-    private readonly onDispose: () => void, 
-    private readonly disposeDelayMs: number
+    private readonly onDispose: () => void
   ) {
-    // Extended grace period for single player rooms to handle page refreshes
-    this.singlePlayerGracePeriodMs = disposeDelayMs; // Same as normal disposal delay (60 seconds)
+    // Colyseus now handles reconnection timing via allowReconnection()
   }
 
   onAuth(client: Client, options: any): boolean {
@@ -28,28 +21,24 @@ export class PlayerManager {
   }
 
   onJoin(client: Client): void {
-    // Clear any pending disposal timer
-    if (this.disposeTimer) { 
-      clearTimeout(this.disposeTimer); 
-      this.disposeTimer = undefined; 
-    }
-    
     console.log(`👤 Player joined: ${client.sessionId.slice(0, 6)}, total players: ${this.state.players.size}`);
     
-    // Track peak player count for disposal logic
-    this.peakPlayerCount = Math.max(this.peakPlayerCount, this.state.players.size);
-    
     // Host assignment and game state management
-    if (!this.state.hostId) this.state.setHost(client.sessionId);
+    if (!this.state.hostId) {
+      console.log(`👑 No host found, assigning ${client.sessionId.slice(0, 6)} as host`);
+      this.state.setHost(client.sessionId);
+    }
+    
     if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) this.state.canStart = true;
     if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) this.onResume();
-    
-    // Update player count tracking AFTER all logic
-    this.lastPlayerCount = this.state.players.size;
   }
 
-  onLeave(client: Client): void {
-    console.log(`👋 Player leaving: ${client.sessionId.slice(0, 6)}, players before removal: ${this.state.players.size}, lastPlayerCount: ${this.lastPlayerCount}`);
+  /**
+   * Handle actual player removal after reconnection window expires or consented leave
+   * This replaces the old onLeave method and contains all the removal logic
+   */
+  handlePlayerRemoval(client: Client): void {
+    console.log(`👋 Removing player: ${client.sessionId.slice(0, 6)}, players before removal: ${this.state.players.size}`);
     
     this.state.removePlayer(client.sessionId);
     
@@ -73,32 +62,19 @@ export class PlayerManager {
     if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) this.onPause();
     this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
     
-    // Simple disposal logic: Grace period if room went from 1 player to 0 (likely refresh)
+    // Room disposal logic - dispose immediately when empty (Colyseus handles reconnection timing)
     if (this.state.players.size === 0) {
-      const wasLikelySinglePlayerRefresh = this.lastPlayerCount === 1;
-      
-      if (wasLikelySinglePlayerRefresh) {
-        // Room went from 1 to 0 players: Give grace period for page refresh
-        const disposalDelay = this.singlePlayerGracePeriodMs;
-        console.log(`📅 Single-player refresh detected - scheduling disposal in ${disposalDelay/1000}s grace period for reconnection`);
-        
-        this.disposeTimer = setTimeout(() => {
-          console.log(`🗑️ Disposing room after ${disposalDelay/1000}s grace period`);
-          this.onDispose();
-        }, disposalDelay);
-      } else {
-        // Multi-player room or intentional leave: Dispose immediately when empty
-        console.log(`🚀 Multi-player room empty - disposing immediately (had ${this.lastPlayerCount} players)`);
-        this.onDispose();
-      }
-    } else if (this.disposeTimer) {
-      // Cancel disposal if players rejoin
-      clearTimeout(this.disposeTimer);
-      this.disposeTimer = undefined;
+      console.log(`🗑️ Room empty - disposing immediately (Colyseus handled reconnection window)`);
+      this.onDispose();
     }
-    
-    // Update player count tracking
-    this.lastPlayerCount = this.state.players.size;
+  }
+
+  /**
+   * Legacy method for backwards compatibility - now just delegates to handlePlayerRemoval
+   * @deprecated Use handlePlayerRemoval instead
+   */
+  onLeave(client: Client): void {
+    this.handlePlayerRemoval(client);
   }
 }
 
