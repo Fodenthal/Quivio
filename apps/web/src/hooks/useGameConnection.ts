@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { GameClient, ConnectionStatus } from "@/lib/gameClient";
 import { GameState } from "@shared/index";
 import { convertColyseusState } from "@/utils/gameStateConverter";
+import { GameSessionStorage } from "@/utils/gameSessionStorage";
 
 export interface UseGameConnectionReturn {
   // State
@@ -16,6 +17,11 @@ export interface UseGameConnectionReturn {
   joinRoom: (params: { playerName: string; gamePin: string }) => Promise<void>;
   createRoom: (params: { roomName: string; hostName: string; topics: string[]; difficulty: number; isPrivate: boolean }) => Promise<void>;
   leaveRoom: () => Promise<void>;
+  
+  // Session management
+  attemptReconnection: () => Promise<boolean>;
+  hasStoredSession: () => boolean;
+  getRecentGames: () => import("@/utils/gameSessionStorage").RecentGame[];
   
   // Game actions
   sendPlayerReady: (ready: boolean) => Promise<void>;
@@ -88,9 +94,66 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [gameClient, connectionStatus]);
 
-  // Room actions
+  // Save session data when connected and have game state
+  useEffect(() => {
+    if (connectionStatus === ConnectionStatus.CONNECTED && gameState && currentPlayerId) {
+      const currentPlayer = gameState.players.get(currentPlayerId);
+      const room = gameClient.getRoom();
+      
+      if (currentPlayer && gameState.gamePin && room) {
+        // Save current session data with reconnection token for Colyseus reconnection
+        GameSessionStorage.saveCurrentSession({
+          gamePin: gameState.gamePin,
+          playerName: currentPlayer.name,
+          playerId: currentPlayerId,
+          roomId: room.roomId, // Actual Colyseus room ID
+          reconnectionToken: room.reconnectionToken, // Colyseus reconnection token
+          hostId: gameState.hostId,
+          lastConnected: Date.now(),
+          currentRound: gameState.currentRound,
+          playerScore: currentPlayer.score,
+          gameStatus: gameState.gameStatus
+        });
+
+        // Save to recent games list
+        GameSessionStorage.addRecentGame({
+          gamePin: gameState.gamePin,
+          roomName: gameState.roomName,
+          playerName: currentPlayer.name,
+          isHost: currentPlayer.isHost
+        });
+
+        // Save player name for future use
+        GameSessionStorage.saveLastPlayerName(currentPlayer.name);
+      }
+    }
+  }, [connectionStatus, gameState, currentPlayerId, gameClient]);
+
+  // Note: Session clearing is now handled contextually in reconnection logic
+  // Colyseus allowReconnection(20s) provides the timing, no manual delays needed
+
+  // Room actions with automatic reconnection logic
   const joinRoom = useCallback(async ({ playerName, gamePin }: { playerName: string; gamePin: string }) => {
     try {
+      // First, check if we have a stored session for this exact game pin
+      const storedSession = GameSessionStorage.getCurrentSession();
+      
+      if (storedSession && storedSession.gamePin === gamePin && storedSession.reconnectionToken) {
+        try {
+          console.log(`🔄 Found stored session for ${gamePin}, attempting reconnection...`);
+          await gameClient.reconnect(storedSession.reconnectionToken);
+          console.log(`✅ Successfully reconnected to existing session`);
+          return; // Success! We're reconnected to the same session
+        } catch (reconnectError) {
+          console.log(`❌ Reconnection failed: ${reconnectError instanceof Error ? reconnectError.message : String(reconnectError)}`);
+          console.log(`🔄 Falling back to fresh connection...`);
+          // Clear stale session data
+          GameSessionStorage.clearCurrentSession();
+        }
+      }
+
+      // Fallback: Create fresh connection
+      console.log(`🚪 Creating fresh connection to ${gamePin}...`);
       await gameClient.joinRoom({
         playerName,
         gamePin,
@@ -121,6 +184,8 @@ export function useGameConnection(): UseGameConnectionReturn {
   const leaveRoom = useCallback(async () => {
     try {
       await gameClient.leaveRoom();
+      // Clear session storage when intentionally leaving
+      GameSessionStorage.clearCurrentSession();
       // Reset local state
       if (isMountedRef.current) {
         setGameState(null);
@@ -235,6 +300,50 @@ export function useGameConnection(): UseGameConnectionReturn {
     }
   }, [gameClient]);
 
+  // Session management functions
+  const attemptReconnection = useCallback(async (): Promise<boolean> => {
+    const storedSession = GameSessionStorage.getCurrentSession();
+    
+    try {
+      if (!storedSession || !storedSession.reconnectionToken) {
+        console.log("❌ No stored session data for Colyseus reconnection");
+        return false;
+      }
+
+      console.log(`🔄 Attempting Colyseus reconnection using token ${storedSession.reconnectionToken.slice(0, 8)}...`);
+      await gameClient.reconnect(storedSession.reconnectionToken);
+      
+      console.log(`✅ Colyseus reconnection successful to ${storedSession.gamePin}`);
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const gamePin = storedSession?.gamePin || 'unknown';
+      console.error(`❌ Colyseus reconnection failed for ${gamePin}:`, errorMessage);
+      
+      // Enhanced error handling for specific cases
+      if (errorMessage.includes('not found') || errorMessage.includes('does not exist') || errorMessage.includes('reconnect')) {
+        console.log("🗑️ Room disposed or session expired - clearing stale session data");
+        GameSessionStorage.clearCurrentSession();
+      } else if (errorMessage.includes('full') || errorMessage.includes('capacity')) {
+        console.log("🚫 Room is full - keeping session data for retry");
+        // Don't clear session data for full rooms - user might want to retry
+      } else {
+        console.log("🧹 Clearing session data due to unknown reconnection error");
+        GameSessionStorage.clearCurrentSession();
+      }
+      
+      return false;
+    }
+  }, [gameClient]);
+
+  const hasStoredSession = useCallback((): boolean => {
+    return GameSessionStorage.hasActiveSession();
+  }, []);
+
+  const getRecentGames = useCallback(() => {
+    return GameSessionStorage.getRecentGames();
+  }, []);
+
   return {
     // State
     connectionStatus,
@@ -246,6 +355,11 @@ export function useGameConnection(): UseGameConnectionReturn {
     joinRoom,
     createRoom,
     leaveRoom,
+    
+    // Session management
+    attemptReconnection,
+    hasStoredSession,
+    getRecentGames,
     
     // Game actions
     sendPlayerReady,

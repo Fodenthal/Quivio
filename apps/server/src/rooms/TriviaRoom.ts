@@ -47,16 +47,17 @@ interface SettingsMessage {
 // StaticPrompt type moved alongside static prompts
 
 export class TriviaRoom extends Room<TriviaRoomState> {
-  maxClients = 8;
+  maxClients = 8
+  autoDispose = false // Disable automatic disposal when room becomes empty
   private roundTimer?: NodeJS.Timeout;
   private gameLoopTimer?: NodeJS.Timeout;
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
-  private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
+  // ROOM_DISPOSE_DELAY removed - Colyseus handles timing via allowReconnection()
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
-  private disposeTimer?: NodeJS.Timeout;
+
   private registrySync!: RegistrySync;
   private pinGenerator = new PinGenerator();
   private chatManager!: ChatManager;
@@ -167,8 +168,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       this.state,
       () => this.resumeGame(),
       () => this.pauseGame(),
-      () => this.disconnect(),
-      this.ROOM_DISPOSE_DELAY
+      () => this.disconnect()
     );
     
     // Set up message handlers
@@ -190,14 +190,44 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.updateRoomMetadata();
   }
 
-  onLeave(client: Client, _consented: boolean) {
-    this.log.player("Player left", { 
+  async onLeave(client: Client, consented?: boolean) {
+    this.log.player("Player disconnected", { 
       playerId: client.sessionId,
+      consented: !!consented,
       remainingPlayers: this.state.players.size - 1
     });
-    
-    this.playerManager.onLeave(client);
-    this.updateRoomMetadata();
+
+    try {
+      if (consented) {
+        // User explicitly left (clicked leave button) - no reconnection allowed
+        console.log(`🚪 Player ${client.sessionId.slice(0, 6)} left voluntarily - no reconnection`);
+        throw new Error("Consented leave - no reconnection allowed");
+      }
+
+      // Unintended disconnect - allow reconnection with 20 second window
+      console.log(`🔄 Allowing reconnection for ${client.sessionId.slice(0, 6)} (20s window)`);
+      await this.allowReconnection(client, 20);
+
+      // Client successfully reconnected
+      console.log(`✅ Player ${client.sessionId.slice(0, 6)} reconnected successfully`);
+      this.log.player("Player reconnected", { 
+        playerId: client.sessionId,
+        totalPlayers: this.state.players.size
+      });
+      
+    } catch (e) {
+      // Client didn't reconnect in time OR it was a consented leave
+      console.log(`❌ Player ${client.sessionId.slice(0, 6)} did not reconnect: ${e instanceof Error ? e.message : String(e)}`);
+      this.log.player("Player removed", { 
+        playerId: client.sessionId,
+        reason: consented ? "voluntary_leave" : "reconnection_timeout",
+        remainingPlayers: this.state.players.size - 1
+      });
+      
+      // Now handle the actual removal (host reassignment, disposal logic, etc.)
+      this.playerManager.handlePlayerRemoval(client);
+      this.updateRoomMetadata();
+    }
   }
 
   private updateRoomMetadata() {
@@ -230,9 +260,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.restartTimer) {
       clearInterval(this.restartTimer);
     }
-    if (this.disposeTimer) {
-      clearTimeout(this.disposeTimer);
-    }
+    // Colyseus handles disposal timing via allowReconnection()
     
     // Note: We don't close the database here since it's a singleton
     // that may be used by other rooms. It will be closed when the process exits.

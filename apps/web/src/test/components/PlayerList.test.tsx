@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PlayerList } from "../../app/components/PlayerList";
-import { GameState, PlayerData } from "@shared/index";
+import { GameState, PlayerData, GameStatus } from "@shared/index";
 
 describe("PlayerList", () => {
   const createPlayer = (overrides: Partial<PlayerData> = {}): PlayerData => ({
@@ -24,8 +24,9 @@ describe("PlayerList", () => {
     maxPlayers: 8,
     isPrivate: false,
     gamePin: "TEST1",
-    gameStarted: true,
-    gameEnded: false,
+    roomName: "Test Room",
+    gameStatus: GameStatus.IN_PROGRESS,
+
     gamePaused: false,
     canStart: false,
     currentRound: 1,
@@ -39,6 +40,8 @@ describe("PlayerList", () => {
     correctAnswer: "",
     currentTopic: "General Knowledge",
     currentDifficulty: 5,
+    topics: ["General Knowledge"],
+    currentTopicIndex: 0,
     players: playersMap,
     currentPrompt: {
       id: "test-prompt",

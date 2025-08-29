@@ -8,7 +8,6 @@ export enum ConnectionStatus {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting", 
   CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
   ERROR = "error"
 }
 
@@ -47,9 +46,6 @@ export class GameClient {
   private room: Room | null = null;
   private connectionStatus: ConnectionStatus = ConnectionStatus.DISCONNECTED;
   private events: GameClientEvents = {};
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 3;
-  private reconnectDelay = 1000; // Start with 1 second
   private serverHttpUrl: string; // HTTP URL for API calls
 
   constructor(serverUrl?: string) {
@@ -111,7 +107,7 @@ export class GameClient {
 
       this.setupRoomHandlers();
       this.setConnectionStatus(ConnectionStatus.CONNECTED);
-      this.reconnectAttempts = 0; // Reset on successful connection
+       // Reset on successful connection
 
       return this.room;
     } catch (error) {
@@ -168,6 +164,33 @@ export class GameClient {
   }
 
   /**
+   * Attempt to reconnect to an existing room session using reconnection token
+   */
+  async reconnect(reconnectionToken: string): Promise<Room> {
+    try {
+      console.log(`🔄 Attempting to reconnect using token ${reconnectionToken.slice(0, 8)}...`);
+      
+      this.setConnectionStatus(ConnectionStatus.CONNECTING);
+      
+      // Use Colyseus client.reconnect method with reconnection token
+      this.room = await this.client.reconnect(reconnectionToken);
+      
+      this.setupRoomHandlers();
+      this.setConnectionStatus(ConnectionStatus.CONNECTED);
+      
+      
+      console.log(`✅ Successfully reconnected using token`);
+      return this.room;
+      
+    } catch (error) {
+      this.setConnectionStatus(ConnectionStatus.ERROR);
+      const gameError = new Error(`Failed to reconnect: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`❌ Reconnection failed:`, gameError);
+      throw gameError;
+    }
+  }
+
+  /**
    * Join a trivia room by game pin
    */
   async joinRoom(options: JoinRoomOptions): Promise<Room> {
@@ -201,7 +224,7 @@ export class GameClient {
 
       this.setupRoomHandlers();
       this.setConnectionStatus(ConnectionStatus.CONNECTED);
-      this.reconnectAttempts = 0; // Reset on successful connection
+       // Reset on successful connection
 
       return this.room;
     } catch (error) {
@@ -389,22 +412,11 @@ export class GameClient {
       this.events.onMessage?.(String(type), message);
     });
 
-    // Handle disconnection
+    // Handle disconnection - Colyseus handles reconnection timing
     this.room.onLeave((code) => {
       console.log(`Left room with code: ${code}`);
       this.room = null;
-      
-      // Handle different disconnect reasons
-      if (code === 1000) {
-        // Graceful disconnect (user left or server removed them)
-        console.log("Gracefully disconnected from room");
-        this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
-      } else if (code > 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-        // Unexpected disconnection, try to reconnect
-        this.attemptReconnect();
-      } else {
-        this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
-      }
+      this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
     });
 
     // Handle errors
@@ -415,35 +427,7 @@ export class GameClient {
     });
   }
 
-  /**
-   * Attempt to reconnect to the room
-   */
-  private async attemptReconnect(): Promise<void> {
-    this.setConnectionStatus(ConnectionStatus.RECONNECTING);
-    this.reconnectAttempts++;
-
-    // Exponential backoff
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
-    setTimeout(async () => {
-      try {
-        // Note: In a real implementation, we'd need to store the original join options
-        // For now, this is a placeholder for the reconnection logic
-        console.log(`Attempting reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-        
-        // The actual reconnection would need additional state management
-        // to remember the room and player details
-        
-      } catch {
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          this.setConnectionStatus(ConnectionStatus.ERROR);
-          this.events.onError?.(new Error("Max reconnection attempts reached"));
-        } else {
-          this.attemptReconnect();
-        }
-      }
-    }, delay);
-  }
+  // Old reconnection logic removed - Colyseus handles this with reconnectionToken
 
   /**
    * Update connection status and notify listeners
