@@ -11,7 +11,7 @@ export function DebugTools() {
     if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       // Dynamically import debug tools and make them globally available
       import("../../utils/debugStorage").then(({ debugGameStorage }) => {
-        (window as any).debugGameStorage = debugGameStorage;
+        (window as typeof window & { debugGameStorage: typeof debugGameStorage }).debugGameStorage = debugGameStorage;
         console.log("🔧 Debug tools loaded! Try: debugGameStorage.logAllData()");
       }).catch((error) => {
         console.warn("Failed to load debug tools:", error);

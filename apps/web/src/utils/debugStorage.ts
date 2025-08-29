@@ -92,5 +92,5 @@ export const debugGameStorage = {
 
 // Make it available globally in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).debugGameStorage = debugGameStorage;
+  (window as typeof window & { debugGameStorage: typeof debugGameStorage }).debugGameStorage = debugGameStorage;
 }

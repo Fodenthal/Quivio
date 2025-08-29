@@ -43,7 +43,6 @@ export function GameLayout({
       case ConnectionStatus.CONNECTED:
         return "bg-green-500";
       case ConnectionStatus.CONNECTING:
-      case ConnectionStatus.RECONNECTING:
         return "bg-yellow-500";
       case ConnectionStatus.ERROR:
         return "bg-red-500";
@@ -58,8 +57,6 @@ export function GameLayout({
         return "Connected";
       case ConnectionStatus.CONNECTING:
         return "Connecting...";
-      case ConnectionStatus.RECONNECTING:
-        return "Reconnecting...";
       case ConnectionStatus.ERROR:
         return "Connection Error";
       default:

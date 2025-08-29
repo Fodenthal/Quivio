@@ -165,13 +165,7 @@ describe("GameLayout", () => {
       expect(statusIndicator).toBeInTheDocument();
     });
 
-    it("shows correct status text and color for reconnecting", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.RECONNECTING} />);
-      
-      expect(screen.getByText("Reconnecting...")).toBeInTheDocument();
-      const statusIndicator = document.querySelector('.bg-yellow-500');
-      expect(statusIndicator).toBeInTheDocument();
-    });
+    // Removed RECONNECTING test - Colyseus handles reconnection internally
 
     it("shows correct status text and color for error", () => {
       render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.ERROR} />);

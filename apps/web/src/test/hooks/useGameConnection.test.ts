@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useGameConnection } from "../../hooks/useGameConnection";
 import { ConnectionStatus } from "../../lib/gameClient";
-import { GameState } from "@shared/index";
+import { GameState, GameStatus } from "@shared/index";
 
 // Mock the GameClient
 const mockGameClient = {
@@ -29,8 +29,8 @@ const mockConvertedState: GameState = {
   isPrivate: false,
   gamePin: "TEST1",
   roomName: "Test Room",
-  gameStarted: false,
-  gameEnded: false,
+  gameStatus: GameStatus.WAITING,
+
   gamePaused: false,
   canStart: false,
   currentRound: 1,
@@ -78,7 +78,7 @@ vi.mock("../../lib/gameClient", () => ({
     DISCONNECTED: "disconnected",
     CONNECTING: "connecting",
     CONNECTED: "connected",
-    RECONNECTING: "reconnecting",
+    // RECONNECTING removed - Colyseus handles reconnection internally
     ERROR: "error",
   },
 }));

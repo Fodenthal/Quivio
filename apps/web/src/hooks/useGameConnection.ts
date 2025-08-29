@@ -127,22 +127,10 @@ export function useGameConnection(): UseGameConnectionReturn {
         GameSessionStorage.saveLastPlayerName(currentPlayer.name);
       }
     }
-  }, [connectionStatus, gameState, currentPlayerId]);
+  }, [connectionStatus, gameState, currentPlayerId, gameClient]);
 
-  // Clear session data when disconnected (with delay to allow for reconnection attempts)
-  useEffect(() => {
-    if (connectionStatus === ConnectionStatus.DISCONNECTED) {
-      // Delay session clearing to allow for page refreshes and temporary disconnections
-      const clearDelay = setTimeout(() => {
-        if (connectionStatus === ConnectionStatus.DISCONNECTED) {
-          console.log("🗑️ Clearing session storage after disconnection timeout");
-          GameSessionStorage.clearCurrentSession();
-        }
-      }, 5000); // 5 second delay
-      
-      return () => clearTimeout(clearDelay);
-    }
-  }, [connectionStatus]);
+  // Note: Session clearing is now handled contextually in reconnection logic
+  // Colyseus allowReconnection(20s) provides the timing, no manual delays needed
 
   // Room actions with automatic reconnection logic
   const joinRoom = useCallback(async ({ playerName, gamePin }: { playerName: string; gamePin: string }) => {
