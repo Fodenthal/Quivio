@@ -69,13 +69,7 @@ export class PlayerManager {
     }
   }
 
-  /**
-   * Legacy method for backwards compatibility - now just delegates to handlePlayerRemoval
-   * @deprecated Use handlePlayerRemoval instead
-   */
-  onLeave(client: Client): void {
-    this.handlePlayerRemoval(client);
-  }
+  // Removed deprecated onLeave method - use handlePlayerRemoval directly
 }
 
 

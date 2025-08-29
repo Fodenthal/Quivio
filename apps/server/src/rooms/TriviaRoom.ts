@@ -54,10 +54,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
-  private readonly ROOM_DISPOSE_DELAY = 60000; // 60 seconds before disposing empty room
+  // ROOM_DISPOSE_DELAY removed - Colyseus handles timing via allowReconnection()
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
-  private disposeTimer?: NodeJS.Timeout;
+
   private registrySync!: RegistrySync;
   private pinGenerator = new PinGenerator();
   private chatManager!: ChatManager;
@@ -260,9 +260,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     if (this.restartTimer) {
       clearInterval(this.restartTimer);
     }
-    if (this.disposeTimer) {
-      clearTimeout(this.disposeTimer);
-    }
+    // Colyseus handles disposal timing via allowReconnection()
     
     // Note: We don't close the database here since it's a singleton
     // that may be used by other rooms. It will be closed when the process exits.
