@@ -51,6 +51,7 @@ export const debugGameStorage = {
       playerName: "TestPlayer",
       playerId: "test-player-id",
       roomId: "test-room-id",
+      reconnectionToken: "test-reconnection-token-123456",
       hostId: "test-host-id",
       lastConnected: Date.now(),
       currentRound: 3,

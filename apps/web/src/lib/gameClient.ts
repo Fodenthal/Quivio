@@ -168,6 +168,33 @@ export class GameClient {
   }
 
   /**
+   * Attempt to reconnect to an existing room session using reconnection token
+   */
+  async reconnect(reconnectionToken: string): Promise<Room> {
+    try {
+      console.log(`🔄 Attempting to reconnect using token ${reconnectionToken.slice(0, 8)}...`);
+      
+      this.setConnectionStatus(ConnectionStatus.CONNECTING);
+      
+      // Use Colyseus client.reconnect method with reconnection token
+      this.room = await this.client.reconnect(reconnectionToken);
+      
+      this.setupRoomHandlers();
+      this.setConnectionStatus(ConnectionStatus.CONNECTED);
+      this.reconnectAttempts = 0;
+      
+      console.log(`✅ Successfully reconnected using token`);
+      return this.room;
+      
+    } catch (error) {
+      this.setConnectionStatus(ConnectionStatus.ERROR);
+      const gameError = new Error(`Failed to reconnect: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`❌ Reconnection failed:`, gameError);
+      throw gameError;
+    }
+  }
+
+  /**
    * Join a trivia room by game pin
    */
   async joinRoom(options: JoinRoomOptions): Promise<Room> {

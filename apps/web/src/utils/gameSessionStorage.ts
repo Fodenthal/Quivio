@@ -12,6 +12,7 @@ export interface GameSessionData {
   playerName: string;
   playerId: string;
   roomId: string;
+  reconnectionToken: string; // NEW - for Colyseus reconnection
   hostId: string;
   lastConnected: number; // timestamp
   currentRound: number;
