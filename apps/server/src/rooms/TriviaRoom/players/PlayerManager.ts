@@ -56,31 +56,39 @@ export class PlayerManager {
     console.log(`📊 Players after removal: ${this.state.players.size}`);
     
     // Host reassignment if needed
-    if (this.state.hostId === client.sessionId && this.state.players.size > 0) {
-      const newHostId = Array.from(this.state.players.keys())[0];
-      this.state.setHost(newHostId);
+    if (this.state.hostId === client.sessionId) {
+      if (this.state.players.size > 0) {
+        // Reassign host to remaining player
+        const newHostId = Array.from(this.state.players.keys())[0];
+        console.log(`👑 Reassigning host from ${client.sessionId.slice(0, 6)} to ${newHostId.slice(0, 6)}`);
+        this.state.setHost(newHostId);
+      } else {
+        // No players left, clear host completely
+        console.log(`👑 Clearing host - no players remaining`);
+        this.state.hostId = "";
+      }
     }
     
     // Game state management
     if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) this.onPause();
     this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
     
-    // Smart disposal logic based on room history and peak player count
+    // Simple disposal logic: Grace period if room went from 1 player to 0 (likely refresh)
     if (this.state.players.size === 0) {
-      const wasAlwaysSinglePlayer = this.peakPlayerCount <= 1;
+      const wasLikelySinglePlayerRefresh = this.lastPlayerCount === 1;
       
-      if (wasAlwaysSinglePlayer) {
-        // Room that never had more than 1 player: Give grace period for page refresh
+      if (wasLikelySinglePlayerRefresh) {
+        // Room went from 1 to 0 players: Give grace period for page refresh
         const disposalDelay = this.singlePlayerGracePeriodMs;
-        console.log(`📅 Single-player room empty - scheduling disposal in ${disposalDelay/1000}s grace period for potential reconnection (peak: ${this.peakPlayerCount})`);
+        console.log(`📅 Single-player refresh detected - scheduling disposal in ${disposalDelay/1000}s grace period for reconnection`);
         
         this.disposeTimer = setTimeout(() => {
-          console.log(`🗑️ Disposing single-player room after ${disposalDelay/1000}s grace period`);
+          console.log(`🗑️ Disposing room after ${disposalDelay/1000}s grace period`);
           this.onDispose();
         }, disposalDelay);
       } else {
-        // Room that had multiple players at some point: Dispose immediately when empty
-        console.log(`🚀 Multi-player room empty - disposing immediately (peak was ${this.peakPlayerCount} players)`);
+        // Multi-player room or intentional leave: Dispose immediately when empty
+        console.log(`🚀 Multi-player room empty - disposing immediately (had ${this.lastPlayerCount} players)`);
         this.onDispose();
       }
     } else if (this.disposeTimer) {
