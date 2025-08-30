@@ -4,6 +4,7 @@ import { ConnectionStatus } from "@/lib/gameClient";
 import { GameView } from "./GameView";
 import { GameState } from "@shared/index";
 import { UserDisplayName } from "./UserDisplayName";
+import { QuivioLogo } from "./QuivioLogo";
 
 export interface GameLayoutProps {
   connectionStatus: ConnectionStatus;
@@ -103,7 +104,10 @@ export function GameLayout({
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 overflow-x-hidden">
-            <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+            <div className="flex items-center space-x-3">
+              <QuivioLogo size={40} className="text-primary" />
+              <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+            </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* User Display Name - shown when connected */}

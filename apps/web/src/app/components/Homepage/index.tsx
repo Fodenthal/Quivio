@@ -9,6 +9,7 @@ import { UserDisplayName } from "../UserDisplayName";
 import { useDisplayName } from "../../../contexts/DisplayNameContext";
 import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
 import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
+import { QuivioLogo } from "../QuivioLogo";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
@@ -63,7 +64,10 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+            <div className="flex items-center space-x-3">
+              <QuivioLogo size={40} className="text-primary" />
+              <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+            </div>
             <UserDisplayName />
           </div>
         </div>
