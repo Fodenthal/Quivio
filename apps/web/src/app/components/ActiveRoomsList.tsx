@@ -320,7 +320,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-text-secondary">
-                        Pin: <span className="font-mono font-bold text-primary">{room.gamePin}</span>
+                        Pin: <span className="font-mono font-bold text-blue-500">{room.gamePin}</span>
                       </span>
                       <span className={`text-sm ${status.color}`}>
                         {status.label}

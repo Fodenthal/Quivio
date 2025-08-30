@@ -48,7 +48,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onChange={(e) => onRoomNameChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Room name"
-            className="w-full px-3 py-2 text-center text-sm bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:border-primary/50 transition-all duration-300"
+            className="w-full px-3 py-2 text-center text-sm bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500/50 transition-all duration-300"
           />
         </div>
         
@@ -58,7 +58,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onClick={() => onPrivateToggle(false)}
             className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
               !isPrivate
-                ? "bg-primary text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
             }`}
           >
@@ -68,7 +68,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onClick={() => onPrivateToggle(true)}
             className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
               isPrivate
-                ? "bg-primary text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
             }`}
           >
@@ -80,7 +80,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
         <button
           onClick={onCreateRoom}
           disabled={isCreating || !roomName.trim() || !displayName.trim()}
-          className="w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-opacity-90 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           {isCreating ? "Creating..." : "Create Room"}
         </button>

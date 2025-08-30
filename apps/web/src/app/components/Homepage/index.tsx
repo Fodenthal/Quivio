@@ -65,8 +65,8 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-3">
-              <QuivioLogo size={40} className="text-primary" />
-              <h1 className="text-3xl font-bold text-primary">Quivio</h1>
+              <QuivioLogo size={48} className="text-indigo-400 translate-y-[2px]" />
+              <h1 className="text-3xl font-bold text-indigo-400">Quivio</h1>
             </div>
             <UserDisplayName />
           </div>
