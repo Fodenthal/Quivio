@@ -253,7 +253,9 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="btn-primary px-4 py-2"
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white
+           px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40
+           disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {refreshing ? 'Retrying...' : 'Try Again'}
           </button>
@@ -271,7 +273,9 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="btn-primary px-4 py-2"
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white
+           px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40
+           disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
@@ -291,12 +295,17 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
           </p>
         </div>
         <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="btn-ghost px-4 py-2 text-sm"
-        >
-          {refreshing ? '⟳' : '↻'} Refresh
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm
+                        text-slate-300 hover:bg-white/10 hover:text-indigo-200
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500/40
+                        disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+            <span className={refreshing ? 'animate-spin' : ''}>↻</span>
+            Refresh
         </button>
+
       </div>
 
       {/* Rooms Grid */}
@@ -320,7 +329,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-text-secondary">
-                        Pin: <span className="font-mono font-bold text-primary">{room.gamePin}</span>
+                        Pin: <span className="font-mono font-bold text-blue-500">{room.gamePin}</span>
                       </span>
                       <span className={`text-sm ${status.color}`}>
                         {status.label}
@@ -349,9 +358,12 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
                  <button
                   onClick={() => handleJoinRoom(room.gamePin)}
                   disabled={!status.joinable || !onJoinRoom}
-                   className={`w-full py-3 px-4 rounded-md font-medium transition-all duration-200 ${
-                     status.joinable && onJoinRoom ? 'btn-primary' : 'bg-white/10 text-text-secondary cursor-not-allowed'
-                   }`}
+                  className={`w-full py-3 px-4 rounded-md font-medium transition-all duration-200
+                    disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${
+                      status.joinable && onJoinRoom
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white focus:ring-2 focus:ring-emerald-500/40'
+                        : 'bg-white/10 text-text-secondary cursor-not-allowed'
+                    }`}
                 >
                   {!onJoinRoom 
                     ? 'Join Disabled' 

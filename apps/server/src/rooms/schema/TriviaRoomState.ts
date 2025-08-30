@@ -8,6 +8,7 @@ export class PlayerState extends Schema {
   @type("boolean") ready: boolean = false;
   @type("boolean") isHost: boolean = false;
   @type("number") joinedAt: number = 0;
+  @type("number") avatarHue: number = 0; // 0-359 for HSL hue value
 }
 
 export class GuessState extends Schema {
@@ -99,9 +100,31 @@ export class TriviaRoomState extends Schema {
     player.id = id;
     player.name = name;
     player.joinedAt = Date.now();
+    player.avatarHue = this.generateUniqueAvatarHue();
     this.players.set(id, player);
   }
 
+  private generateUniqueAvatarHue(): number {
+    const existing = Array.from(this.players.values())
+      .map(p => p.avatarHue)
+      .filter(h => h >= 0 && h < 360);
+  
+    const preferred = [220,280,160,30,340,180,60,120,260,200,300,40,140,320,100,240];
+    for (const h of preferred) if (!existing.includes(h)) return h;
+  
+    if (existing.length === 0) return 220;
+  
+    let bestHue = 0, bestScore = -1;
+    for (let h = 0; h < 360; h += 3) {      // step by 3° for speed
+      const score = Math.min(...existing.map(e => {
+        const d = Math.abs(h - e);
+        return Math.min(d, 360 - d);
+      }));
+      if (score > bestScore) { bestScore = score; bestHue = h; }
+    }
+    return bestHue;
+  }
+  
   removePlayer(id: string) {
     this.players.delete(id);
   }

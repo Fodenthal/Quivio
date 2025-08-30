@@ -52,6 +52,7 @@ const mockConvertedState: GameState = {
       name: "TestPlayer",
       score: 0,
       ready: false,
+      avatarHue: 220,
       isHost: true,
       joinedAt: Date.now(),
     }]

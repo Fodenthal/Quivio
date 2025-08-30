@@ -32,9 +32,9 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-4 border border-white/20 hover:border-white/30 transition-all duration-300 h-full flex flex-col">
+    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
       <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-text-main">
+        <h2 className="text-xl font-bold text-slate-100">
           Start a new room
         </h2>
       </div>
@@ -48,7 +48,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onChange={(e) => onRoomNameChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Room name"
-            className="w-full px-3 py-2 text-center text-sm bg-white/20 border border-white/30 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:border-primary/50 transition-all duration-300"
+            className="w-full px-3 py-2 text-center text-sm bg-white/5 border border-white/10 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
           />
         </div>
         
@@ -58,8 +58,8 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onClick={() => onPrivateToggle(false)}
             className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
               !isPrivate
-                ? "bg-primary text-white"
-                : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
+                ? "bg-indigo-600 text-white"
+                : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
             }`}
           >
             Public
@@ -68,8 +68,8 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
             onClick={() => onPrivateToggle(true)}
             className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
               isPrivate
-                ? "bg-primary text-white"
-                : "bg-white/20 text-text-secondary hover:bg-white/30 hover:text-text-main"
+                ? "bg-indigo-600 text-white"
+                : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
             }`}
           >
             Private
@@ -80,15 +80,15 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
         <button
           onClick={onCreateRoom}
           disabled={isCreating || !roomName.trim() || !displayName.trim()}
-          className="w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-opacity-90 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           {isCreating ? "Creating..." : "Create Room"}
         </button>
         
         {/* Error Display */}
         {error && (
-          <div className="p-2 bg-red-500/20 border border-red-500/40 rounded-lg">
-            <p className="text-red-400 text-xs text-center">{error}</p>
+          <div className="p-2 bg-rose-500/20 border border-rose-500/40 rounded-lg">
+            <p className="text-rose-400 text-xs text-center">{error}</p>
           </div>
         )}
       </div>

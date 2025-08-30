@@ -21,6 +21,7 @@ export interface PlayerData {
     ready: boolean;
     isHost: boolean;
     joinedAt: number;
+    avatarHue: number;
 }
 export interface Prompt {
     id: string;

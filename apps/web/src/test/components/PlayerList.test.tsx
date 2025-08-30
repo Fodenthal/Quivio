@@ -11,6 +11,7 @@ describe("PlayerList", () => {
     ready: true,
     isHost: false,
     joinedAt: Date.now(),
+    avatarHue: 220, // Default blue hue for tests
     ...overrides
   });
 

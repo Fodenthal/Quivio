@@ -23,6 +23,7 @@ export interface PlayerData {
   ready: boolean;
   isHost: boolean;
   joinedAt: number;
+  avatarHue: number; // 0-359 for HSL hue value
 }
 
 export interface Prompt {

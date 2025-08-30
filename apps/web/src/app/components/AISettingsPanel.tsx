@@ -117,13 +117,13 @@ export function AISettingsPanel({
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
         <div className="flex flex-wrap gap-2 mb-2">
           {topics.map((topic, index) => (
-            <span key={index} className="flex items-center bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium">
+            <span key={index} className="flex items-center bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
               {topic}
               {!isReadOnly && (
                 <button
                   type="button"
                   onClick={() => handleRemoveTopic(index)}
-                  className="ml-2 text-primary hover:text-red-500 focus:outline-none"
+                  className="ml-2 text-indigo-300 hover:text-rose-500 focus:outline-none"
                   aria-label={`Remove topic ${topic}`}
                 >
                   ×
@@ -151,7 +151,7 @@ export function AISettingsPanel({
               <button
                 type="button"
                 onClick={handleAddTopicChip}
-                className="hidden sm:inline-flex px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="hidden sm:inline-flex px-3 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 + Add
               </button>
