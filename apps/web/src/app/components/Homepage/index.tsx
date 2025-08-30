@@ -81,6 +81,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           </div>
           {/* Right: Stacked panels */}
           <div className="flex flex-col gap-4">
+            <InfoPanel />
             <CreateRoomPanel
               roomName={roomName}
               onRoomNameChange={handleRoomNameChange}
@@ -99,7 +100,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
               isJoining={isJoining}
               error={joinError}
             />
-            <InfoPanel />
             <AnnouncementsPanel />
           </div>
         </div>

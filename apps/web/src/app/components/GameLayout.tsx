@@ -105,8 +105,8 @@ export function GameLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 overflow-x-hidden">
             <div className="flex items-center space-x-3">
-              <QuivioLogo size={48} className="text-blue-500 translate-y-[3px]" />
-              <h1 className="text-3xl font-bold text-blue-500">Quivio</h1>
+              <QuivioLogo size={48} className="text-indigo-400 translate-y-[2px]" />
+              <h1 className="text-3xl font-bold text-indigo-400">Quivio</h1>
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">

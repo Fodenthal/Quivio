@@ -376,7 +376,7 @@ export const GameView = memo(function GameView({
                       disabled={!canStartGame}
                       className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
                         canStartGame
-                          ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500"
+                          ? "bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500"
                           : "bg-gray-600 text-gray-400 cursor-not-allowed"
                       }`}
                     >
