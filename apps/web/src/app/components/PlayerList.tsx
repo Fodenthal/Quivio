@@ -23,19 +23,21 @@ const PlayerListComponent = memo(function PlayerListInner({
 
   const getPlayerAvatar = (player: PlayerData) => {
     const firstLetter = player.name.charAt(0).toUpperCase();
-    // Expanded color palette for more visual variety
-    const colors = [
-      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500",
-      "bg-orange-500", "bg-cyan-500", "bg-lime-500", "bg-emerald-500",
-      "bg-violet-500", "bg-rose-500", "bg-amber-500", "bg-sky-500"
-    ];
-    const colorIndex = player.name.length % colors.length;
-    const bgColor = colors[colorIndex];
+    
+    // Use server-assigned hue for consistent, unique colors
+    const hue = player.avatarHue ?? 220; // Default to blue if not set
+    const backgroundColor = `hsl(${hue}, 65%, 55%)`; // Vibrant but not too bright
+    const shadowColor = `hsl(${hue} 65% 35% / 0.25)`; // Darker shade for shadow
 
     return (
       <div className="relative">
-        <div className={`w-12 h-12 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+        <div 
+          className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg"
+          style={{ 
+            backgroundColor,
+            boxShadow: `0 4px 12px ${shadowColor}`
+          }}
+        >
           {firstLetter}
         </div>
         {/* Score positioned at bottom-left corner of avatar */}
