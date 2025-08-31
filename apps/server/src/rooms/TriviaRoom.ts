@@ -54,7 +54,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
-  // ROOM_DISPOSE_DELAY removed - Colyseus handles timing via allowReconnection()
   private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
   private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
 
