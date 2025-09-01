@@ -38,6 +38,60 @@ const blogPosts: BlogPost[] = [
     category: 'Science',
     publishDate: 'January 15, 2025',
     featured: true
+  },
+  {
+    slug: 'psychology-competition-trivia',
+    title: 'The Psychology of Competition in Trivia Games: Why We Love to Compete',
+    description: 'Understand why we love to compete and how competition enhances learning, memory, and engagement in trivia games.',
+    readTime: '8 min read',
+    category: 'Psychology',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'famous-trivia-champions',
+    title: 'Famous Trivia Champions and Their Winning Strategies: Lessons from the Best',
+    description: 'Learn from the world\'s best trivia players and discover the winning strategies that separate champions from casual players.',
+    readTime: '10 min read',
+    category: 'Strategy',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'trivia-improves-social-skills',
+    title: 'How Trivia Games Improve Social Skills: Building Connections Through Knowledge',
+    description: 'Explore how trivia games build communication, teamwork, and interpersonal skills in a fun, low-pressure environment.',
+    readTime: '9 min read',
+    category: 'Social',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'evolution-quiz-shows',
+    title: 'The Evolution of Quiz Shows: From Radio to Streaming - A Century of Trivia Entertainment',
+    description: 'Trace the fascinating journey of quiz shows through a century of technological innovation and cultural change.',
+    readTime: '11 min read',
+    category: 'Media',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'trivia-in-education',
+    title: 'Trivia in Education: Using Games to Teach - Making Learning Fun and Effective',
+    description: 'Discover how trivia games are transforming education by making learning engaging, interactive, and memorable.',
+    readTime: '10 min read',
+    category: 'Education',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'art-of-hosting-trivia',
+    title: 'The Art of Hosting a Great Trivia Night: From Setup to Showtime',
+    description: 'Master the skills needed to host engaging trivia events that players will want to return to week after week.',
+    readTime: '12 min read',
+    category: 'Hosting',
+    publishDate: 'January 15, 2025',
+    featured: false
   }
 ];
 
@@ -49,7 +103,7 @@ const BlogPage: React.FC = () => {
         <h1 className="text-4xl font-bold mb-4 text-white">Quivio Blog</h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
           Discover the fascinating world of trivia, learn proven strategies to improve your skills, 
-          and explore the science behind learning and memory.
+          explore the science behind learning and memory, and master the art of hosting engaging trivia events.
         </p>
       </div>
 
@@ -96,7 +150,7 @@ const BlogPage: React.FC = () => {
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 text-gray-100">Categories</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['History', 'Skills', 'Science', 'Strategy'].map((category) => (
+          {['History', 'Skills', 'Science', 'Psychology', 'Strategy', 'Social', 'Media', 'Education', 'Hosting'].map((category) => (
             <div key={category} className="bg-white/5 backdrop-blur-xl rounded-lg p-4 text-center border border-white/10 hover:border-white/20 transition-all duration-300">
               <h3 className="font-semibold text-white">{category}</h3>
             </div>
