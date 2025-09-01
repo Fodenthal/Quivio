@@ -34,17 +34,9 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [supabase.auth])
 
-  // Check if user is age-verified (13+) based on metadata
-  const isAgeVerified = user?.user_metadata?.is_age_verified === true
-  
-  // Check if user can chat (authenticated AND age-verified)
-  const canChat = !!user && isAgeVerified
-
   return {
     user,
     loading,
     isAuthenticated: !!user,
-    isAgeVerified,
-    canChat,
   }
 }
