@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [birthDay, setBirthDay] = useState('')
   const [birthYear, setBirthYear] = useState('')
   const [ageError, setAgeError] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Calculate age and validate 13+ requirement
   const validateAge = () => {
@@ -39,16 +41,63 @@ export default function LoginPage() {
     return true
   }
 
-  const handleFormSubmit = (action: (formData: FormData) => void) => {
-    return (formData: FormData) => {
-      if (!validateAge()) return
+  // Comprehensive form validation
+  const validateForm = (formData: FormData): boolean => {
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    
+    setAuthError('')
+    
+    // Email validation
+    if (!email || !email.includes('@')) {
+      setAuthError('Please enter a valid email address')
+      return false
+    }
+    
+    // Password validation
+    if (!password || password.length < 6) {
+      setAuthError('Password must be at least 6 characters long')
+      return false
+    }
+    
+    // Age validation for signup
+    if (mode === 'signup' && !validateAge()) {
+      return false
+    }
+    
+    return true
+  }
+
+  const handleFormSubmit = (action: (formData: FormData) => Promise<void>) => {
+    return async (formData: FormData) => {
+      if (!validateForm(formData)) return
       
-      // Add birth year to form data for signup
-      if (mode === 'signup') {
-        formData.append('birthYear', birthYear)
+      setIsSubmitting(true)
+      setAuthError('')
+      
+      try {
+        // Add birth year to form data for signup
+        if (mode === 'signup') {
+          formData.append('birthYear', birthYear)
+        }
+        
+        await action(formData)
+      } catch (error) {
+        // Handle specific auth errors
+        const errorMessage = error instanceof Error ? error.message : 'An error occurred'
+        
+        if (errorMessage.includes('Invalid login credentials')) {
+          setAuthError('Invalid email or password. Please check your credentials.')
+        } else if (errorMessage.includes('Email already registered')) {
+          setAuthError('An account with this email already exists. Try signing in instead.')
+        } else if (errorMessage.includes('Password should be at least')) {
+          setAuthError('Password is too weak. Please choose a stronger password.')
+        } else {
+          setAuthError(errorMessage)
+        }
+      } finally {
+        setIsSubmitting(false)
       }
-      
-      action(formData)
     }
   }
 
@@ -90,6 +139,13 @@ export default function LoginPage() {
             Create Account
           </button>
         </div>
+
+        {/* Error Display */}
+        {authError && (
+          <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg">
+            {authError}
+          </div>
+        )}
 
         <form className="space-y-6">
           <div>
@@ -195,16 +251,18 @@ export default function LoginPage() {
             {mode === 'signin' ? (
               <button 
                 formAction={handleFormSubmit(login)}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                disabled={isSubmitting}
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
               </button>
             ) : (
               <button 
                 formAction={handleFormSubmit(signup)}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                disabled={isSubmitting}
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create Account
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </button>
             )}
           </div>

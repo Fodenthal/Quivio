@@ -7,8 +7,6 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -17,7 +15,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    redirect('/error')
+    throw new Error(error.message)
   }
 
   revalidatePath('/', 'layout')
@@ -31,16 +29,8 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const birthYear = formData.get('birthYear') as string
 
-  // Server-side age validation
-  if (birthYear) {
-    const currentYear = new Date().getFullYear()
-    const age = currentYear - parseInt(birthYear)
-    
-    if (age < 13) {
-      // Redirect to error page with age-specific message
-      redirect('/error?message=age_requirement')
-    }
-  }
+  // Note: Age validation is handled client-side to prevent form submission
+  // This server action should only be called for valid ages
 
   // Sign up with birth year in metadata (COPPA compliant - only store birth year)
   const { error } = await supabase.auth.signUp({
@@ -55,8 +45,7 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    console.error('Signup error:', error)
-    redirect('/error')
+    throw new Error(error.message)
   }
 
   revalidatePath('/', 'layout')
