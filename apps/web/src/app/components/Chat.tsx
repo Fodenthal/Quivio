@@ -3,6 +3,8 @@
 import { ChatMessage as ChatMessageType } from "@shared/index";
 import { ChatWindow } from "./ChatWindow";
 import { ChatInput } from "./ChatInput";
+import { useAuth } from "../../hooks/useAuth";
+import Link from "next/link";
 
 interface ChatProps {
   messages: ChatMessageType[];
@@ -24,14 +26,38 @@ export function Chat({
   disabled = false,
   shouldAutoFocus = false
 }: ChatProps) {
+  const { canChat, isAuthenticated, loading } = useAuth();
+  
   // Message count for desktop header; mobile stays minimal
   const validMessages = messages.filter((m) => m && m.id && m.playerName && m.content);
+  
+  // Determine if chat should be disabled due to auth requirements
+  const isChatDisabled = disabled || !canChat;
   
   return (
     <div className="min-h-[50dvh] md:h-[600px] flex flex-col safe-bottom">
       {/* Desktop header only */}
       <div className="hidden md:flex items-center justify-between pb-4 border-b border-white/20">
-        <h3 className="text-xl font-bold text-text-main">Chat</h3>
+        <div className="flex items-center space-x-3">
+          <h3 className="text-xl font-bold text-text-main">Chat</h3>
+          {!loading && (
+            <div className="flex items-center space-x-1">
+              {canChat ? (
+                <div className="flex items-center space-x-1 text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-xs">Verified</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-yellow-400">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span className="text-xs">
+                    {isAuthenticated ? "Unverified" : "Guest"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="text-sm text-text-secondary">
           {validMessages.length > 0 ? `${validMessages.length} messages` : "No messages"}
         </div>
@@ -48,12 +74,40 @@ export function Chat({
 
       {/* Chat Input - fixed at bottom */}
       <div className="flex-shrink-0 mt-2">
-        <ChatInput
-          onSendMessage={onSendMessage}
-          disabled={disabled}
-          placeholder={disabled ? "Chat unavailable..." : "Type a message..."}
-          shouldAutoFocus={shouldAutoFocus}
-        />
+        {loading ? (
+          // Loading state
+          <div className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg">
+            <div className="text-sm text-text-secondary">Loading...</div>
+          </div>
+        ) : !canChat ? (
+          // Authentication required message
+          <div className="space-y-3">
+            <div className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-center">
+              <div className="text-sm text-text-secondary mb-2">
+                {!isAuthenticated 
+                  ? "Sign in to chat with other players" 
+                  : "Account verification required to chat"
+                }
+              </div>
+              {!isAuthenticated && (
+                <Link
+                  href="/login"
+                  className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Normal chat input for verified users
+          <ChatInput
+            onSendMessage={onSendMessage}
+            disabled={isChatDisabled}
+            placeholder={isChatDisabled ? "Chat unavailable..." : "Type a message..."}
+            shouldAutoFocus={shouldAutoFocus}
+          />
+        )}
       </div>
     </div>
   );
