@@ -146,6 +146,60 @@ const blogPosts: BlogPost[] = [
     category: 'Technology',
     publishDate: 'January 15, 2025',
     featured: false
+  },
+  {
+    slug: 'music-trivia',
+    title: 'Music Trivia: The Universal Language - How Melodies Shape Our World',
+    description: 'Discover how music has transcended cultural boundaries to become humanity\'s universal language, influencing everything from social movements to scientific discoveries.',
+    readTime: '10 min read',
+    category: 'Music',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'art-trivia',
+    title: 'Art Trivia: The Visual Language of Humanity - How Images Shape Our World',
+    description: 'Explore how visual expression has been humanity\'s most powerful tool for communication, cultural preservation, and social change throughout history.',
+    readTime: '11 min read',
+    category: 'Art',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'food-trivia',
+    title: 'Food Trivia: The Cultural History of Cuisine - How Meals Shape Our World',
+    description: 'Discover how cuisine has been one of humanity\'s most powerful tools for cultural exchange, social bonding, and historical preservation.',
+    readTime: '10 min read',
+    category: 'Food',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'nature-trivia',
+    title: 'Nature Trivia: The Wonders of the Natural World - Exploring Earth\'s Incredible Diversity',
+    description: 'Explore the incredible complexity and diversity of life on Earth, from the smallest microorganisms to the largest ecosystems.',
+    readTime: '11 min read',
+    category: 'Nature',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'space-trivia',
+    title: 'Space Trivia: Exploring the Cosmos - Our Journey to the Stars',
+    description: 'Discover humanity\'s incredible journey of cosmic discovery, from ancient stargazers to modern space exploration and our quest to understand the universe.',
+    readTime: '12 min read',
+    category: 'Space',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'philosophy-trivia',
+    title: 'Philosophy Trivia: The Great Questions of Life - Exploring the Big Ideas',
+    description: 'Explore how the greatest minds in history have grappled with life\'s most fundamental questions, from the nature of reality to the meaning of existence.',
+    readTime: '11 min read',
+    category: 'Philosophy',
+    publishDate: 'January 15, 2025',
+    featured: false
   }
 ];
 
@@ -156,7 +210,7 @@ const BlogPage: React.FC = () => {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 text-white">Quivio Blog</h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Discover the fascinating world of trivia across 15 diverse categories, from sports and science to literature and technology. 
+          Discover the fascinating world of trivia across 20 diverse categories, from sports and science to philosophy and space exploration. 
           Learn proven strategies, explore the science behind learning, and master the art of hosting engaging trivia events.
         </p>
       </div>
@@ -204,7 +258,7 @@ const BlogPage: React.FC = () => {
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 text-gray-100">Categories</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['History', 'Skills', 'Science', 'Psychology', 'Strategy', 'Social', 'Media', 'Education', 'Hosting', 'Sports', 'Entertainment', 'Geography', 'Literature', 'Technology'].map((category) => (
+          {['History', 'Skills', 'Science', 'Psychology', 'Strategy', 'Social', 'Media', 'Education', 'Hosting', 'Sports', 'Entertainment', 'Geography', 'Literature', 'Technology', 'Music', 'Art', 'Food', 'Nature', 'Space', 'Philosophy'].map((category) => (
             <div key={category} className="bg-white/5 backdrop-blur-xl rounded-lg p-4 text-center border border-white/10 hover:border-white/20 transition-all duration-300">
               <h3 className="font-semibold text-white">{category}</h3>
             </div>
