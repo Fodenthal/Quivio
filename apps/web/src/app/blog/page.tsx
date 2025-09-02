@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+// Uncomment when ready to add ads:
+// import { BlogAd } from './components/BlogAd';
 
 interface BlogPost {
   slug: string;
@@ -253,6 +255,9 @@ const BlogPage: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* Ad placement example - uncomment when ready */}
+      {/* <BlogAd slot="your-ad-slot-id" className="text-center" /> */}
 
       {/* Categories */}
       <section className="mb-12">
