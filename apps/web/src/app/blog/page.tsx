@@ -92,6 +92,60 @@ const blogPosts: BlogPost[] = [
     category: 'Hosting',
     publishDate: 'January 15, 2025',
     featured: false
+  },
+  {
+    slug: 'sports-trivia',
+    title: 'Sports Trivia: More Than Just Numbers - The Stories Behind the Stats',
+    description: 'Discover how sports trivia goes beyond statistics to reveal human stories, cultural impact, and historical significance.',
+    readTime: '9 min read',
+    category: 'Sports',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'pop-culture-trivia',
+    title: 'Pop Culture Trivia Through the Decades: How Entertainment Shapes Our World',
+    description: 'Explore how pop culture has evolved from the 1920s to today, reflecting and shaping society through entertainment.',
+    readTime: '10 min read',
+    category: 'Entertainment',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'geography-trivia',
+    title: 'Geography Trivia: Exploring the World - Beyond Maps and Capitals',
+    description: 'Understand how geography connects people, places, and the natural world, revealing the complex relationships that shape our planet.',
+    readTime: '11 min read',
+    category: 'Geography',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'science-trivia',
+    title: 'Science Trivia: From Atoms to Galaxies - The Wonders of Scientific Discovery',
+    description: 'Explore the incredible journey of human discovery from quantum physics to cosmic exploration, showing how curiosity transforms our understanding.',
+    readTime: '12 min read',
+    category: 'Science',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'literature-trivia',
+    title: 'Literature Trivia: Books That Shaped History - The Power of the Written Word',
+    description: 'Discover how literature has influenced revolutions, social movements, and the way we think about ourselves and our world.',
+    readTime: '11 min read',
+    category: 'Literature',
+    publishDate: 'January 15, 2025',
+    featured: false
+  },
+  {
+    slug: 'technology-trivia',
+    title: 'Technology Trivia: The Digital Revolution - How Innovation Transformed Our World',
+    description: 'Explore how human ingenuity created the digital world, from early computers to modern AI, transforming every aspect of our lives.',
+    readTime: '11 min read',
+    category: 'Technology',
+    publishDate: 'January 15, 2025',
+    featured: false
   }
 ];
 
@@ -102,8 +156,8 @@ const BlogPage: React.FC = () => {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 text-white">Quivio Blog</h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Discover the fascinating world of trivia, learn proven strategies to improve your skills, 
-          explore the science behind learning and memory, and master the art of hosting engaging trivia events.
+          Discover the fascinating world of trivia across 15 diverse categories, from sports and science to literature and technology. 
+          Learn proven strategies, explore the science behind learning, and master the art of hosting engaging trivia events.
         </p>
       </div>
 
@@ -150,7 +204,7 @@ const BlogPage: React.FC = () => {
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 text-gray-100">Categories</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['History', 'Skills', 'Science', 'Psychology', 'Strategy', 'Social', 'Media', 'Education', 'Hosting'].map((category) => (
+          {['History', 'Skills', 'Science', 'Psychology', 'Strategy', 'Social', 'Media', 'Education', 'Hosting', 'Sports', 'Entertainment', 'Geography', 'Literature', 'Technology'].map((category) => (
             <div key={category} className="bg-white/5 backdrop-blur-xl rounded-lg p-4 text-center border border-white/10 hover:border-white/20 transition-all duration-300">
               <h3 className="font-semibold text-white">{category}</h3>
             </div>

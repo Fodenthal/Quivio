@@ -109,7 +109,6 @@ export default function ArtOfHostingTrivia() {
         <h3>Building Community</h3>
         <p>
           <strong>Team Introductions:</strong> Give teams a chance to introduce themselves or share team names. This creates personal connections and makes the competition more engaging.
-        </strong>
         </p>
 
         <p>
