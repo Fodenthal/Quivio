@@ -4,7 +4,6 @@ import { ChatMessage as ChatMessageType } from "@shared/index";
 import { ChatWindow } from "./ChatWindow";
 import { ChatInput } from "./ChatInput";
 import { useAuth } from "../../hooks/useAuth";
-import Link from "next/link";
 
 interface ChatProps {
   messages: ChatMessageType[];
@@ -88,18 +87,10 @@ export function Chat({
             <div className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-center">
               <div className="text-sm text-text-secondary mb-2">
                 {!isAuthenticated 
-                  ? "Sign in to chat with other players" 
+                  ? "Sign in to chat!" 
                   : "Account verification required to chat"
                 }
               </div>
-              {!isAuthenticated && (
-                <Link
-                  href="/login"
-                  className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  Sign In
-                </Link>
-              )}
             </div>
           </div>
         ) : (

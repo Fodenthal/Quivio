@@ -39,31 +39,6 @@ export function GameLayout({
   // This component receives all state and actions as props from a parent component
   // that uses the useGameConnection hook. It focuses purely on game UI rendering.
 
-  const getStatusColor = (status: ConnectionStatus) => {
-    switch (status) {
-      case ConnectionStatus.CONNECTED:
-        return "bg-green-500";
-      case ConnectionStatus.CONNECTING:
-        return "bg-yellow-500";
-      case ConnectionStatus.ERROR:
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getStatusText = (status: ConnectionStatus) => {
-    switch (status) {
-      case ConnectionStatus.CONNECTED:
-        return "Connected";
-      case ConnectionStatus.CONNECTING:
-        return "Connecting...";
-      case ConnectionStatus.ERROR:
-        return "Connection Error";
-      default:
-        return "Disconnected";
-    }
-  };
 
   // Determine which view to show
   const renderMainContent = () => {
@@ -138,16 +113,6 @@ export function GameLayout({
                 </button>
               </>
             )}
-              
-              {/* Connection Status Indicator */}
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <div
-                  className={`w-3 h-3 rounded-full ${getStatusColor(connectionStatus)}`}
-                />
-                <span className="hidden sm:inline text-sm font-medium text-text-secondary">
-                  {getStatusText(connectionStatus)}
-                </span>
-              </div>
             </div>
           </div>
         </div>
