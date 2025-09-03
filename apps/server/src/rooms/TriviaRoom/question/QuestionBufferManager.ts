@@ -30,6 +30,16 @@ export class QuestionBufferManager {
   private topicAnswers: Map<string, string[]> = new Map(); // Track previous answers per topic
   private topicRawResponses: Map<string, string[]> = new Map(); // Track raw fact-gathering responses per topic
 
+  // NEW: Topic pool system for large batch management
+  private topicQuestionPools: Map<string, GeneratedQuestion[]> = new Map(); // Large pools per topic
+  private topicLoadPromises: Map<string, Promise<void>> = new Map(); // Track in-flight loads to avoid duplicates
+  private topicLoadingStates: Map<string, boolean> = new Map(); // Simple boolean state tracking
+  private refillMutex: Promise<void> = Promise.resolve(); // Single mutex for all refill operations
+
+  // Configuration constants
+  private readonly TOPIC_POOL_SIZE = 50; // Large batch size for database fetching
+  private readonly BUFFER_SIZE = 2; // Keep existing small buffer size
+
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates
    * @param params.geminiService Question generator
@@ -577,6 +587,107 @@ export class QuestionBufferManager {
     } finally {
       this.isGeneratingQuestions = false;
     }
+  }
+
+  // ========================================
+  // NEW: Topic Pool Management Methods
+  // ========================================
+
+  /**
+   * Ensures a topic pool is loaded or loading. Coalesces concurrent requests.
+   * @param topic - The topic to ensure has a loaded pool
+   * @returns Promise that resolves when the topic pool is ready
+   */
+  private async ensureTopicPool(topic: string): Promise<void> {
+    // If already loading, return existing promise (coalescing)
+    if (this.topicLoadPromises.has(topic)) {
+      return this.topicLoadPromises.get(topic)!;
+    }
+    
+    // If pool already exists and has questions, no need to load
+    const existingPool = this.topicQuestionPools.get(topic) || [];
+    if (existingPool.length > 0) {
+      return Promise.resolve();
+    }
+    
+    // Start new load
+    const loadPromise = this.loadTopicPool(topic);
+    this.topicLoadPromises.set(topic, loadPromise);
+    
+    // Clean up promise when done (success or failure)
+    loadPromise.finally(() => {
+      this.topicLoadPromises.delete(topic);
+    });
+    
+    return loadPromise;
+  }
+
+  /**
+   * Loads a large batch of questions for a specific topic from the database.
+   * @param topic - The topic to load questions for
+   */
+  private async loadTopicPool(topic: string): Promise<void> {
+    try {
+      this.topicLoadingStates.set(topic, true);
+      
+      const dbQuestions = await this.questionDatabase.getQuestions(
+        topic, 
+        this.state.currentDifficulty || 3, 
+        this.TOPIC_POOL_SIZE
+      );
+      
+      // Filter out recently used questions from previous sessions
+      const recentQuestions = this.getTopicRecentQuestions(topic);
+      const availableQuestions = dbQuestions.filter((q: GeneratedQuestion) => 
+        !recentQuestions.includes(q.question)
+      );
+      
+      this.topicQuestionPools.set(topic, availableQuestions);
+      this.log(`📦 Loaded ${availableQuestions.length}/${dbQuestions.length} available questions for topic "${topic}"`);
+      
+    } catch (error) {
+      this.log(`❌ Failed to load topic pool for "${topic}":`, error);
+      this.topicQuestionPools.set(topic, []); // Set empty to avoid retry loops
+    } finally {
+      this.topicLoadingStates.set(topic, false);
+    }
+  }
+
+  /**
+   * Thread-safe wrapper for refill operations using a mutex.
+   * @param operation - The async operation to run with mutex protection
+   */
+  private async withRefillLock<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.refillMutex.then(async () => {
+      return await operation();
+    });
+    this.refillMutex = result.then(() => {}, () => {}); // Continue chain regardless of success/failure
+    return result;
+  }
+
+  /**
+   * Gets the current topic pool size for a given topic.
+   * @param topic - The topic to check
+   * @returns Number of questions available in the topic pool
+   */
+  private getTopicPoolSize(topic: string): number {
+    return (this.topicQuestionPools.get(topic) || []).length;
+  }
+
+  /**
+   * Checks if any topic pools have available questions.
+   * @returns True if at least one topic has questions available
+   */
+  private hasAvailablePoolQuestions(): boolean {
+    return Array.from(this.topicQuestionPools.values()).some(pool => pool.length > 0);
+  }
+
+  /**
+   * Checks if any topics are currently loading.
+   * @returns True if at least one topic is being loaded
+   */
+  private hasLoadingTopics(): boolean {
+    return Array.from(this.topicLoadingStates.values()).some(loading => loading);
   }
 }
 
