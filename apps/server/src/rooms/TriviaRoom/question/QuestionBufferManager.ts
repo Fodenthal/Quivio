@@ -38,7 +38,6 @@ export class QuestionBufferManager {
 
   // Configuration constants
   private readonly TOPIC_POOL_SIZE = 50; // Large batch size for database fetching
-  private readonly BUFFER_SIZE = 2; // Keep existing small buffer size
 
   /**
    * @param params.state Room state used for topic/difficulty and round-robin updates
@@ -417,12 +416,18 @@ export class QuestionBufferManager {
    * @throws Error if topics list is empty
    */
   async getNextQuestion(): Promise<GeneratedQuestion | null> {
+    // Fast path: use buffered question
     if (this.questionBuffer.length > 0) {
       const question = this.questionBuffer.shift()!;
       this.log(`📤 Using buffered question: "${question.question}" (Remaining in buffer: ${this.questionBuffer.length})`);
 
       await this.questionDatabase.markQuestionAsUsed(question.question);
-      this.refillBackground();
+      
+      // Trigger background refill (don't await)
+      this.refillBufferFromPools().catch(error => {
+        this.log(`⚠️ Background refill failed:`, error);
+      });
+      
       return question;
     }
 
@@ -430,31 +435,56 @@ export class QuestionBufferManager {
     if (allTopics.length === 0) {
       throw new Error("No topics set. Please add at least one topic before starting the game.");
     }
-    const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-    const difficulty = this.state.currentDifficulty || 3;
 
-    this.log("⚠️ Question buffer empty, checking database...");
+    this.log("⚠️ Question buffer empty, checking topic pools...");
 
-    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 5);
-    const topicRecentQuestions = this.getTopicRecentQuestions(topic);
-    const availableDbQuestions = dbQuestions.filter((q: any) => !topicRecentQuestions.includes(q.question));
-
-    if (availableDbQuestions.length > 0) {
-      const question = availableDbQuestions[0];
-
-      this.addTopicRecentQuestion(topic, question.question);
-
+    // Try to refill buffer from topic pools
+    await this.refillBufferFromPools();
+    
+    if (this.questionBuffer.length > 0) {
+      const question = this.questionBuffer.shift()!;
       await this.questionDatabase.markQuestionAsUsed(question.question);
-
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-
-      this.log(`📤 Using database question directly: "${question.question}" (Topic: ${topic})`);
-      this.refillBackground();
+      this.log(`📤 Using question from topic pool: "${question.question}"`);
       return question;
     }
 
-    this.log("⚠️ No suitable questions in database, generating question directly...");
+    // No questions in pools - check if any are still loading
+    if (this.hasLoadingTopics()) {
+      this.log("⏳ Topics still loading, waiting for any to complete...");
+      
+      // Wait for any topic to finish loading
+      const loadPromises = Array.from(this.topicLoadPromises.values());
+      if (loadPromises.length > 0) {
+        try {
+          await Promise.any(loadPromises);
+          // Try refill again after a topic finishes loading
+          await this.refillBufferFromPools();
+          
+          if (this.questionBuffer.length > 0) {
+            const question = this.questionBuffer.shift()!;
+            await this.questionDatabase.markQuestionAsUsed(question.question);
+            this.log(`📤 Using question after topic load: "${question.question}"`);
+            return question;
+          }
+        } catch (error) {
+          this.log(`⚠️ All topic loads failed:`, error);
+        }
+      }
+    }
+
+    // Last resort: generate new question
+    this.log("⚠️ No questions available in topic pools, generating directly...");
+    return await this.generateQuestionDirect();
+  }
+
+  /**
+   * Generates a question directly (bypassing buffer) as last resort.
+   * Uses the original generation logic.
+   */
+  private async generateQuestionDirect(): Promise<GeneratedQuestion | null> {
+    const allTopics = this.state.topics || [];
+    const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
+    const difficulty = this.state.currentDifficulty || 3;
 
     try {
       const topicRecentQuestions = this.getTopicRecentQuestions(topic);
@@ -496,11 +526,12 @@ export class QuestionBufferManager {
       this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
       this.state.currentTopic = allTopics[this.state.currentTopicIndex];
 
-      this.log(`📝 Generated question directly: "${generatedQuestion.question}" (Topic: ${topic})`);
-      this.refillBackground();
+      this.log(`🤖 Generated question directly: "${generatedQuestion.question}" (Topic: ${topic})`);
+
       return generatedQuestion;
+
     } catch (error) {
-      console.error("Failed to generate question directly:", error);
+      console.error("Failed to generate question:", error);
       return null;
     }
   }
@@ -688,6 +719,44 @@ export class QuestionBufferManager {
    */
   private hasLoadingTopics(): boolean {
     return Array.from(this.topicLoadingStates.values()).some(loading => loading);
+  }
+
+  /**
+   * Refills the question buffer from topic pools using round-robin approach.
+   * Protected by mutex to prevent concurrent modifications.
+   */
+  private async refillBufferFromPools(): Promise<void> {
+    return this.withRefillLock(async () => {
+      const allTopics = this.state.topics || [];
+      if (allTopics.length === 0) return;
+      
+      let startIndex = this.state.currentTopicIndex % allTopics.length;
+      let attempts = 0;
+      
+      // Round-robin through topics to fill buffer
+      while (this.questionBuffer.length < this.questionBufferSize && attempts < allTopics.length * 2) {
+        const topicIndex = (startIndex + attempts) % allTopics.length;
+        const topic = allTopics[topicIndex];
+        const pool = this.topicQuestionPools.get(topic) || [];
+        
+        if (pool.length > 0) {
+          // Take one question from this topic's pool
+          const question = pool.shift()!;
+          this.questionBuffer.push(question);
+          this.addTopicRecentQuestion(topic, question.question);
+          this.log(`📤 Added question from "${topic}" pool to buffer (${this.questionBuffer.length}/${this.questionBufferSize})`);
+        } else {
+          // Pool empty - try to reload it (async, don't block)
+          this.ensureTopicPool(topic).catch(error => {
+            this.log(`⚠️ Background topic reload failed for "${topic}":`, error);
+          });
+        }
+        
+        attempts++;
+      }
+      
+      this.log(`🔄 Buffer refill complete: ${this.questionBuffer.length}/${this.questionBufferSize} questions`);
+    });
   }
 }
 
