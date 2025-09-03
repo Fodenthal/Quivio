@@ -362,10 +362,13 @@ export class QuestionBufferManager {
   }
 
   /**
-   * Pre-fill the buffer by first pulling cached questions from the DB,
-   * then generating remaining slots. Preserves existing logging.
+   * Pre-fill using new parallel topic pool system:
+   * 1. Start loading ALL topics in parallel (don't block)
+   * 2. Wait for ANY topic to finish loading
+   * 3. Fill buffer from available topic pools
+   * 4. Continue loading other topics in background
    *
-   * @throws Error if no topic is set
+   * @throws Error if no topics are set
    */
   async preFillBuffer(): Promise<void> {
     if (this.state.currentTopic === "__DEV__") {
@@ -373,36 +376,48 @@ export class QuestionBufferManager {
       return;
     }
 
-    const topic = this.state.currentTopic || "";
-    if (!topic) {
-      throw new Error("No topic set. Please add at least one topic before starting the game.");
+    const allTopics = this.state.topics || [];
+    if (allTopics.length === 0) {
+      throw new Error("No topics set. Please add at least one topic before starting the game.");
     }
-    const difficulty = this.state.currentDifficulty || 3;
 
-    this.log(`🔄 Pre-filling ${this.questionBufferSize} questions for buffer...`);
-
-    const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, this.questionBufferSize);
-
-    for (const cachedQuestion of dbQuestions) {
-      if (this.questionBuffer.length >= this.questionBufferSize) break;
-      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
-      if (!topicRecentQuestions.includes(cachedQuestion.question)) {
-        this.questionBuffer.push(cachedQuestion);
-        this.addTopicRecentQuestion(topic, cachedQuestion.question);
-        this.log(`📦 Pre-filled with cached question: "${cachedQuestion.question}"`);
+    this.log(`🔄 Starting parallel loads for ${allTopics.length} topics with ${this.TOPIC_POOL_SIZE} questions each...`);
+    
+    // Start ALL topic loads in parallel (don't await)
+    const loadPromises = allTopics.map(topic => this.ensureTopicPool(topic));
+    
+    // Wait for ANY topic to finish loading before proceeding
+    try {
+      await Promise.any(loadPromises);
+      this.log(`✅ At least one topic loaded, proceeding with buffer fill`);
+    } catch (error) {
+      // All loads failed - this is unusual but we can still try generation
+      this.log(`⚠️ All topic loads failed, will fallback to generation:`, error);
+    }
+    
+    // Fill initial buffer from whatever topic pools are available
+    await this.refillBufferFromPools();
+    
+    // Continue loading other topics in background (don't await)
+    Promise.allSettled(loadPromises).then(results => {
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      // Log pool sizes for each topic
+      const poolSizes = allTopics.map(topic => {
+        const size = this.getTopicPoolSize(topic);
+        return `${topic}: ${size}`;
+      }).join(', ');
+      
+      this.log(`🏁 Topic loading complete: ${successful}/${allTopics.length} topics loaded successfully`);
+      this.log(`📊 Topic pool sizes: ${poolSizes}`);
+      
+      if (failed > 0) {
+        this.log(`⚠️ ${failed} topics failed to load`);
       }
-    }
+    });
 
-    while (this.questionBuffer.length < this.questionBufferSize && !this.isGeneratingQuestions) {
-      try {
-        await this.generateAndAddToBuffer();
-      } catch (error) {
-        console.error("Failed to pre-generate question for buffer:", error);
-        break;
-      }
-    }
-
-    this.log(`✅ Question buffer initialized with ${this.questionBuffer.length} questions (${dbQuestions.length} from cache)`);
+    this.log(`✅ Question buffer initialized with ${this.questionBuffer.length} questions from topic pools`);
 
     const stats = await this.questionDatabase.getStats();
     this.log(`📊 Database stats: ${stats.totalQuestions} total questions, ${stats.topicCount} topics, avg usage: ${stats.avgUsagePerQuestion}`);
