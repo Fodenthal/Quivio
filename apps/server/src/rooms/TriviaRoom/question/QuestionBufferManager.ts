@@ -33,8 +33,9 @@ export class QuestionBufferManager {
   // NEW: Topic pool system for large batch management
   private topicQuestionPools: Map<string, GeneratedQuestion[]> = new Map(); // Large pools per topic
   private topicLoadPromises: Map<string, Promise<void>> = new Map(); // Track in-flight loads to avoid duplicates
-  private topicLoadingStates: Map<string, boolean> = new Map(); // Simple boolean state tracking
   private refillMutex: Promise<void> = Promise.resolve(); // Single mutex for all refill operations
+  // RR fairness: pointer independent of this.currentTopicIndex
+  private rrIndex = 0;
 
   // Configuration constants
   private readonly TOPIC_POOL_SIZE = 50; // Large batch size for database fetching
@@ -443,7 +444,7 @@ export class QuestionBufferManager {
     
     if (this.questionBuffer.length > 0) {
       const question = this.questionBuffer.shift()!;
-      await this.questionDatabase.markQuestionAsUsed(question.question);
+      void this.questionDatabase.markQuestionAsUsed(question.question);
       this.log(`📤 Using question from topic pool: "${question.question}"`);
       return question;
     }
@@ -659,8 +660,6 @@ export class QuestionBufferManager {
    */
   private async loadTopicPool(topic: string): Promise<void> {
     try {
-      this.topicLoadingStates.set(topic, true);
-      
       const dbQuestions = await this.questionDatabase.getQuestions(
         topic, 
         this.state.currentDifficulty || 3, 
@@ -679,8 +678,6 @@ export class QuestionBufferManager {
     } catch (error) {
       this.log(`❌ Failed to load topic pool for "${topic}":`, error);
       this.topicQuestionPools.set(topic, []); // Set empty to avoid retry loops
-    } finally {
-      this.topicLoadingStates.set(topic, false);
     }
   }
 
@@ -718,7 +715,7 @@ export class QuestionBufferManager {
    * @returns True if at least one topic is being loaded
    */
   private hasLoadingTopics(): boolean {
-    return Array.from(this.topicLoadingStates.values()).some(loading => loading);
+    return this.topicLoadPromises.size > 0;
   }
 
   /**
@@ -730,7 +727,7 @@ export class QuestionBufferManager {
       const allTopics = this.state.topics || [];
       if (allTopics.length === 0) return;
       
-      let startIndex = this.state.currentTopicIndex % allTopics.length;
+      let startIndex = this.rrIndex % allTopics.length;
       let attempts = 0;
       
       // Round-robin through topics to fill buffer
@@ -745,6 +742,8 @@ export class QuestionBufferManager {
           this.questionBuffer.push(question);
           this.addTopicRecentQuestion(topic, question.question);
           this.log(`📤 Added question from "${topic}" pool to buffer (${this.questionBuffer.length}/${this.questionBufferSize})`);
+          // Advance RR pointer only on successful pull
+          this.rrIndex = (topicIndex + 1) % allTopics.length;
         } else {
           // Pool empty - try to reload it (async, don't block)
           this.ensureTopicPool(topic).catch(error => {
