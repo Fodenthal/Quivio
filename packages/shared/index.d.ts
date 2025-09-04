@@ -8,6 +8,9 @@ export declare const MSG: {
     readonly SET_TOPIC: "set_topic";
     readonly SET_TOPICS: "set_topics";
     readonly SET_DIFFICULTY: "set_difficulty";
+    readonly ROUND_START: "round_start";
+    readonly ROUND_END: "round_end";
+    readonly CLOCK_SYNC: "clock_sync";
 };
 export declare enum GameStatus {
     WAITING = "waiting",
@@ -60,6 +63,20 @@ export interface TopicsMessage {
 }
 export interface DifficultyMessage {
     difficulty: number;
+}
+export interface RoundStartMessage {
+    roundStartTime: number;
+    roundDurationMs: number;
+    roundNumber: number;
+}
+export interface RoundEndMessage {
+    reason: "timer_expired" | "all_answered";
+    roundNumber: number;
+    correctAnswer?: string;
+}
+export interface ClockSyncMessage {
+    clientTimestamp: number;
+    serverTimestamp: number;
 }
 export interface RoomSettings {
     targetScore: number;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GameClient, ConnectionStatus } from "@/lib/gameClient";
-import { GameState } from "@shared/index";
+import { GameState, RoundStartMessage, RoundEndMessage } from "@shared/index";
 import { convertColyseusState } from "@/utils/gameStateConverter";
 import { GameSessionStorage } from "@/utils/gameSessionStorage";
 
@@ -73,6 +73,18 @@ export function useGameConnection(): UseGameConnectionReturn {
         
         const convertedState = convertColyseusState(state);
         setGameState(convertedState);
+      },
+      onRoundStart: (message: RoundStartMessage) => {
+        if (!isMountedRef.current) return;
+        console.log("🎯 Round start in useGameConnection:", message);
+        // Timer events are handled by components directly via clockSync utilities
+        // No state updates needed here - components will calculate locally
+      },
+      onRoundEnd: (message: RoundEndMessage) => {
+        if (!isMountedRef.current) return;
+        console.log("🏁 Round end in useGameConnection:", message);
+        // Timer events are handled by components directly
+        // The round end state will come through onStateChange
       },
       onError: (error) => {
         console.error("Game client error:", error);

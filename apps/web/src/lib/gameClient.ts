@@ -1,5 +1,6 @@
 import { Client, Room } from "colyseus.js";
-import { MSG, type PlayerData } from "@shared/index";
+import { MSG, type PlayerData, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
+import { clockSyncManager } from "@/utils/clockSync";
 
 /**
  * Connection status enum for tracking client state
@@ -21,6 +22,9 @@ export interface GameClientEvents {
   onPlayerLeave?: (playerId: string) => void;
   onMessage?: (type: string, message: unknown) => void;
   onError?: (error: Error) => void;
+  // Timer event handlers
+  onRoundStart?: (message: RoundStartMessage) => void;
+  onRoundEnd?: (message: RoundEndMessage) => void;
 }
 
 /**
@@ -402,9 +406,27 @@ export class GameClient {
   private setupRoomHandlers(): void {
     if (!this.room) return;
 
+    // Initialize clock sync manager with this client
+    clockSyncManager.initialize(this);
+
     // Handle state changes
     this.room.onStateChange((state) => {
       this.events.onStateChange?.(state);
+    });
+
+    // Handle timer events
+    this.room.onMessage(MSG.ROUND_START, (message: RoundStartMessage) => {
+      console.log("🎯 Round start event received:", message);
+      this.events.onRoundStart?.(message);
+    });
+
+    this.room.onMessage(MSG.ROUND_END, (message: RoundEndMessage) => {
+      console.log("🏁 Round end event received:", message);
+      this.events.onRoundEnd?.(message);
+    });
+
+    this.room.onMessage(MSG.CLOCK_SYNC, (message: ClockSyncMessage) => {
+      clockSyncManager.handleClockSyncResponse(message);
     });
 
     // Handle messages
@@ -415,6 +437,7 @@ export class GameClient {
     // Handle disconnection - Colyseus handles reconnection timing
     this.room.onLeave((code) => {
       console.log(`Left room with code: ${code}`);
+      clockSyncManager.dispose();
       this.room = null;
       this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
     });
