@@ -253,10 +253,6 @@ export class TriviaRoomState extends Schema {
       this.chatMessages.delete(keys[0]);
     }
   }
-
-  /**
-   * JKLM-style restart system methods
-   */
   
   startRestartCountdown() {
     this.restartCountdown = 10; // 10 seconds countdown
