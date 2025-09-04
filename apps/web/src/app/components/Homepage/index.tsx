@@ -5,7 +5,7 @@ import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
 // Removed TrendingTopics in favor of a larger Active Rooms area
-import { UserDisplayName } from "../UserDisplayName";
+import { UserDropdown } from "../UserDropdown";
 import { useDisplayName } from "../../../contexts/DisplayNameContext";
 import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
 import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
@@ -61,27 +61,58 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   return (
     <div className="min-h-dvh safe-bottom">
       {/* Header styled like GameLayout, with Quivio and UserDisplayName */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
+      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-1">
-              <QuivioLogo size={80} className="text-indigo-400 translate-y-[2px]" />
-              <h1 className="text-3xl font-bold text-indigo-400">Quivio</h1>
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <QuivioLogo 
+                size={60} 
+                className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
+              />
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400">
+                Quivio
+              </h1>
             </div>
-            <UserDisplayName />
+            <UserDropdown />
           </div>
         </div>
       </header>
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left: Active Rooms - 2/3 width with generous height */}
-          <div className="lg:col-span-2">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 sm:pt-6 lg:py-12">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+          {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
+          <div className="lg:order-2 lg:flex lg:flex-col lg:gap-4">
+            <InfoPanel />
+            <div className="hidden lg:flex lg:flex-col lg:gap-4">
+              <CreateRoomPanel
+                roomName={roomName}
+                onRoomNameChange={handleRoomNameChange}
+                isPrivate={isPrivate}
+                onPrivateToggle={setIsPrivate}
+                onCreateRoom={handleCreateRoom}
+                isCreating={isCreating}
+                error={createError}
+                displayName={displayName}
+              />
+              <JoinRoomPanel
+                displayName={displayName}
+                gamePin={gamePin}
+                onGamePinChange={handleGamePinChange}
+                onJoinRoom={handleJoinRoom}
+                isJoining={isJoining}
+                error={joinError}
+              />
+              <AnnouncementsPanel />
+            </div>
+          </div>
+          
+          {/* Active Rooms - Shows after info panel on mobile/tablet, left side on desktop */}
+          <div className="lg:order-1 lg:col-span-2">
             <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
           </div>
-          {/* Right: Stacked panels */}
-          <div className="flex flex-col gap-4">
-            <InfoPanel />
+          
+          {/* Mobile/Tablet panels - Shows after active rooms on mobile/tablet, hidden on desktop */}
+          <div className="flex flex-col gap-4 lg:hidden">
             <CreateRoomPanel
               roomName={roomName}
               onRoomNameChange={handleRoomNameChange}
