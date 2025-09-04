@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -380,6 +380,23 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         });
       }
     });
+
+    // Handle clock synchronization requests
+    this.onMessage(MSG.CLOCK_SYNC, (client, message: ClockSyncMessage) => {
+      if (typeof message?.clientTimestamp === "number") {
+        // Respond with server timestamp for client sync calculation
+        const response: ClockSyncMessage = {
+          clientTimestamp: message.clientTimestamp,
+          serverTimestamp: Date.now()
+        };
+        client.send(MSG.CLOCK_SYNC, response);
+        this.log.debug("Clock sync response sent", { 
+          playerId: client.sessionId,
+          clientTimestamp: message.clientTimestamp,
+          serverTimestamp: response.serverTimestamp
+        });
+      }
+    });
   }
 
   private startGameLoop() {
@@ -392,24 +409,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private updateGameState() {
-    // Update round timer
-    if (this.state.currentRound > 0 && this.state.roundStartTime > 0) {
+    // Check if round should end (timer expired OR all players answered correctly)
+    // Note: We no longer continuously update roundTimeRemaining - clients calculate locally
+    if (this.state.currentRound > 0 && this.state.roundStartTime > 0 && !this.state.roundEnded) {
       const elapsed = Date.now() - this.state.roundStartTime;
-      const newTimerValue = Math.max(0, this.state.roundTime - elapsed);
+      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
       
-      // Only update timer state if it has changed significantly (reduces network traffic)
-      if (Math.abs(newTimerValue - this.lastTimerValue) >= this.TIMER_UPDATE_THRESHOLD || newTimerValue === 0) {
-        this.state.roundTimeRemaining = newTimerValue;
-        this.lastTimerValue = newTimerValue;
-      }
-      
-      // Check if round should end (timer expired OR all players answered correctly)
-      if (!this.state.roundEnded) {
-        if (newTimerValue <= 0) {
-          this.endRound();
-        } else if (this.checkAllPlayersAnswered()) {
-          this.endRound();
-        }
+      if (timeRemaining <= 0) {
+        this.endRound();
+      } else if (this.checkAllPlayersAnswered()) {
+        this.endRound();
       }
     }
   }
@@ -472,10 +481,20 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundStartTime = Date.now();
     this.roundManager.markRoundLoaded();
     
+    // Broadcast round start event to all clients for local timer calculation
+    const roundStartMessage: RoundStartMessage = {
+      roundStartTime: this.state.roundStartTime,
+      roundDurationMs: this.state.roundTime,
+      roundNumber: this.state.currentRound
+    };
+    this.broadcast(MSG.ROUND_START, roundStartMessage);
+    
     this.log.game("Round started", { 
       round: this.state.currentRound,
       topic: this.state.currentTopic,
-      question: this.state.currentPrompt.text
+      question: this.state.currentPrompt.text,
+      roundStartTime: this.state.roundStartTime,
+      roundDurationMs: this.state.roundTime
     });
   }
 
@@ -547,8 +566,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private endRound() {
     if (this.state.roundEnded) return;
     
+    // Determine why the round ended
+    const elapsed = Date.now() - this.state.roundStartTime;
+    const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
+    const reason = timeRemaining <= 0 ? "timer_expired" : "all_answered";
+    
     // Performance monitoring - track round completion
-    const reason = this.state.roundTimeRemaining <= 0 ? "timer_expired" : "all_answered_correctly";
     this.roundManager.addRoundEndMetric(reason);
     
     this.log.game("Round ended", {
@@ -559,10 +582,18 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
     
     this.state.roundEnded = true;
-    this.state.roundTimeRemaining = 0;
+    this.state.roundTimeRemaining = 0; // Keep for backwards compatibility during transition
     
     // Always set the correct answer when round ends so it displays regardless of how the round ended
     this.state.correctAnswer = this.currentRoundAnswer;
+    
+    // Broadcast round end event to all clients
+    const roundEndMessage: RoundEndMessage = {
+      reason,
+      roundNumber: this.state.currentRound,
+      correctAnswer: this.currentRoundAnswer
+    };
+    this.broadcast(MSG.ROUND_END, roundEndMessage);
     
     // Clear the round timer if it exists
     if (this.roundTimer) {
