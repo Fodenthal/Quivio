@@ -389,12 +389,6 @@ export class QuestionBufferManager {
     // Fill up to the configured size using the unified path
     await this.fillToTarget(this.questionBufferSize);
   
-    // If we started truly cold and still have nothing, seed one by generation
-    if (this.questionBuffer.length === 0) {
-      this.log("🌱 Seeding 2 question via generation (pools not ready)");
-      await this.fillToTarget(2);
-    }
-  
     // Log final state once all loads settle in the background
     void Promise.allSettled(loads).then(_ => {
       const sizes = (this.state.topics || [])
@@ -441,61 +435,6 @@ export class QuestionBufferManager {
   }
   
 
-  /**
-   * Generates a question directly (bypassing buffer) as last resort.
-   * Uses the original generation logic.
-   */
-  private async generateQuestionDirect(): Promise<GeneratedQuestion | null> {
-    const allTopics = this.state.topics || [];
-    const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-    const difficulty = this.state.currentDifficulty || 3;
-
-    try {
-      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
-      const topicSpecificQueries = this.getTopicQueries(topic);
-      const topicPreviousAnswers = this.getTopicAnswers(topic);
-      const topicRawResponses = this.getTopicRawResponses(topic);
-
-      this.log(topicRecentQuestions)
-      
-      const questionRequest = {
-        topic,
-        difficulty,
-        previousQuestions: topicRecentQuestions,
-        previousSearchQueries: topicSpecificQueries,
-        previousAnswers: topicPreviousAnswers,
-        previousRawResponses: topicRawResponses
-      };
-
-      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
-
-      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
-
-      this.addTopicRecentQuestion(topic, generatedQuestion.question);
-      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
-
-      // Add raw fact response if available
-      if (generatedQuestion.rawFactResponse) {
-        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
-      }
-
-      // Add actual web search queries if any were used
-      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
-        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
-        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
-      } else {
-        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
-      }
-
-      this.log(`🤖 Generated question directly: "${generatedQuestion.question}" (Topic: ${topic})`);
-
-      return generatedQuestion;
-
-    } catch (error) {
-      console.error("Failed to generate question:", error);
-      return null;
-    }
-  }
 
   // ========================================
   // NEW: Topic Pool Management Methods
@@ -587,45 +526,6 @@ export class QuestionBufferManager {
     return this.topicLoadPromises.size > 0;
   }
 
-  /**
-   * Refills the question buffer from topic pools using round-robin approach.
-   * Protected by mutex to prevent concurrent modifications.
-   */
-  private async refillBufferFromPools(): Promise<void> {
-    return this.withRefillLock(async () => {
-      const allTopics = this.state.topics || [];
-      if (allTopics.length === 0) return;
-      
-      let startIndex = this.rrIndex % allTopics.length;
-      let attempts = 0;
-      
-      // Round-robin through topics to fill buffer
-      while (this.questionBuffer.length < this.questionBufferSize && attempts < allTopics.length * 2) {
-        const topicIndex = (startIndex + attempts) % allTopics.length;
-        const topic = allTopics[topicIndex];
-        const pool = this.topicQuestionPools.get(topic) || [];
-        
-        if (pool.length > 0) {
-          // Take one question from this topic's pool
-          const question = pool.shift()!;
-          this.questionBuffer.push(question);
-          this.addTopicRecentQuestion(topic, question.question);
-          this.log(`📤 Added question from "${topic}" pool to buffer (${this.questionBuffer.length}/${this.questionBufferSize})`);
-          // Advance RR pointer only on successful pull
-          this.rrIndex = (topicIndex + 1) % allTopics.length;
-        } else {
-          // Pool empty - try to reload it (async, don't block)
-          this.ensureTopicPool(topic).catch(error => {
-            this.log(`⚠️ Background topic reload failed for "${topic}":`, error);
-          });
-        }
-        
-        attempts++;
-      }
-      
-      this.log(`🔄 Buffer refill complete: ${this.questionBuffer.length}/${this.questionBufferSize} questions`);
-    });
-  }
 
   /**
    * Promise.any with a small timeout so we don't hang cold starts
@@ -637,33 +537,6 @@ export class QuestionBufferManager {
     ]);
   }
 
-  // 2) Try to take exactly one question from pools (round-robin), or null
-  private takeOneFromPools(): GeneratedQuestion | null {
-    const topics = this.state.topics || [];
-    if (topics.length === 0) return null;
-  
-    const start = this.rrIndex % topics.length;
-    for (let i = 0; i < topics.length; i++) {
-      const idx = (start + i) % topics.length;
-      const t = topics[idx];
-  
-      const hasPool = this.topicQuestionPools.has(t);
-      const pool = hasPool ? (this.topicQuestionPools.get(t) as GeneratedQuestion[]) : undefined;
-  
-      if (pool && pool.length > 0) {
-        const q = pool.shift()!;
-        this.addTopicRecentQuestion(t, q.question);
-        this.rrIndex = (idx + 1) % topics.length;
-        return q;
-      }
-  
-      // ❗ Only kick a load for topics with NO pool yet (unknown), not for known-empty
-      if (!hasPool && !this.topicLoadPromises.has(t)) {
-        void this.ensureTopicPool(t);
-      }
-    }
-    return null;
-  }
 
   // Fill the buffer up to `target` using topic-targeted serving for fairness.
 // Serialized via the mutex so multiple callers don't overlap work.
@@ -749,7 +622,7 @@ export class QuestionBufferManager {
       const topicSpecificQueries = this.getTopicQueries(targetTopic);
       const topicPreviousAnswers = this.getTopicAnswers(targetTopic);
       const topicRawResponses = this.getTopicRawResponses(targetTopic);
-
+      
       const questionRequest = {
         topic: targetTopic, // Use target topic, not current topic
         difficulty,

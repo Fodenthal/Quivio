@@ -495,16 +495,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       return;
     }
 
-    const generatedQuestion = await this.getNextQuestion();
-    if (generatedQuestion) {
-      const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(generatedQuestion);
+    const currentQuestion = await this.getNextQuestion();
+    if (currentQuestion) {
+      const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(currentQuestion);
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
       this.log.ai("Generated question loaded", {
         topic: this.state.currentTopic,
-        question: generatedQuestion.question,
-        answer: generatedQuestion.correctAnswer,
-        difficulty: generatedQuestion.difficulty
+        question: currentQuestion.question,
+        answer: currentQuestion.correctAnswer,
+        difficulty: currentQuestion.difficulty
       });
     } else {
       this.log.warn("Question generation failed, using static prompt", { topic: this.state.currentTopic });
