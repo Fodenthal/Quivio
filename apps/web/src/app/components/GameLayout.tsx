@@ -3,7 +3,7 @@
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameView } from "./GameView";
 import { GameState } from "@shared/index";
-import { UserDisplayName } from "./UserDisplayName";
+import { GameUserDropdown } from "./GameUserDropdown";
 import { QuivioLogo } from "./QuivioLogo";
 
 export interface GameLayoutProps {
@@ -76,44 +76,27 @@ export function GameLayout({
   return (
     <div className="min-h-lvh safe-bottom">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
+      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 overflow-x-hidden">
-            <div className="flex items-center gap-1">
-              <QuivioLogo size={80} className="text-indigo-400 translate-y-[2px]" />
-              <h1 className="text-3xl font-bold text-indigo-400">Quivio</h1>
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <QuivioLogo 
+                size={60} 
+                className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
+              />
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400">
+                Quivio
+              </h1>
             </div>
             
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* User Display Name - shown when connected */}
-              {connectionStatus === ConnectionStatus.CONNECTED && (
-                <div className="hidden sm:block">
-                  <UserDisplayName />
-                </div>
-              )}
-              
-              {/* Leave Game Button - shown when connected */}
-            {connectionStatus === ConnectionStatus.CONNECTED && (
-              <>
-                <button
-                  onClick={onLeaveGame}
-                  className="hidden sm:inline-flex px-3 sm:px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-main hover:bg-white/10 rounded-md transition-colors"
-                >
-                  Leave Game
-                </button>
-                <button
-                  onClick={onLeaveGame}
-                  aria-label="Leave game"
-                  className="inline-flex sm:hidden items-center justify-center w-9 h-9 rounded-md hover:bg-white/10 text-text-secondary hover:text-text-main"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                    <path d="M16 13v-2H7V8l-5 4 5 4v-3h9z"/>
-                    <path d="M20 3h-8a2 2 0 00-2 2v3h2V5h8v14h-8v-3h-2v3a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/>
-                  </svg>
-                </button>
-              </>
-            )}
-            </div>
+            <GameUserDropdown 
+              onLeaveGame={onLeaveGame}
+              connectionStatus={
+                connectionStatus === ConnectionStatus.CONNECTED ? 'connected' :
+                connectionStatus === ConnectionStatus.CONNECTING ? 'connecting' : 
+                'disconnected'
+              }
+            />
           </div>
         </div>
       </header>

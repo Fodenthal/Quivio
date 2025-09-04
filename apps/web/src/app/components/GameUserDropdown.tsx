@@ -4,11 +4,19 @@ import { useDisplayName } from "../../contexts/DisplayNameContext";
 import { useAuth } from "../../hooks/useAuth";
 import Link from "next/link";
 
+export interface GameUserDropdownProps {
+  onLeaveGame: () => void;
+  connectionStatus: 'connected' | 'connecting' | 'disconnected';
+}
+
 /**
- * Consolidated user dropdown component for Quivio
- * Combines display name editing and authentication in a space-efficient dropdown
+ * Game-specific user dropdown component for Quivio
+ * Extends the base UserDropdown with game-specific actions like Leave Game
  */
-export const UserDropdown: React.FC = () => {
+export const GameUserDropdown: React.FC<GameUserDropdownProps> = ({ 
+  onLeaveGame,
+  connectionStatus 
+}) => {
   const { displayName, setDisplayName } = useDisplayName();
   const { user, loading } = useAuth();
   const [input, setInput] = useState<string>(displayName);
@@ -54,6 +62,11 @@ export const UserDropdown: React.FC = () => {
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleLeaveGame = () => {
+    setIsOpen(false);
+    onLeaveGame();
   };
 
   return (
@@ -111,6 +124,24 @@ export const UserDropdown: React.FC = () => {
                 This name will be visible to other players
               </p>
             </div>
+
+            {/* Game Actions Section */}
+            {connectionStatus === 'connected' && (
+              <>
+                <div className="border-t border-gray/20 my-4"></div>
+                <div className="mb-4">
+                  <button
+                    onClick={handleLeaveGame}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors text-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Leave Game
+                  </button>
+                </div>
+              </>
+            )}
 
             {/* Divider */}
             <div className="border-t border-gray/20 my-4"></div>
