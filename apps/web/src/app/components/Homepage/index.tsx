@@ -78,7 +78,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
         </div>
       </header>
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 sm:pt-6 lg:py-12">
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
           <div className="lg:order-2 lg:flex lg:flex-col lg:gap-4">
