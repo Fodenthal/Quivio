@@ -665,34 +665,125 @@ export class QuestionBufferManager {
     return null;
   }
 
-  // Fill the buffer up to `target` using: pools → await any load (w/ timeout) → generate.
+  // Fill the buffer up to `target` using topic-targeted serving for fairness.
 // Serialized via the mutex so multiple callers don't overlap work.
   private async fillToTarget(target: number): Promise<void> {
     await this.withRefillLock(async () => {
       while (this.questionBuffer.length < target) {
-        // 1) Try pools first s
-        const fromPool = this.takeOneFromPools();
-        if (fromPool) {
-          this.questionBuffer.push(fromPool);
-          this.log(`📦 +1 from pool → buffer ${this.questionBuffer.length}/${target}`);
-          continue;
-        }
-  
-        // 2) If pools are loading, wait briefly for the first to finish and retry once
-        if (this.topicLoadPromises.size > 0) {
-          try { await this.anyWithTimeout([...this.topicLoadPromises.values()], 800); }
-          catch { /* timeout or all failed — move on */ }
-          // After a load (or timeout), try pools again in the next loop iteration
-          continue;
-        }
-  
-        // 3) Last resort: generate one
-        const gen = await this.generateQuestionDirect();
-        if (!gen) break; // give up if generation failed
-        this.questionBuffer.push(gen);
-        this.log(`🤖 +1 generated → buffer ${this.questionBuffer.length}/${target}`);
+        const question = await this.getQuestionForTargetTopic();
+        if (!question) break; // give up if all methods failed
+        
+        this.questionBuffer.push(question);
+        this.log(`📦 +1 topic-targeted → buffer ${this.questionBuffer.length}/${target}`);
       }
     });
+  }
+
+  /**
+   * Gets a question for the next topic in round-robin order.
+   * Ensures fair distribution across topics regardless of pool availability.
+   * 
+   * @returns A question for the target topic, or null if all methods fail
+   */
+  private async getQuestionForTargetTopic(): Promise<GeneratedQuestion | null> {
+    const topics = this.state.topics || [];
+    if (topics.length === 0) return null;
+
+    // Pick the next topic (round-robin)
+    const targetTopic = topics[this.rrIndex % topics.length];
+    this.log(`🎯 Target topic: "${targetTopic}" (RR index: ${this.rrIndex})`);
+
+    // For this specific topic, try: pool → wait for load → generate
+    
+    // 1) Try topic's pool first
+    const pool = this.topicQuestionPools.get(targetTopic) || [];
+    if (pool.length > 0) {
+      const question = pool.shift()!;
+      this.addTopicRecentQuestion(targetTopic, question.question);
+      this.rrIndex = (this.rrIndex + 1) % topics.length; // Advance only on success
+      this.log(`📤 Using question from "${targetTopic}" pool`);
+      return question;
+    }
+
+    // 2) If topic is loading, wait briefly for it to finish
+    const loadPromise = this.topicLoadPromises.get(targetTopic);
+    if (loadPromise) {
+      this.log(`⏳ Waiting for "${targetTopic}" to finish loading...`);
+      try {
+        await this.anyWithTimeout([loadPromise], 800);
+        // Try pool again after load completes
+        const poolAfterLoad = this.topicQuestionPools.get(targetTopic) || [];
+        if (poolAfterLoad.length > 0) {
+          const question = poolAfterLoad.shift()!;
+          this.addTopicRecentQuestion(targetTopic, question.question);
+          this.rrIndex = (this.rrIndex + 1) % topics.length; // Advance only on success
+          this.log(`📤 Using question from "${targetTopic}" pool after load`);
+          return question;
+        }
+      } catch (error) {
+        this.log(`⚠️ Load timeout/failed for "${targetTopic}":`, error);
+      }
+    }
+
+    // 3) Generate for this specific topic
+    this.log(`🤖 Generating question for target topic "${targetTopic}"`);
+    const generatedQuestion = await this.generateQuestionForTopic(targetTopic);
+    if (generatedQuestion) {
+      this.rrIndex = (this.rrIndex + 1) % topics.length; // Advance only on success
+    }
+    return generatedQuestion;
+  }
+
+  /**
+   * Generates a question for a specific topic (not necessarily current topic).
+   * Used for topic-targeted serving to ensure fair distribution.
+   * 
+   * @param targetTopic - The specific topic to generate a question for
+   * @returns Generated question or null on failure
+   */
+  private async generateQuestionForTopic(targetTopic: string): Promise<GeneratedQuestion | null> {
+    const difficulty = this.state.currentDifficulty || 3;
+
+    try {
+      const topicRecentQuestions = this.getTopicRecentQuestions(targetTopic);
+      const topicSpecificQueries = this.getTopicQueries(targetTopic);
+      const topicPreviousAnswers = this.getTopicAnswers(targetTopic);
+      const topicRawResponses = this.getTopicRawResponses(targetTopic);
+
+      const questionRequest = {
+        topic: targetTopic, // Use target topic, not current topic
+        difficulty,
+        previousQuestions: topicRecentQuestions,
+        previousSearchQueries: topicSpecificQueries,
+        previousAnswers: topicPreviousAnswers,
+        previousRawResponses: topicRawResponses
+      };
+
+      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
+
+      await this.questionDatabase.storeQuestion(targetTopic, difficulty, generatedQuestion);
+
+      this.addTopicRecentQuestion(targetTopic, generatedQuestion.question);
+      this.addTopicAnswer(targetTopic, generatedQuestion.correctAnswer);
+
+      // Add raw fact response if available
+      if (generatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(targetTopic, generatedQuestion.rawFactResponse);
+      }
+
+      // Add actual web search queries if any were used
+      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
+        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(targetTopic, query));
+        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} search queries for "${targetTopic}"`);
+      }
+
+      this.log(`🤖 Generated question for target topic "${targetTopic}": "${generatedQuestion.question}"`);
+      return generatedQuestion;
+
+    } catch (error) {
+      console.error(`Failed to generate question for topic "${targetTopic}":`, error);
+      return null;
+    }
   }
 
 }
