@@ -216,7 +216,7 @@ export function AISettingsPanel({
       {/* Game Settings Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 mt-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:gap-4 mt-2">
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
             <input
@@ -228,7 +228,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -246,7 +246,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
@@ -264,7 +264,7 @@ export function AISettingsPanel({
               disabled={isReadOnly}
               inputMode="numeric"
               pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+              className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
                 isReadOnly 
                   ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
                   : "bg-white/10 border-white/20 text-text-main"
