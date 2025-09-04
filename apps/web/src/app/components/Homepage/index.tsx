@@ -69,7 +69,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                 size={60} 
                 className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
               />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400 hidden sm:block">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400">
                 Quivio
               </h1>
             </div>
@@ -79,14 +79,40 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       </header>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left: Active Rooms - 2/3 width with generous height */}
-          <div className="lg:col-span-2">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+          {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
+          <div className="lg:order-2 lg:flex lg:flex-col lg:gap-4">
+            <InfoPanel />
+            <div className="hidden lg:flex lg:flex-col lg:gap-4">
+              <CreateRoomPanel
+                roomName={roomName}
+                onRoomNameChange={handleRoomNameChange}
+                isPrivate={isPrivate}
+                onPrivateToggle={setIsPrivate}
+                onCreateRoom={handleCreateRoom}
+                isCreating={isCreating}
+                error={createError}
+                displayName={displayName}
+              />
+              <JoinRoomPanel
+                displayName={displayName}
+                gamePin={gamePin}
+                onGamePinChange={handleGamePinChange}
+                onJoinRoom={handleJoinRoom}
+                isJoining={isJoining}
+                error={joinError}
+              />
+              <AnnouncementsPanel />
+            </div>
+          </div>
+          
+          {/* Active Rooms - Shows after info panel on mobile/tablet, left side on desktop */}
+          <div className="lg:order-1 lg:col-span-2">
             <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
           </div>
-          {/* Right: Stacked panels */}
-          <div className="flex flex-col gap-4">
-            <InfoPanel />
+          
+          {/* Mobile/Tablet panels - Shows after active rooms on mobile/tablet, hidden on desktop */}
+          <div className="flex flex-col gap-4 lg:hidden">
             <CreateRoomPanel
               roomName={roomName}
               onRoomNameChange={handleRoomNameChange}
