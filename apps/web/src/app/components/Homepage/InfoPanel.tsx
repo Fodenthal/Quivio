@@ -15,7 +15,6 @@ export function InfoPanel(): React.ReactElement {
       {/* Bulleted list */}
       <ul className="mt-1 list-disc marker:text-indigo-400/80 pl-5 space-y-1.5 text-sm text-slate-300">
         <li>Play trivia on anything, with anyone, in seconds.</li>
-        <li>We're currently in beta, so expect frequent updates as we smooth out the rough edges.</li>
       </ul>
     </div>
   );
