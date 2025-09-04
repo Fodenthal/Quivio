@@ -5,7 +5,7 @@ import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
 // Removed TrendingTopics in favor of a larger Active Rooms area
-import { UserDisplayName } from "../UserDisplayName";
+import { UserDropdown } from "../UserDropdown";
 import { useDisplayName } from "../../../contexts/DisplayNameContext";
 import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
 import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
@@ -61,14 +61,19 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
   return (
     <div className="min-h-dvh safe-bottom">
       {/* Header styled like GameLayout, with Quivio and UserDisplayName */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top">
+      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-1">
-              <QuivioLogo size={80} className="text-indigo-400 translate-y-[2px]" />
-              <h1 className="text-3xl font-bold text-indigo-400">Quivio</h1>
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <QuivioLogo 
+                size={60} 
+                className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
+              />
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400 hidden sm:block">
+                Quivio
+              </h1>
             </div>
-            <UserDisplayName />
+            <UserDropdown />
           </div>
         </div>
       </header>
