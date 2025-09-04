@@ -24,7 +24,6 @@ export class QuestionBufferManager {
   private readonly log: (message?: any, ...optional: any[]) => void;
 
   private questionBuffer: GeneratedQuestion[] = [];
-  private isGeneratingQuestions = false;
   private topicRecentQuestions: Map<string, string[]> = new Map(); // Track recent questions per topic
   private topicQueries: Map<string, string[]> = new Map(); // Track search queries per topic
   private topicAnswers: Map<string, string[]> = new Map(); // Track previous answers per topic
@@ -66,7 +65,6 @@ export class QuestionBufferManager {
    */
   clear(): void {
     this.questionBuffer = [];
-    this.isGeneratingQuestions = false;
     this.log("🗑️ Question buffer cleared");
   }
 
@@ -375,52 +373,36 @@ export class QuestionBufferManager {
       this.log("⚙️ Development mode active. Skipping question buffer pre-generation.");
       return;
     }
-
-    const allTopics = this.state.topics || [];
-    if (allTopics.length === 0) {
-      throw new Error("No topics set. Please add at least one topic before starting the game.");
-    }
-
-    this.log(`🔄 Starting parallel loads for ${allTopics.length} topics with ${this.TOPIC_POOL_SIZE} questions each...`);
-    
-    // Start ALL topic loads in parallel (don't await)
-    const loadPromises = allTopics.map(topic => this.ensureTopicPool(topic));
-    
-    // Wait for ANY topic to finish loading before proceeding
+    const topics = this.state.topics || [];
+    if (topics.length === 0) throw new Error("No topics set. Please add at least one topic before starting the game.");
+  
+    this.log(`🔄 Warming pools for ${topics.length} topics (batch=${this.TOPIC_POOL_SIZE})…`);
+    const loads = topics.map(t => this.ensureTopicPool(t)); // fire all
+  
     try {
-      await Promise.any(loadPromises);
-      this.log(`✅ At least one topic loaded, proceeding with buffer fill`);
-    } catch (error) {
-      // All loads failed - this is unusual but we can still try generation
-      this.log(`⚠️ All topic loads failed, will fallback to generation:`, error);
+      await this.anyWithTimeout(loads, 800); // don't hang here
+      this.log("✅ At least one pool ready (or timeout) — filling buffer");
+    } catch (e) {
+      this.log("⚠️ No pools ready yet (or all failed) — proceeding anyway", e);
     }
-    
-    // Fill initial buffer from whatever topic pools are available
-    await this.refillBufferFromPools();
-    
-    // Continue loading other topics in background (don't await)
-    Promise.allSettled(loadPromises).then(results => {
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-      
-      // Log pool sizes for each topic
-      const poolSizes = allTopics.map(topic => {
-        const size = this.getTopicPoolSize(topic);
-        return `${topic}: ${size}`;
-      }).join(', ');
-      
-      this.log(`🏁 Topic loading complete: ${successful}/${allTopics.length} topics loaded successfully`);
-      this.log(`📊 Topic pool sizes: ${poolSizes}`);
-      
-      if (failed > 0) {
-        this.log(`⚠️ ${failed} topics failed to load`);
-      }
+  
+    // Fill up to the configured size using the unified path
+    await this.fillToTarget(this.questionBufferSize);
+  
+    // If we started truly cold and still have nothing, seed one by generation
+    if (this.questionBuffer.length === 0) {
+      this.log("🌱 Seeding 2 question via generation (pools not ready)");
+      await this.fillToTarget(2);
+    }
+  
+    // Log final state once all loads settle in the background
+    void Promise.allSettled(loads).then(_ => {
+      const sizes = (this.state.topics || [])
+        .map(t => `${t}: ${this.getTopicPoolSize(t)}`).join(", ");
+      this.log(`📊 Pool sizes after warm: ${sizes}`);
     });
-
-    this.log(`✅ Question buffer initialized with ${this.questionBuffer.length} questions from topic pools`);
-
-    const stats = await this.questionDatabase.getStats();
-    this.log(`📊 Database stats: ${stats.totalQuestions} total questions, ${stats.topicCount} topics, avg usage: ${stats.avgUsagePerQuestion}`);
+  
+    this.log(`✅ Prefill complete: buffer=${this.questionBuffer.length}/${this.questionBufferSize}`);
   }
 
   /**
@@ -432,66 +414,32 @@ export class QuestionBufferManager {
    * @throws Error if topics list is empty
    */
   async getNextQuestion(): Promise<GeneratedQuestion | null> {
-    // Fast path: use buffered question
-    if (this.questionBuffer.length > 0) {
-      const question = this.questionBuffer.shift()!;
-      this.log(`📤 Using buffered question: "${question.question}" (Remaining in buffer: ${this.questionBuffer.length})`);
-
-      await this.questionDatabase.markQuestionAsUsed(question.question);
-      
-      // Trigger background refill (don't await)
-      this.refillBufferFromPools().catch(error => {
-        this.log(`⚠️ Background refill failed:`, error);
-      });
-      
-      return question;
+    // Ensure at least one is ready (fast if already full)
+    if (this.questionBuffer.length === 0) {
+      await this.fillToTarget(1); // unified path will use pools / await-any / or generate
     }
+    if (this.questionBuffer.length === 0) return null; // still nothing — give up gracefully
+  
+    const q = this.questionBuffer.shift()!;
+    this.log(`📤 Serving: "${q.question}" (buffer ${this.questionBuffer.length}/${this.questionBufferSize})`);
 
-    const allTopics = this.state.topics || [];
-    if (allTopics.length === 0) {
-      throw new Error("No topics set. Please add at least one topic before starting the game.");
+    const topics = this.state.topics || [];
+    if (topics.length > 0) {
+      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
+      this.state.currentTopic = topics[this.state.currentTopicIndex];
     }
-
-    this.log("⚠️ Question buffer empty, checking topic pools...");
-
-    // Try to refill buffer from topic pools
-    await this.refillBufferFromPools();
-    
-    if (this.questionBuffer.length > 0) {
-      const question = this.questionBuffer.shift()!;
-      void this.questionDatabase.markQuestionAsUsed(question.question);
-      this.log(`📤 Using question from topic pool: "${question.question}"`);
-      return question;
-    }
-
-    // No questions in pools - check if any are still loading
-    if (this.hasLoadingTopics()) {
-      this.log("⏳ Topics still loading, waiting for any to complete...");
-      
-      // Wait for any topic to finish loading
-      const loadPromises = Array.from(this.topicLoadPromises.values());
-      if (loadPromises.length > 0) {
-        try {
-          await Promise.any(loadPromises);
-          // Try refill again after a topic finishes loading
-          await this.refillBufferFromPools();
-          
-          if (this.questionBuffer.length > 0) {
-            const question = this.questionBuffer.shift()!;
-            await this.questionDatabase.markQuestionAsUsed(question.question);
-            this.log(`📤 Using question after topic load: "${question.question}"`);
-            return question;
-          }
-        } catch (error) {
-          this.log(`⚠️ All topic loads failed:`, error);
-        }
-      }
-    }
-
-    // Last resort: generate new question
-    this.log("⚠️ No questions available in topic pools, generating directly...");
-    return await this.generateQuestionDirect();
+  
+    // Non-blocking write; player shouldn't wait on DB I/O
+    void this.questionDatabase.markQuestionAsUsed(q.question).catch((err: unknown) => this.log("markQuestionAsUsed failed", err));
+  
+    // Keep topping up in the background; no duplicate work thanks to the mutex
+    void this.fillToTarget(this.questionBufferSize).catch(err =>
+      this.log("⚠️ Background top-up failed", err)
+    );
+  
+    return q;
   }
+  
 
   /**
    * Generates a question directly (bypassing buffer) as last resort.
@@ -539,9 +487,6 @@ export class QuestionBufferManager {
         this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
       }
 
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-
       this.log(`🤖 Generated question directly: "${generatedQuestion.question}" (Topic: ${topic})`);
 
       return generatedQuestion;
@@ -549,90 +494,6 @@ export class QuestionBufferManager {
     } catch (error) {
       console.error("Failed to generate question:", error);
       return null;
-    }
-  }
-
-  /**
-   * Schedule a background refill if allowed. Non-blocking.
-   */
-  refillBackground(): void {
-    if (this.state.currentTopic === "__DEV__" || this.isGeneratingQuestions) {
-      return;
-    }
-    this.generateAndAddToBuffer().catch(error => {
-      console.error("Background question generation failed:", error);
-    });
-  }
-
-  private async generateAndAddToBuffer(): Promise<void> {
-    if (this.isGeneratingQuestions || this.questionBuffer.length >= this.questionBufferSize) {
-      return;
-    }
-
-    this.isGeneratingQuestions = true;
-    try {
-      const allTopics = this.state.topics || [];
-      if (allTopics.length === 0) {
-        throw new Error("No topics set. Please add at least one topic before starting the game.");
-      }
-      const topic = allTopics[this.state.currentTopicIndex % allTopics.length];
-      const difficulty = this.state.currentDifficulty || 3;
-
-      const dbQuestions = await this.questionDatabase.getQuestions(topic, difficulty, 1);
-      if (dbQuestions.length > 0) {
-        const cachedQuestion = dbQuestions[0];
-        const topicRecentQuestions = this.getTopicRecentQuestions(topic);
-        if (!topicRecentQuestions.includes(cachedQuestion.question)) {
-          this.questionBuffer.push(cachedQuestion);
-          this.addTopicRecentQuestion(topic, cachedQuestion.question);
-          this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-          this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-          this.log(`📦 Added cached question to buffer: "${cachedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.questionBufferSize})`);
-          return;
-        }
-      }
-
-      // Get topic-specific previous queries, questions, and answers for enhanced generation
-      const topicSpecificQueries = this.getTopicQueries(topic);
-      const topicRecentQuestions = this.getTopicRecentQuestions(topic);
-      const topicPreviousAnswers = this.getTopicAnswers(topic);
-      const topicRawResponses = this.getTopicRawResponses(topic);
-      
-      const questionRequest = {
-        topic,
-        difficulty,
-        previousQuestions: topicRecentQuestions,
-        previousSearchQueries: topicSpecificQueries,
-        previousAnswers: topicPreviousAnswers,
-        previousRawResponses: topicRawResponses
-      };
-
-      this.log(`🔍 Generating question for topic "${topic}" with ${topicRecentQuestions.length} previous questions, ${topicSpecificQueries.length} previous search queries, and ${topicPreviousAnswers.length} previous answers`);
-      const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
-      await this.questionDatabase.storeQuestion(topic, difficulty, generatedQuestion);
-
-      // Add actual web search queries if any were used
-      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
-        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(topic, query));
-        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} actual search queries: ${generatedQuestion.webSearchQueries.join(', ')}`);
-      } else {
-        this.log(`📝 No search queries used for topic "${topic}" (search was disabled)`);
-      }
-
-      this.questionBuffer.push(generatedQuestion);
-      this.addTopicRecentQuestion(topic, generatedQuestion.question);
-      this.addTopicAnswer(topic, generatedQuestion.correctAnswer);
-
-      // Add raw fact response if available
-      if (generatedQuestion.rawFactResponse) {
-        this.addTopicRawResponse(topic, generatedQuestion.rawFactResponse);
-      }
-
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % allTopics.length;
-      this.state.currentTopic = allTopics[this.state.currentTopicIndex];
-      this.log(`📦 Added generated question to buffer: "${generatedQuestion.question}" (Topic: ${topic}, Buffer: ${this.questionBuffer.length}/${this.questionBufferSize})`);
-    } finally {
-      this.isGeneratingQuestions = false;
     }
   }
 
@@ -646,26 +507,19 @@ export class QuestionBufferManager {
    * @returns Promise that resolves when the topic pool is ready
    */
   private async ensureTopicPool(topic: string): Promise<void> {
-    // If already loading, return existing promise (coalescing)
+    // If a load is in-flight, reuse it
     if (this.topicLoadPromises.has(topic)) {
       return this.topicLoadPromises.get(topic)!;
     }
-    
-    // If pool already exists and has questions, no need to load
-    const existingPool = this.topicQuestionPools.get(topic) || [];
-    if (existingPool.length > 0) {
-      return Promise.resolve();
+  
+    // ❗ If we already have a pool entry (even empty), do NOT reload immediately
+    if (this.topicQuestionPools.has(topic)) {
+      return;
     }
-    
-    // Start new load
+  
     const loadPromise = this.loadTopicPool(topic);
     this.topicLoadPromises.set(topic, loadPromise);
-    
-    // Clean up promise when done (success or failure)
-    loadPromise.finally(() => {
-      this.topicLoadPromises.delete(topic);
-    });
-    
+    loadPromise.finally(() => this.topicLoadPromises.delete(topic));
     return loadPromise;
   }
 
@@ -772,6 +626,75 @@ export class QuestionBufferManager {
       this.log(`🔄 Buffer refill complete: ${this.questionBuffer.length}/${this.questionBufferSize} questions`);
     });
   }
+
+  /**
+   * Promise.any with a small timeout so we don't hang cold starts
+   */
+  private anyWithTimeout<T>(promises: Promise<T>[], ms = 800): Promise<T> {
+    return Promise.any([
+      ...promises,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error("pool-timeout")), ms)),
+    ]);
+  }
+
+  // 2) Try to take exactly one question from pools (round-robin), or null
+  private takeOneFromPools(): GeneratedQuestion | null {
+    const topics = this.state.topics || [];
+    if (topics.length === 0) return null;
+  
+    const start = this.rrIndex % topics.length;
+    for (let i = 0; i < topics.length; i++) {
+      const idx = (start + i) % topics.length;
+      const t = topics[idx];
+  
+      const hasPool = this.topicQuestionPools.has(t);
+      const pool = hasPool ? (this.topicQuestionPools.get(t) as GeneratedQuestion[]) : undefined;
+  
+      if (pool && pool.length > 0) {
+        const q = pool.shift()!;
+        this.addTopicRecentQuestion(t, q.question);
+        this.rrIndex = (idx + 1) % topics.length;
+        return q;
+      }
+  
+      // ❗ Only kick a load for topics with NO pool yet (unknown), not for known-empty
+      if (!hasPool && !this.topicLoadPromises.has(t)) {
+        void this.ensureTopicPool(t);
+      }
+    }
+    return null;
+  }
+
+  // Fill the buffer up to `target` using: pools → await any load (w/ timeout) → generate.
+// Serialized via the mutex so multiple callers don't overlap work.
+  private async fillToTarget(target: number): Promise<void> {
+    await this.withRefillLock(async () => {
+      while (this.questionBuffer.length < target) {
+        // 1) Try pools first s
+        const fromPool = this.takeOneFromPools();
+        if (fromPool) {
+          this.questionBuffer.push(fromPool);
+          this.log(`📦 +1 from pool → buffer ${this.questionBuffer.length}/${target}`);
+          continue;
+        }
+  
+        // 2) If pools are loading, wait briefly for the first to finish and retry once
+        if (this.topicLoadPromises.size > 0) {
+          try { await this.anyWithTimeout([...this.topicLoadPromises.values()], 800); }
+          catch { /* timeout or all failed — move on */ }
+          // After a load (or timeout), try pools again in the next loop iteration
+          continue;
+        }
+  
+        // 3) Last resort: generate one
+        const gen = await this.generateQuestionDirect();
+        if (!gen) break; // give up if generation failed
+        this.questionBuffer.push(gen);
+        this.log(`🤖 +1 generated → buffer ${this.questionBuffer.length}/${target}`);
+      }
+    });
+  }
+
 }
 
 
