@@ -7,7 +7,11 @@ export const MSG = {
   JOIN_NEXT_GAME: "join_next_game",
   SET_TOPIC: "set_topic",
   SET_TOPICS: "set_topics",
-  SET_DIFFICULTY: "set_difficulty"
+  SET_DIFFICULTY: "set_difficulty",
+  // Timer event system
+  ROUND_START: "round_start",
+  ROUND_END: "round_end",
+  CLOCK_SYNC: "clock_sync"
 } as const;
 
 export enum GameStatus {
@@ -70,6 +74,24 @@ export interface TopicsMessage {
 
 export interface DifficultyMessage {
   difficulty: number; // 1-5 scale
+}
+
+// Timer event message interfaces
+export interface RoundStartMessage {
+  roundStartTime: number; // Server timestamp when round started
+  roundDurationMs: number; // Duration of the round in milliseconds
+  roundNumber: number; // Current round number for validation
+}
+
+export interface RoundEndMessage {
+  reason: "timer_expired" | "all_answered"; // Why the round ended
+  roundNumber: number; // Round number for validation
+  correctAnswer?: string; // Optional: include correct answer
+}
+
+export interface ClockSyncMessage {
+  clientTimestamp: number; // Client timestamp for round-trip calculation
+  serverTimestamp: number; // Server timestamp for sync calculation
 }
 
 export interface RoomSettings {
