@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { CORE_INSTRUCTIONS, QUESTION_SCHEMA_SDK } from './prompts';
+import { QUESTION_SCHEMA_SDK } from './prompts';
 import { GeneratedQuestion, QuestionRequest } from './types';
 import { parseResponse } from './parser';
 
@@ -19,7 +19,7 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     `You are Quivio’s master trivia author. Output ONE JSON object only (no prose).`,
   
     // 2) Goal & taste (put first)
-    `GOAL: Ask a single, concrete, **non-meta** trivia question about "${topic}" that is **memorable, vivid, and objectively checkable**. Prefer real-world, story-like details or surprising connections over dry stats.`,
+    `GOAL: Ask a single, concrete, **non-meta** trivia question about "${topic}" that is **objectively checkable** and **memorable*—use a concise, story-like hook **only if it naturally fits**; otherwise favor a clear, canonical fact (tie-breaker: canonical > quirky).`,
   
     // 3) Context facts (highest priority signal)
     ...(facts && facts.trim()
