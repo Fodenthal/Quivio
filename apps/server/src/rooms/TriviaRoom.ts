@@ -49,20 +49,16 @@ interface SettingsMessage {
 export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8
   autoDispose = false // Disable automatic disposal when room becomes empty
-  private roundTimer?: NodeJS.Timeout;
-  private gameLoopTimer?: NodeJS.Timeout;
+  private roundTimer?: any; // Can be NodeJS.Timeout or Colyseus Delayed
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
-  private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
-  private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
 
   private registrySync!: RegistrySync;
   private pinGenerator = new PinGenerator();
   private chatManager!: ChatManager;
   private settingsManager!: SettingsManager;
   private playerManager!: PlayerManager;
-  private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
   private log: ReturnType<typeof createChildLogger>;
 
   // Question buffer system
@@ -172,9 +168,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Set up message handlers
     this.setupMessageHandlers();
-    
-    // Start the game loop
-    this.startGameLoop();
   }
 
   async onAuth(client: Client, options: any, _req: any) { return this.playerManager.onAuth(client, options); }
@@ -251,10 +244,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clean up timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
-    }
-    if (this.gameLoopTimer) {
-      clearInterval(this.gameLoopTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
     }
     if (this.restartTimer) {
       clearInterval(this.restartTimer);
@@ -399,30 +394,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
   }
 
-  private startGameLoop() {
-    // Game loop runs every 100ms for better performance vs 50ms
-    this.gameLoopTimer = setInterval(() => {
-      if (this.state.gameStatus === GameStatus.IN_PROGRESS && !this.state.gamePaused) {
-        this.updateGameState();
-      }
-    }, this.GAME_LOOP_INTERVAL);
-  }
-
-  private updateGameState() {
-    // Check if round should end (timer expired OR all players answered correctly)
-    // Note: We no longer continuously update roundTimeRemaining - clients calculate locally
-    if (this.state.currentRound > 0 && this.state.roundStartTime > 0 && !this.state.roundEnded) {
-      const elapsed = Date.now() - this.state.roundStartTime;
-      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
-      
-      if (timeRemaining <= 0) {
-        this.endRound();
-      } else if (this.checkAllPlayersAnswered()) {
-        this.endRound();
-      }
-    }
-  }
-
   private checkGameStart() {
     const readyPlayers = Array.from(this.state.players.values()).filter(p => p.ready);
     const canStart = readyPlayers.length >= 2 && this.state.gameStatus === GameStatus.WAITING;
@@ -460,9 +431,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundStartTime = 0; // Don't start timer yet - wait for questions to load
     this.state.roundTimeRemaining = this.state.roundTime;
     
-    // Reset timer tracking for optimized updates
-    this.lastTimerValue = this.state.roundTime;
-    
     // Clear previous round's guesses and incorrect guesses
     this.state.clearRoundGuesses();
     this.state.clearIncorrectGuesses();
@@ -488,6 +456,13 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       roundNumber: this.state.currentRound
     };
     this.broadcast(MSG.ROUND_START, roundStartMessage);
+    
+    // Schedule round end timeout using Colyseus clock (replaces game loop)
+    this.roundTimer = this.clock.setTimeout(() => {
+      if (!this.state.roundEnded && this.state.currentRound === this.state.currentRound) {
+        this.endRound();
+      }
+    }, this.state.roundTime);
     
     this.log.game("Round started", { 
       round: this.state.currentRound,
@@ -597,7 +572,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clear the round timer if it exists
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
     
@@ -655,7 +635,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clear any timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
     
@@ -749,7 +734,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clear any active timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
   }
@@ -783,8 +773,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       recentRounds: metrics.recentRounds,
       averageRoundDuration: metrics.averageRoundDuration,
       currentPlayers: this.state.players.size,
-      gameLoopInterval: this.GAME_LOOP_INTERVAL,
-      timerUpdateThreshold: this.TIMER_UPDATE_THRESHOLD
+      timerSystem: "event-driven", // Now using event-driven system instead of game loop
+      clockSyncEnabled: true // Clients use clock sync for smooth rendering
     };
   }
 }

@@ -60,7 +60,7 @@ export class TriviaRoomState extends Schema {
   @type("string") hostId: string = "";
   @type("string") winnerId: string = "";
 
-  // Restart system (JKLM-style auto-restart)
+  // Restart system
   @type("number") restartCountdown: number = 0;
   @type({ map: "boolean" }) participatingPlayers = new MapSchema<boolean>();
 
