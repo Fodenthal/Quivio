@@ -64,16 +64,6 @@ export function AnnouncementsPanel(): React.ReactElement {
                   {new Date(a.date + 'T00:00:00').toLocaleDateString()}
                 </div>
               </div>
-              {a.url && (
-                <a
-                  href={a.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 px-3 py-1.5 text-sm bg-white/5 text-indigo-300 hover:text-indigo-200 hover:bg-white/10 rounded-lg transition-all duration-300"
-                >
-                  Learn more
-                </a>
-              )}
             </li>
           ))}
         </ul>
