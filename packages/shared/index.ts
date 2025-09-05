@@ -125,7 +125,7 @@ export interface GameState {
 
   // Round state
   roundStartTime: number;
-  roundTimeRemaining: number;
+  // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   roundEnded: boolean;
   correctAnswer: string;
 

@@ -414,7 +414,7 @@ describe("testing TriviaRoom", () => {
     
     // Round should have ended and timer should be 0
     assert.ok(room.state.roundEnded, "Round should have ended due to timeout");
-    assert.strictEqual(room.state.roundTimeRemaining, 0, "Round time should be 0");
+    // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   });
 
   it("should handle game win condition", async () => {

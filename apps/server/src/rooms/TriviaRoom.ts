@@ -429,7 +429,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private async startNewRound(): Promise<void> {
     this.state.currentRound++;
     this.state.roundStartTime = 0; // Don't start timer yet - wait for questions to load
-    this.state.roundTimeRemaining = this.state.roundTime;
+    // roundTimeRemaining removed - clients calculate locally
     
     // Clear previous round's guesses and incorrect guesses
     this.state.clearRoundGuesses();
@@ -508,35 +508,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
   }
 
-  /**
-   * Checks if all active players in the game have answered correctly.
-   * Returns true if all players have submitted correct answers, false otherwise.
-   * This enables JKLM-style round completion where rounds end early when everyone gets it right.
-   */
-  private checkAllPlayersAnswered(): boolean {
-    // Get all active players (those who are in the game, not just lobby)
-    const activePlayers = Array.from(this.state.players.values());
-    
-    if (activePlayers.length === 0) {
-      return false;
-    }
-    
-    // Check if every active player has a correct guess for this round
-    for (const player of activePlayers) {
-      const playerGuess = this.state.roundGuesses.get(player.id);
-      
-      // If player hasn't guessed yet, or their guess was incorrect, return false
-      if (!playerGuess || !playerGuess.isCorrect) {
-        return false;
-      }
-    }
-    
-    this.log.game("All players answered correctly", { 
-      playerCount: activePlayers.length,
-      round: this.state.currentRound
-    });
-    return true;
-  }
+  // checkAllPlayersAnswered() removed - GuessManager.handleGuess() is now the single source of truth
+  // for detecting when all players have answered correctly
 
   private endRound() {
     if (this.state.roundEnded) return;
@@ -557,7 +530,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
     
     this.state.roundEnded = true;
-    this.state.roundTimeRemaining = 0; // Keep for backwards compatibility during transition
+    // roundTimeRemaining removed - no longer needed
     
     // Always set the correct answer when round ends so it displays regardless of how the round ended
     this.state.correctAnswer = this.currentRoundAnswer;
@@ -612,7 +585,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Reset game state for next game
     this.state.currentRound = 0;
     this.state.roundStartTime = 0;
-    this.state.roundTimeRemaining = 0;
+    // roundTimeRemaining removed - no longer needed
     this.state.roundEnded = false;
     this.state.correctAnswer = "";
     
@@ -751,13 +724,21 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     this.state.gamePaused = false;
     
-    // If we're in the middle of a round, restart the round timer
+    // If we're in the middle of a round, check if we should continue or start new round
     if (this.state.currentRound > 0 && !this.state.roundEnded) {
-      // Reset round timer based on remaining time
-      if (this.state.roundTimeRemaining > 0) {
-        this.state.roundStartTime = Date.now() - (this.state.roundTime - this.state.roundTimeRemaining);
+      // Calculate remaining time based on when round started
+      const elapsed = Date.now() - this.state.roundStartTime;
+      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
+      
+      if (timeRemaining > 0) {
+        // Resume with remaining time - schedule new timeout
+        this.roundTimer = this.clock.setTimeout(() => {
+          if (!this.state.roundEnded) {
+            this.endRound();
+          }
+        }, timeRemaining);
       } else {
-        // If no time remaining, start a new round
+        // Time expired during pause - start new round
         this.startNewRound();
       }
     }

@@ -66,7 +66,7 @@ export class TriviaRoomState extends Schema {
 
   // Round state
   @type("number") roundStartTime: number = 0;
-  @type("number") roundTimeRemaining: number = 0;
+  // roundTimeRemaining removed - clients now calculate locally using event-driven timer system
   @type("boolean") roundEnded: boolean = false;
   @type("string") correctAnswer: string = "";
 

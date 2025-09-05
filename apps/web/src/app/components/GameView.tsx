@@ -732,7 +732,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.gamePaused === nextProps.gameState.gamePaused &&
     prevProps.gameState.roundEnded === nextProps.gameState.roundEnded &&
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
-    Math.floor(prevProps.gameState.roundTimeRemaining / 1000) === Math.floor(nextProps.gameState.roundTimeRemaining / 1000) && // Only re-render on second changes, not millisecond changes
+    // roundTimeRemaining comparison removed - now using local timer rendering
     prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
     prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&

@@ -1,4 +1,5 @@
 import { MSG, ClockSyncMessage } from "@shared/index";
+import type { GameClient } from "@/lib/gameClient";
 
 /**
  * Manages client-server clock synchronization for accurate timer calculations.
@@ -8,7 +9,7 @@ export class ClockSyncManager {
   private serverTimeOffset: number = 0; // Server time - client time
   private lastSyncTime: number = 0;
   private syncInProgress: boolean = false;
-  private gameClient: any = null; // Will be injected
+  private gameClient: GameClient | null = null;
   private readonly SYNC_INTERVAL = 30000; // Re-sync every 30 seconds
   private readonly SYNC_TIMEOUT = 5000; // Timeout sync requests after 5s
   private syncTimer?: NodeJS.Timeout;
@@ -17,7 +18,7 @@ export class ClockSyncManager {
    * Initialize the clock sync manager with a game client reference
    * @param gameClient - The game client instance for sending messages
    */
-  initialize(gameClient: any): void {
+  initialize(gameClient: GameClient): void {
     this.gameClient = gameClient;
     this.startPeriodicSync();
   }
@@ -118,7 +119,12 @@ export class ClockSyncManager {
 
     try {
       // Send sync request to server
-      this.gameClient.getRoom().send(MSG.CLOCK_SYNC, {
+      const room = this.gameClient?.getRoom();
+      if (!room) {
+        throw new Error("No room available for sync");
+      }
+      
+      room.send(MSG.CLOCK_SYNC, {
         clientTimestamp,
         serverTimestamp: 0 // Server will fill this
       } as ClockSyncMessage);

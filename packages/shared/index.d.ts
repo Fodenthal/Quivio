@@ -100,7 +100,6 @@ export interface GameState {
     restartCountdown: number;
     participatingPlayers: Map<string, boolean>;
     roundStartTime: number;
-    roundTimeRemaining: number;
     roundEnded: boolean;
     correctAnswer: string;
     topics: string[];
