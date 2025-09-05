@@ -73,7 +73,7 @@ describe("GameLayout", () => {
     restartCountdown: 0,
     participatingPlayers: new Map([["player1", true]]),
     roundStartTime: 0,
-    roundTimeRemaining: 30000,
+    // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
     roundEnded: false,
     correctAnswer: "",
     topics: ["Test Topic"],

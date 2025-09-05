@@ -33,7 +33,7 @@ describe("gameStateConverter", () => {
         restartCountdown: 0,
         participatingPlayers: new Map(),
         roundStartTime: 0,
-        roundTimeRemaining: 0,
+        // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
         roundEnded: false,
         correctAnswer: "",
         topics: [],
@@ -72,7 +72,7 @@ describe("gameStateConverter", () => {
         winnerId: "winner456",
         restartCountdown: 10,
         roundStartTime: 1234567890,
-        roundTimeRemaining: 25000,
+        // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
         roundEnded: true,
         correctAnswer: "Paris",
         currentTopic: "Geography",
@@ -105,7 +105,7 @@ describe("gameStateConverter", () => {
         winnerId: "winner456",
         restartCountdown: 10,
         roundStartTime: 1234567890,
-        roundTimeRemaining: 25000,
+        // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
         roundEnded: true,
         correctAnswer: "Paris",
         currentTopic: "Geography",

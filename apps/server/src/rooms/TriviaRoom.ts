@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -49,20 +49,16 @@ interface SettingsMessage {
 export class TriviaRoom extends Room<TriviaRoomState> {
   maxClients = 8
   autoDispose = false // Disable automatic disposal when room becomes empty
-  private roundTimer?: NodeJS.Timeout;
-  private gameLoopTimer?: NodeJS.Timeout;
+  private roundTimer?: any; // Can be NodeJS.Timeout or Colyseus Delayed
   private restartTimer?: NodeJS.Timeout;
   private readonly DEFAULT_TARGET_SCORE = 100;
   private readonly DEFAULT_ROUND_TIME = 20000; // 20 seconds
-  private readonly GAME_LOOP_INTERVAL = 100; // 100ms for better performance vs 50ms
-  private readonly TIMER_UPDATE_THRESHOLD = 100; // Only update timer if changed by 100ms+
 
   private registrySync!: RegistrySync;
   private pinGenerator = new PinGenerator();
   private chatManager!: ChatManager;
   private settingsManager!: SettingsManager;
   private playerManager!: PlayerManager;
-  private lastTimerValue: number = 0; // Track last timer value to prevent redundant updates
   private log: ReturnType<typeof createChildLogger>;
 
   // Question buffer system
@@ -172,9 +168,6 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Set up message handlers
     this.setupMessageHandlers();
-    
-    // Start the game loop
-    this.startGameLoop();
   }
 
   async onAuth(client: Client, options: any, _req: any) { return this.playerManager.onAuth(client, options); }
@@ -251,10 +244,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clean up timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
-    }
-    if (this.gameLoopTimer) {
-      clearInterval(this.gameLoopTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
     }
     if (this.restartTimer) {
       clearInterval(this.restartTimer);
@@ -380,38 +375,23 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         });
       }
     });
-  }
 
-  private startGameLoop() {
-    // Game loop runs every 100ms for better performance vs 50ms
-    this.gameLoopTimer = setInterval(() => {
-      if (this.state.gameStatus === GameStatus.IN_PROGRESS && !this.state.gamePaused) {
-        this.updateGameState();
+    // Handle clock synchronization requests
+    this.onMessage(MSG.CLOCK_SYNC, (client, message: ClockSyncMessage) => {
+      if (typeof message?.clientTimestamp === "number") {
+        // Respond with server timestamp for client sync calculation
+        const response: ClockSyncMessage = {
+          clientTimestamp: message.clientTimestamp,
+          serverTimestamp: Date.now()
+        };
+        client.send(MSG.CLOCK_SYNC, response);
+        this.log.debug("Clock sync response sent", { 
+          playerId: client.sessionId,
+          clientTimestamp: message.clientTimestamp,
+          serverTimestamp: response.serverTimestamp
+        });
       }
-    }, this.GAME_LOOP_INTERVAL);
-  }
-
-  private updateGameState() {
-    // Update round timer
-    if (this.state.currentRound > 0 && this.state.roundStartTime > 0) {
-      const elapsed = Date.now() - this.state.roundStartTime;
-      const newTimerValue = Math.max(0, this.state.roundTime - elapsed);
-      
-      // Only update timer state if it has changed significantly (reduces network traffic)
-      if (Math.abs(newTimerValue - this.lastTimerValue) >= this.TIMER_UPDATE_THRESHOLD || newTimerValue === 0) {
-        this.state.roundTimeRemaining = newTimerValue;
-        this.lastTimerValue = newTimerValue;
-      }
-      
-      // Check if round should end (timer expired OR all players answered correctly)
-      if (!this.state.roundEnded) {
-        if (newTimerValue <= 0) {
-          this.endRound();
-        } else if (this.checkAllPlayersAnswered()) {
-          this.endRound();
-        }
-      }
-    }
+    });
   }
 
   private checkGameStart() {
@@ -449,10 +429,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private async startNewRound(): Promise<void> {
     this.state.currentRound++;
     this.state.roundStartTime = 0; // Don't start timer yet - wait for questions to load
-    this.state.roundTimeRemaining = this.state.roundTime;
-    
-    // Reset timer tracking for optimized updates
-    this.lastTimerValue = this.state.roundTime;
+    // roundTimeRemaining removed - clients calculate locally
     
     // Clear previous round's guesses and incorrect guesses
     this.state.clearRoundGuesses();
@@ -472,10 +449,27 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.roundStartTime = Date.now();
     this.roundManager.markRoundLoaded();
     
+    // Broadcast round start event to all clients for local timer calculation
+    const roundStartMessage: RoundStartMessage = {
+      roundStartTime: this.state.roundStartTime,
+      roundDurationMs: this.state.roundTime,
+      roundNumber: this.state.currentRound
+    };
+    this.broadcast(MSG.ROUND_START, roundStartMessage);
+    
+    // Schedule round end timeout using Colyseus clock (replaces game loop)
+    this.roundTimer = this.clock.setTimeout(() => {
+      if (!this.state.roundEnded && this.state.currentRound === this.state.currentRound) {
+        this.endRound();
+      }
+    }, this.state.roundTime);
+    
     this.log.game("Round started", { 
       round: this.state.currentRound,
       topic: this.state.currentTopic,
-      question: this.state.currentPrompt.text
+      question: this.state.currentPrompt.text,
+      roundStartTime: this.state.roundStartTime,
+      roundDurationMs: this.state.roundTime
     });
   }
 
@@ -514,41 +508,18 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     }
   }
 
-  /**
-   * Checks if all active players in the game have answered correctly.
-   * Returns true if all players have submitted correct answers, false otherwise.
-   * This enables JKLM-style round completion where rounds end early when everyone gets it right.
-   */
-  private checkAllPlayersAnswered(): boolean {
-    // Get all active players (those who are in the game, not just lobby)
-    const activePlayers = Array.from(this.state.players.values());
-    
-    if (activePlayers.length === 0) {
-      return false;
-    }
-    
-    // Check if every active player has a correct guess for this round
-    for (const player of activePlayers) {
-      const playerGuess = this.state.roundGuesses.get(player.id);
-      
-      // If player hasn't guessed yet, or their guess was incorrect, return false
-      if (!playerGuess || !playerGuess.isCorrect) {
-        return false;
-      }
-    }
-    
-    this.log.game("All players answered correctly", { 
-      playerCount: activePlayers.length,
-      round: this.state.currentRound
-    });
-    return true;
-  }
+  // checkAllPlayersAnswered() removed - GuessManager.handleGuess() is now the single source of truth
+  // for detecting when all players have answered correctly
 
   private endRound() {
     if (this.state.roundEnded) return;
     
+    // Determine why the round ended
+    const elapsed = Date.now() - this.state.roundStartTime;
+    const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
+    const reason = timeRemaining <= 0 ? "timer_expired" : "all_answered";
+    
     // Performance monitoring - track round completion
-    const reason = this.state.roundTimeRemaining <= 0 ? "timer_expired" : "all_answered_correctly";
     this.roundManager.addRoundEndMetric(reason);
     
     this.log.game("Round ended", {
@@ -559,14 +530,27 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     });
     
     this.state.roundEnded = true;
-    this.state.roundTimeRemaining = 0;
+    // roundTimeRemaining removed - no longer needed
     
     // Always set the correct answer when round ends so it displays regardless of how the round ended
     this.state.correctAnswer = this.currentRoundAnswer;
     
+    // Broadcast round end event to all clients
+    const roundEndMessage: RoundEndMessage = {
+      reason,
+      roundNumber: this.state.currentRound,
+      correctAnswer: this.currentRoundAnswer
+    };
+    this.broadcast(MSG.ROUND_END, roundEndMessage);
+    
     // Clear the round timer if it exists
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
     
@@ -601,7 +585,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Reset game state for next game
     this.state.currentRound = 0;
     this.state.roundStartTime = 0;
-    this.state.roundTimeRemaining = 0;
+    // roundTimeRemaining removed - no longer needed
     this.state.roundEnded = false;
     this.state.correctAnswer = "";
     
@@ -624,7 +608,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clear any timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
     
@@ -718,7 +707,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Clear any active timers
     if (this.roundTimer) {
-      clearTimeout(this.roundTimer);
+      // Handle both NodeJS.Timeout and Colyseus Delayed
+      if (typeof this.roundTimer.clear === 'function') {
+        this.roundTimer.clear(); // Colyseus Delayed
+      } else {
+        clearTimeout(this.roundTimer); // NodeJS.Timeout
+      }
       this.roundTimer = undefined;
     }
   }
@@ -730,13 +724,21 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     this.state.gamePaused = false;
     
-    // If we're in the middle of a round, restart the round timer
+    // If we're in the middle of a round, check if we should continue or start new round
     if (this.state.currentRound > 0 && !this.state.roundEnded) {
-      // Reset round timer based on remaining time
-      if (this.state.roundTimeRemaining > 0) {
-        this.state.roundStartTime = Date.now() - (this.state.roundTime - this.state.roundTimeRemaining);
+      // Calculate remaining time based on when round started
+      const elapsed = Date.now() - this.state.roundStartTime;
+      const timeRemaining = Math.max(0, this.state.roundTime - elapsed);
+      
+      if (timeRemaining > 0) {
+        // Resume with remaining time - schedule new timeout
+        this.roundTimer = this.clock.setTimeout(() => {
+          if (!this.state.roundEnded) {
+            this.endRound();
+          }
+        }, timeRemaining);
       } else {
-        // If no time remaining, start a new round
+        // Time expired during pause - start new round
         this.startNewRound();
       }
     }
@@ -752,8 +754,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       recentRounds: metrics.recentRounds,
       averageRoundDuration: metrics.averageRoundDuration,
       currentPlayers: this.state.players.size,
-      gameLoopInterval: this.GAME_LOOP_INTERVAL,
-      timerUpdateThreshold: this.TIMER_UPDATE_THRESHOLD
+      timerSystem: "event-driven", // Now using event-driven system instead of game loop
+      clockSyncEnabled: true // Clients use clock sync for smooth rendering
     };
   }
 }

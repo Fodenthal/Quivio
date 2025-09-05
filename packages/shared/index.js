@@ -10,7 +10,11 @@ exports.MSG = {
     JOIN_NEXT_GAME: "join_next_game",
     SET_TOPIC: "set_topic",
     SET_TOPICS: "set_topics",
-    SET_DIFFICULTY: "set_difficulty"
+    SET_DIFFICULTY: "set_difficulty",
+    // Timer event system
+    ROUND_START: "round_start",
+    ROUND_END: "round_end",
+    CLOCK_SYNC: "clock_sync"
 };
 var GameStatus;
 (function (GameStatus) {

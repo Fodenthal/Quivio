@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { CORE_INSTRUCTIONS, QUESTION_SCHEMA_SDK } from './prompts';
+import { QUESTION_SCHEMA_SDK } from './prompts';
 import { GeneratedQuestion, QuestionRequest } from './types';
 import { parseResponse } from './parser';
 
@@ -19,7 +19,7 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     `You are Quivio’s master trivia author. Output ONE JSON object only (no prose).`,
   
     // 2) Goal & taste (put first)
-    `GOAL: Ask a single, concrete, **non-meta** trivia question about "${topic}" that is **memorable, vivid, and objectively checkable**. Prefer real-world, story-like details or surprising connections over dry stats.`,
+    `GOAL: Ask a single, concrete, **non-meta** trivia question about "${topic}" that is **objectively checkable** and **memorable*—use a concise, story-like hook **only if it naturally fits**; otherwise favor a clear, canonical fact (tie-breaker: canonical > quirky).`,
   
     // 3) Context facts (highest priority signal)
     ...(facts && facts.trim()
@@ -43,11 +43,12 @@ export async function formatQuestion(topic: string, facts: string, request: Ques
     // 6) Always-True Rules (tightened)
     `Always-True Rules:
      1) Non-meta: no definitions, origins, overviews, or “about the field”.
-     2) Clarity & brevity: ≤65 tokens, one unambiguous answer, fact-checkable.
-     3) If the answer is a bare number or year, ensure it’s inherently interesting (≥3 digits, non-round, or carries meaning) **and** the question contains a vivid hook; otherwise reframe to a concrete noun or action.
-     4) Include common variants as acceptable answers (abbreviations, spellings, number/word forms, punctuation).
-     5) Vary phrasing over time; avoid repeating templates.
-     6) Category: use a sensible broad label (e.g., Sports, History, Science).`,
+     2) Topic ≠ Answer: The topic label ("${topic}") or any trivial variant MUST NOT be the answer.
+     3) Clarity & brevity: ≤65 tokens, one unambiguous answer, fact-checkable.
+     4) If the answer is a bare number or year, ensure it’s inherently interesting (≥3 digits, non-round, or carries meaning) **and** the question contains a vivid hook; otherwise reframe to a concrete noun or action.
+     5) Include common variants as acceptable answers (abbreviations, spellings, number/word forms, punctuation).
+     6) Vary phrasing over time; avoid repeating templates.
+     7) Category: use a sensible broad label (e.g., Sports, History, Science).`,
   
     // 7) Topic handling (kept but trimmed)
     `Topic Handling: If "${topic}" is broad, instantiate a specific, self-contained question in that domain (no definitions). If it’s a specific entity or time-sensitive claim, ask a direct factual question about that entity.`,

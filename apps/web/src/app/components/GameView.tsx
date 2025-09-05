@@ -7,6 +7,8 @@ import { WinnerScreen } from "./WinnerScreen";
 import { Chat } from "./Chat";
 import { GamePins } from "./GamePins";
 import { AISettingsPanel } from "./AISettingsPanel";
+import { useLocalTimer } from "@/hooks/useLocalTimer";
+import { useGameConnectionContext } from "@/contexts/GameConnectionContext";
 
 interface GameViewProps {
   gameState: GameState;
@@ -47,6 +49,42 @@ export const GameView = memo(function GameView({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const phoneSheetContentRef = useRef<HTMLDivElement>(null);
   const phoneSheetRef = useRef<HTMLDivElement>(null);
+  
+  // Use local timer for smooth countdown rendering
+  const localTimer = useLocalTimer();
+  const { gameClient } = useGameConnectionContext();
+  
+  // Set up timer event handlers - use refs to avoid infinite loops
+  const timerHandlersRef = useRef({
+    handleRoundStart: localTimer.handleRoundStart,
+    handleRoundEnd: localTimer.handleRoundEnd,
+    reset: localTimer.reset
+  });
+
+  // Update refs when handlers change
+  useEffect(() => {
+    timerHandlersRef.current = {
+      handleRoundStart: localTimer.handleRoundStart,
+      handleRoundEnd: localTimer.handleRoundEnd,
+      reset: localTimer.reset
+    };
+  }, [localTimer.handleRoundStart, localTimer.handleRoundEnd, localTimer.reset]);
+
+  // Set up timer event handlers with stable references
+  useEffect(() => {
+    if (!gameClient) return;
+
+    // Add event handlers to game client using stable references
+    gameClient.setEventHandlers({
+      onRoundStart: timerHandlersRef.current.handleRoundStart,
+      onRoundEnd: timerHandlersRef.current.handleRoundEnd,
+    });
+
+    return () => {
+      // Cleanup: Reset timer when component unmounts or gameClient changes
+      timerHandlersRef.current.reset();
+    };
+  }, [gameClient]);
   // Memoize chat messages early so effects can reference safely
   const chatMessages = useMemo(() => {
     return Array.from(gameState.chatMessages.values()).filter(
@@ -64,12 +102,7 @@ export const GameView = memo(function GameView({
     return "waiting";
   }, [gameState.gameStatus, gameState.gamePaused, gameState.roundEnded, gameState.currentPrompt?.text, gameState.roundStartTime]);
 
-  const formatTime = useCallback((timeMs: number): string => {
-    const seconds = Math.max(0, Math.ceil(timeMs / 1000));
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }, []);
+  // formatTime is now handled by useLocalTimer hook - removing unused function
 
   const handleGuessSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -316,11 +349,11 @@ export const GameView = memo(function GameView({
     }
   }, [onSendChatMessage]);
 
-  // Memoize timer display to prevent unnecessary re-renders for small time changes
+  // Use local timer display instead of server-provided roundTimeRemaining
   const timerDisplay = useMemo(() => ({
-    time: formatTime(gameState.roundTimeRemaining),
-    isUrgent: gameState.roundTimeRemaining < 10000
-  }), [gameState.roundTimeRemaining, formatTime]);
+    time: localTimer.formattedTime,
+    isUrgent: localTimer.isUrgent
+  }), [localTimer.formattedTime, localTimer.isUrgent]);
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 xl:gap-4 h-full min-h-[60dvh] overflow-x-hidden">
@@ -699,7 +732,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.gamePaused === nextProps.gameState.gamePaused &&
     prevProps.gameState.roundEnded === nextProps.gameState.roundEnded &&
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
-    Math.floor(prevProps.gameState.roundTimeRemaining / 1000) === Math.floor(nextProps.gameState.roundTimeRemaining / 1000) && // Only re-render on second changes, not millisecond changes
+    // roundTimeRemaining comparison removed - now using local timer rendering
     prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
     prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&

@@ -18,10 +18,16 @@ export function AnnouncementsPanel(): React.ReactElement {
     // For pass 1, load static announcements inline. Later we can fetch from /api/announcements
     const staticAnnouncements: Announcement[] = [
       {
+        id: "images-coming-soon",
+        title: "Questions with images coming soon!",
+        summary: "Users can upload image questions",
+        date: "2025-09-04",
+      },
+      {
         id: "launch-beta",
         title: "Public Beta launched",
         summary: "Share feedback in Discord please!",
-        date: new Date().toISOString(),
+        date: "2025-08-24",
         url: process.env.NEXT_PUBLIC_DISCORD_URL,
       },
     ];
@@ -55,7 +61,7 @@ export function AnnouncementsPanel(): React.ReactElement {
                   <div className="text-sm text-slate-300 line-clamp-2">{a.summary}</div>
                 </div>
                 <div className="text-xs text-slate-400 whitespace-nowrap">
-                  {new Date(a.date).toLocaleDateString()}
+                  {new Date(a.date + 'T00:00:00').toLocaleDateString()}
                 </div>
               </div>
               {a.url && (

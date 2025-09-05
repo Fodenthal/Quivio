@@ -36,7 +36,7 @@ describe("PlayerList", () => {
     restartCountdown: 0,
     participatingPlayers: new Map<string, boolean>(),
     roundStartTime: Date.now(),
-    roundTimeRemaining: 25000,
+    // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
     roundEnded: false,
     correctAnswer: "",
     currentTopic: "General Knowledge",

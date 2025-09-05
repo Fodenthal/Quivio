@@ -101,7 +101,7 @@ describe("GameView", () => {
       restartCountdown: 0,
       participatingPlayers: new Map<string, boolean>(),
       roundStartTime: Date.now() - 5000, // 5 seconds elapsed
-      roundTimeRemaining: 25000, // 25 seconds left
+      // roundTimeRemaining removed - clients calculate locally using event-driven timer system
       roundEnded: false,
       correctAnswer: "",
       topics: ["General Knowledge"],
@@ -437,36 +437,14 @@ describe("GameView", () => {
       expect(screen.getByText("Round 3")).toBeInTheDocument();
     });
 
-    it("displays timer in correct format", () => {
-      const gameState = createGameState({ roundTimeRemaining: 95000 }); // 1:35
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      expect(screen.getByText("1:35")).toBeInTheDocument();
-    });
-
-    it("shows timer in red when under 10 seconds", () => {
-      const gameState = createGameState({ roundTimeRemaining: 5000 }); // 5 seconds
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      const timerElement = screen.getByText("0:05");
-      expect(timerElement).toHaveClass("text-red-500");
-    });
-
-    it("shows timer in normal color when over 10 seconds", () => {
-      const gameState = createGameState({ roundTimeRemaining: 15000 }); // 15 seconds
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      const timerElement = screen.getByText("0:15");
-      expect(timerElement).toHaveClass("text-text-main");
-    });
+    // Timer display tests removed - now using local timer calculation with event-driven system
+    // Timer accuracy and formatting is tested in useLocalTimer.test.ts
+    // The GameView component now uses the useLocalTimer hook for smooth 60fps rendering
 
     it("does not show timer during lobby phase", () => {
       const gameState = createGameState({ 
-        gameStatus: GameStatus.WAITING,
-        roundTimeRemaining: 30000
+        gameStatus: GameStatus.WAITING
+        // roundTimeRemaining removed - clients calculate locally
       });
       
       render(<GameView gameState={gameState} currentPlayerId="player1" />);
@@ -833,20 +811,7 @@ describe("GameView", () => {
       expect(screen.queryByText(/General/)).not.toBeInTheDocument();
     });
 
-    it("handles zero time remaining", () => {
-      const gameState = createGameState({ roundTimeRemaining: 0 });
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      expect(screen.getByText("0:00")).toBeInTheDocument();
-    });
-
-    it("handles large time values", () => {
-      const gameState = createGameState({ roundTimeRemaining: 125000 }); // 2:05
-      
-      render(<GameView gameState={gameState} currentPlayerId="player1" />);
-      
-      expect(screen.getByText("2:05")).toBeInTheDocument();
-    });
+    // Timer edge case tests removed - now using local timer calculation with event-driven system
+    // Edge cases for timer formatting are tested in useLocalTimer.test.ts
   });
 }); 

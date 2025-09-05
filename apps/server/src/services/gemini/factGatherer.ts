@@ -167,7 +167,7 @@ SEARCH DISCIPLINE
 
 QUALITY BAR FOR "ADEQUATE" (stop after one query if these are satisfied)
 - Contains at least one concrete, objectively verifiable detail (proper noun, named place/event/object, or uniquely identifiable description).
-- Feels vivid/quirky/story-like (not a generic definition or bland statistic).
+- Vividness (when it helps): Prefer a concise, story-like detail that illuminates the core subject **if it naturally fits**; otherwise choose a clear, canonical fact (avoid obscure, off-topic anecdotes).
 - Avoid dry numbers unless they make the fact striking.
 - No hallucinations: each claim must be supported by something you just found.${previousQueriesContext}${previousAnswersContext}${rawResponseAvoidanceContext}
 

@@ -60,13 +60,13 @@ export class TriviaRoomState extends Schema {
   @type("string") hostId: string = "";
   @type("string") winnerId: string = "";
 
-  // Restart system (JKLM-style auto-restart)
+  // Restart system
   @type("number") restartCountdown: number = 0;
   @type({ map: "boolean" }) participatingPlayers = new MapSchema<boolean>();
 
   // Round state
   @type("number") roundStartTime: number = 0;
-  @type("number") roundTimeRemaining: number = 0;
+  // roundTimeRemaining removed - clients now calculate locally using event-driven timer system
   @type("boolean") roundEnded: boolean = false;
   @type("string") correctAnswer: string = "";
 
@@ -253,10 +253,6 @@ export class TriviaRoomState extends Schema {
       this.chatMessages.delete(keys[0]);
     }
   }
-
-  /**
-   * JKLM-style restart system methods
-   */
   
   startRestartCountdown() {
     this.restartCountdown = 10; // 10 seconds countdown

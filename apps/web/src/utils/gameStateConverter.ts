@@ -27,7 +27,7 @@ export interface RawRoomState {
   restartCountdown?: number;
   participatingPlayers?: MapSchemaLike;
   roundStartTime?: number;
-  roundTimeRemaining?: number;
+  // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   roundEnded?: boolean;
   correctAnswer?: string;
   topics?: string[];
@@ -170,7 +170,7 @@ export function convertColyseusState(state: unknown): GameState | null {
     restartCountdown: roomState.restartCountdown || 0,
     participatingPlayers: participatingPlayersMap,
     roundStartTime: roomState.roundStartTime || 0,
-    roundTimeRemaining: roomState.roundTimeRemaining || 0,
+    // roundTimeRemaining removed - clients calculate locally using event-driven timer system
     roundEnded: roomState.roundEnded || false,
     correctAnswer: roomState.correctAnswer || "",
     
