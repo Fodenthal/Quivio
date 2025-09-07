@@ -375,10 +375,8 @@ export const GameView = memo(function GameView({
         {gameState.gameStatus === GameStatus.WAITING && (() => {
           const currentPlayer = gameState.players.get(currentPlayerId);
           const isHost = currentPlayer?.isHost || false;
-          const playerCount = gameState.players.size;
-          const hasMinPlayers = playerCount >= 2;
           const hasMinTopics = gameState.topics && gameState.topics.length >= 3 && gameState.topics.filter(topic => topic.trim().length > 0).length >= 3;
-          const canStartGame = hasMinPlayers && hasMinTopics && isHost;
+          const canStartGame = hasMinTopics && isHost;
 
           return (
             <div className="flex flex-col h-full">
@@ -415,14 +413,6 @@ export const GameView = memo(function GameView({
                     >
                       Start Game
                     </button>
-                    <div className="mt-4 space-y-1 text-center">
-                      {!hasMinPlayers && (
-                        <p className="text-yellow-300 text-sm">
-                          Need {2 - playerCount} more player{2 - playerCount !== 1 ? 's' : ''} to start.
-                        </p>
-                      )}
-
-                    </div>
                   </div>
                 )}
               </div>

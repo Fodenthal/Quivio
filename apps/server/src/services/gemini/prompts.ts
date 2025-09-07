@@ -1,7 +1,7 @@
 import {Type} from "@google/genai";
 
 
-    /**
+/**
  * Prompt fragments and JSON schema used for Gemini question generation.
  */
 

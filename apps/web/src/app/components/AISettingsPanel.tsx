@@ -272,7 +272,6 @@ export function AISettingsPanel({
             />
           </div>
         </div>
-        {/* Read-only hint removed per request */}
       </section>
     </div>
   );
