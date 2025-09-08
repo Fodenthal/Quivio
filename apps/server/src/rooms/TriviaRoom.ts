@@ -316,7 +316,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
       // Check if we have minimum players (no ready system - presence = readiness)
       const playerCount = this.state.players.size;
-      if (playerCount >= 2) {
+      if (playerCount >= 1) {
         this.log.game("Starting game", { playerCount });
         this.startGame().catch(error => {
           this.log.error("Failed to start game", error);
@@ -324,7 +324,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       } else {
         this.log.game("Start game rejected - insufficient players", { 
           playerCount, 
-          required: 2 
+          required: 1 
         });
       }
     });
@@ -678,7 +678,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     this.state.gameStatus = GameStatus.WAITING;
     this.state.winnerId = "";
     this.state.gamePaused = false;
-    this.state.canStart = this.state.players.size >= 2; // Can start if enough players
+    this.state.canStart = this.state.players.size >= 1; // Can start if enough players
     this.state.currentRound = 0;
     
     // Preserve existing host if they're still in the room, otherwise assign new host

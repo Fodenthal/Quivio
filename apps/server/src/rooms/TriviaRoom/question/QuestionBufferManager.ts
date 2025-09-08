@@ -526,7 +526,6 @@ export class QuestionBufferManager {
     return this.topicLoadPromises.size > 0;
   }
 
-
   /**
    * Promise.any with a small timeout so we don't hang cold starts
    */
@@ -537,9 +536,11 @@ export class QuestionBufferManager {
     ]);
   }
 
-
-  // Fill the buffer up to `target` using topic-targeted serving for fairness.
-// Serialized via the mutex so multiple callers don't overlap work.
+  /**
+   * Fill the buffer up to `target` using topic-targeted serving for fairness.
+   * Serialized via the mutex so multiple callers don't overlap work.
+   * @param target - The target number of questions to fill the buffer to
+   */
   private async fillToTarget(target: number): Promise<void> {
     await this.withRefillLock(async () => {
       while (this.questionBuffer.length < target) {

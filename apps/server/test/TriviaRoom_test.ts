@@ -59,7 +59,7 @@ describe("testing TriviaRoom", () => {
     
     assert.strictEqual(room.state.players.size, 2);
     assert.strictEqual(room.state.hostId, client1.sessionId);
-    assert.strictEqual(room.state.canStart, true); // Should be able to start with 2+ players
+    assert.strictEqual(room.state.canStart, true); // Should be able to start with 1+ players
   });
 
   it("should handle player ready state", async () => {
@@ -275,7 +275,7 @@ describe("testing TriviaRoom", () => {
     await waitForState(100);
     
     // Verify can start
-    assert.ok(room.state.canStart, "Should be able to start with 2+ ready players");
+    assert.ok(room.state.canStart, "Should be able to start with 1+ ready players");
     
     await client1.send("start_game", {});
     await waitForState(800); // Wait longer for game to start

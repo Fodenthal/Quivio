@@ -228,19 +228,8 @@ describe("GameView", () => {
       it("enables start game button when conditions are met", () => {
         const gameState = createGameState({ 
           gameStatus: GameStatus.WAITING,
-          topics: ["Test Topic"] // Has at least one topic
+          topics: ["Test Topic 1", "Test Topic 2", "Test Topic 3"] // Has minimum required topics
         });
-        
-        // Add second player to meet minimum player requirement
-        const player2: PlayerData = {
-          id: "player2",
-          name: "Player2",
-          score: 0,
-          ready: true,
-          isHost: false,
-          joinedAt: Date.now()
-        };
-        gameState.players.set("player2", player2);
         
         render(<GameView 
           gameState={gameState} 
@@ -252,12 +241,12 @@ describe("GameView", () => {
         expect(startButton).not.toBeDisabled();
       });
 
-      it("disables start game button when not enough players", () => {
+      it("enables start game button with single player (singleplayer support)", () => {
         const gameState = createGameState({ 
           gameStatus: GameStatus.WAITING,
-          topics: ["Test Topic"]
+          topics: ["Test Topic 1", "Test Topic 2", "Test Topic 3"] // Has minimum required topics
         });
-        // Only one player
+        // Only one player - should still work for singleplayer
         
         render(<GameView 
           gameState={gameState} 
@@ -266,8 +255,7 @@ describe("GameView", () => {
         />);
         
         const startButton = screen.getByRole("button", { name: "Start Game" });
-        expect(startButton).toBeDisabled();
-        expect(screen.getByText(/Need\s+1\s+more player/i)).toBeInTheDocument();
+        expect(startButton).not.toBeDisabled();
       });
 
       it("disables start game button when no topics configured", () => {
@@ -275,17 +263,6 @@ describe("GameView", () => {
           gameStatus: GameStatus.WAITING,
           topics: [] // No topics configured
         });
-        
-        // Add second player
-        const player2: PlayerData = {
-          id: "player2",
-          name: "Player2",
-          score: 0,
-          ready: true,
-          isHost: false,
-          joinedAt: Date.now()
-        };
-        gameState.players.set("player2", player2);
         
         render(<GameView 
           gameState={gameState} 

@@ -29,8 +29,8 @@ export class PlayerManager {
       this.state.setHost(client.sessionId);
     }
     
-    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING) this.state.canStart = true;
-    if (this.state.players.size >= 2 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) this.onResume();
+    if (this.state.players.size >= 1 && this.state.gameStatus === GameStatus.WAITING) this.state.canStart = true;
+    if (this.state.players.size >= 1 && this.state.gameStatus === GameStatus.IN_PROGRESS && this.state.gamePaused) this.onResume();
   }
 
   /**
@@ -58,9 +58,9 @@ export class PlayerManager {
       }
     }
     
-    // Game state management
-    if (this.state.players.size < 2 && this.state.gameStatus === GameStatus.IN_PROGRESS) this.onPause();
-    this.state.canStart = this.state.players.size >= 2 && this.state.gameStatus === GameStatus.WAITING;
+    // Game state management - no longer pause games for singleplayer
+    // Games continue running even with 1 player (singleplayer support)
+    this.state.canStart = this.state.players.size >= 1 && this.state.gameStatus === GameStatus.WAITING;
     
     // Room disposal logic - dispose immediately when empty (Colyseus handles reconnection timing)
     if (this.state.players.size === 0) {
