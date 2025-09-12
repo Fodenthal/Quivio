@@ -7,6 +7,7 @@ import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 import { GameConnectionProvider } from "../contexts/GameConnectionContext";
 import { MobileScaleFix } from "./components/MobileScaleFix";
 import { DebugTools } from "./components/DebugTools";
+import Script from "next/script";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -39,7 +40,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head></head>
+      <head>
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
+      </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <MobileScaleFix />
         <DisplayNameProvider>

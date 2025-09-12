@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
@@ -66,14 +65,6 @@ export default function BlogLayout({
 }) {
   return (
     <>
-      {/* Google AdSense Script - Only loaded for blog pages */}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
-      
       {/* Blog Content */}
       <div className="min-h-screen">
         {children}
