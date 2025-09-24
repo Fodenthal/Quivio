@@ -415,12 +415,22 @@ export class QuestionBufferManager {
     if (this.questionBuffer.length === 0) return null; // still nothing — give up gracefully
   
     const q = this.questionBuffer.shift()!;
+    const servedTopic = q.sourceTopic || null;
     this.log(`📤 Serving: "${q.question}" (buffer ${this.questionBuffer.length}/${this.questionBufferSize})`);
 
     const topics = this.state.topics || [];
     if (topics.length > 0) {
-      this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
-      this.state.currentTopic = topics[this.state.currentTopicIndex];
+      const matchedIndex = servedTopic ? topics.indexOf(servedTopic) : -1;
+
+      if (matchedIndex >= 0) {
+        this.state.currentTopicIndex = matchedIndex;
+        this.state.currentTopic = topics[matchedIndex];
+      } else {
+        this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
+        this.state.currentTopic = topics[this.state.currentTopicIndex];
+      }
+    } else if (servedTopic) {
+      this.state.currentTopic = servedTopic;
     }
   
     // Non-blocking write; player shouldn't wait on DB I/O
@@ -476,9 +486,12 @@ export class QuestionBufferManager {
       
       // Filter out recently used questions from previous sessions
       const recentQuestions = this.getTopicRecentQuestions(topic);
-      const availableQuestions = dbQuestions.filter((q: GeneratedQuestion) => 
-        !recentQuestions.includes(q.question)
-      );
+      const availableQuestions = dbQuestions
+        .filter((q: GeneratedQuestion) => !recentQuestions.includes(q.question))
+        .map(question => ({
+          ...question,
+          sourceTopic: question.sourceTopic || topic,
+        }));
       
       this.topicQuestionPools.set(topic, availableQuestions);
       this.log(`📦 Loaded ${availableQuestions.length}/${dbQuestions.length} available questions for topic "${topic}"`);
@@ -576,7 +589,10 @@ export class QuestionBufferManager {
       this.addTopicRecentQuestion(targetTopic, question.question);
       this.rrIndex = (this.rrIndex + 1) % topics.length; // Advance only on success
       this.log(`📤 Using question from "${targetTopic}" pool`);
-      return question;
+      return {
+        ...question,
+        sourceTopic: question.sourceTopic || targetTopic,
+      };
     }
 
     // 2) If topic is loading, wait briefly for it to finish
@@ -592,7 +608,10 @@ export class QuestionBufferManager {
           this.addTopicRecentQuestion(targetTopic, question.question);
           this.rrIndex = (this.rrIndex + 1) % topics.length; // Advance only on success
           this.log(`📤 Using question from "${targetTopic}" pool after load`);
-          return question;
+          return {
+            ...question,
+            sourceTopic: question.sourceTopic || targetTopic,
+          };
         }
       } catch (error) {
         this.log(`⚠️ Load timeout/failed for "${targetTopic}":`, error);
@@ -637,22 +656,27 @@ export class QuestionBufferManager {
 
       await this.questionDatabase.storeQuestion(targetTopic, difficulty, generatedQuestion);
 
-      this.addTopicRecentQuestion(targetTopic, generatedQuestion.question);
-      this.addTopicAnswer(targetTopic, generatedQuestion.correctAnswer);
+      const annotatedQuestion: GeneratedQuestion = {
+        ...generatedQuestion,
+        sourceTopic: generatedQuestion.sourceTopic || targetTopic,
+      };
+
+      this.addTopicRecentQuestion(targetTopic, annotatedQuestion.question);
+      this.addTopicAnswer(targetTopic, annotatedQuestion.correctAnswer);
 
       // Add raw fact response if available
-      if (generatedQuestion.rawFactResponse) {
-        this.addTopicRawResponse(targetTopic, generatedQuestion.rawFactResponse);
+      if (annotatedQuestion.rawFactResponse) {
+        this.addTopicRawResponse(targetTopic, annotatedQuestion.rawFactResponse);
       }
 
       // Add actual web search queries if any were used
-      if (generatedQuestion.webSearchQueries && generatedQuestion.webSearchQueries.length > 0) {
-        generatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(targetTopic, query));
-        this.log(`🔍 Captured ${generatedQuestion.webSearchQueries.length} search queries for "${targetTopic}"`);
+      if (annotatedQuestion.webSearchQueries && annotatedQuestion.webSearchQueries.length > 0) {
+        annotatedQuestion.webSearchQueries.forEach(query => this.addTopicQuery(targetTopic, query));
+        this.log(`🔍 Captured ${annotatedQuestion.webSearchQueries.length} search queries for "${targetTopic}"`);
       }
 
-      this.log(`🤖 Generated question for target topic "${targetTopic}": "${generatedQuestion.question}"`);
-      return generatedQuestion;
+      this.log(`🤖 Generated question for target topic "${targetTopic}": "${annotatedQuestion.question}"`);
+      return annotatedQuestion;
 
     } catch (error) {
       console.error(`Failed to generate question for topic "${targetTopic}":`, error);
@@ -661,5 +685,3 @@ export class QuestionBufferManager {
   }
 
 }
-
-

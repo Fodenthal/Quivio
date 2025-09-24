@@ -133,7 +133,8 @@ export class SupabaseQuestionDatabase {
           acceptableAnswers,
           category: row.category,
           difficulty: row.difficulty,
-          image: row.image ?? null
+          image: row.image ?? null,
+          sourceTopic: row.topic ?? undefined
         };
       });
 

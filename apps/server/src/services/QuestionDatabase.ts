@@ -155,7 +155,8 @@ export class QuestionDatabase {
           acceptableAnswers: JSON.parse(row.acceptableAnswers),
           category: row.category,
           difficulty: row.difficulty,
-          image
+          image,
+          sourceTopic: row.topic ?? undefined
         };
       });
 

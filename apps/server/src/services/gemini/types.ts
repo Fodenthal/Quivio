@@ -42,6 +42,8 @@ export interface GeneratedQuestion {
   difficulty: number;
   /** Optional image metadata for visual questions. */
   image?: QuestionImageMetadata | null;
+  /** Topic that produced this question (used for logging/rotation). */
+  sourceTopic?: string;
   /** Web search queries used during fact gathering (if any). */
   webSearchQueries?: string[];
   /** Raw fact-gathering response for similarity detection. */
@@ -65,4 +67,3 @@ export interface QuestionRequest {
   /** Previous raw fact-gathering responses for repetition detection. */
   previousRawResponses?: string[];
 }
-

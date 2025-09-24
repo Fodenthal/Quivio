@@ -491,6 +491,16 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
     const currentQuestion = await this.getNextQuestion();
     if (currentQuestion) {
+      if (currentQuestion.sourceTopic) {
+        const topics = this.state.topics || [];
+        const matchedIndex = topics.indexOf(currentQuestion.sourceTopic);
+        if (matchedIndex >= 0) {
+          this.state.currentTopicIndex = matchedIndex;
+          this.state.currentTopic = topics[matchedIndex];
+        } else {
+          this.state.currentTopic = currentQuestion.sourceTopic;
+        }
+      }
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(currentQuestion);
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
