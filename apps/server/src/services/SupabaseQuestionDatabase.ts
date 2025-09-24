@@ -55,8 +55,6 @@ export class SupabaseQuestionDatabase {
     if (!this.client) return false;
     
     try {
-      const acceptableAnswersJson = JSON.stringify(question.acceptableAnswers);
-
       const { data, error } = await this.client
         .from('questions')
         .insert({
@@ -64,7 +62,7 @@ export class SupabaseQuestionDatabase {
           difficulty,
           question: question.question,
           correct_answer: question.correctAnswer,
-          acceptable_answers: acceptableAnswersJson,
+          acceptable_answers: question.acceptableAnswers,
           category: question.category,
           used_count: 0,
           image: question.image ?? null
@@ -108,14 +106,36 @@ export class SupabaseQuestionDatabase {
         throw error;
       }
 
-      const questions: GeneratedQuestion[] = (data || []).map(row => ({
-        question: row.question,
-        correctAnswer: row.correct_answer,
-        acceptableAnswers: JSON.parse(row.acceptable_answers),
-        category: row.category,
-        difficulty: row.difficulty,
-        image: row.image ?? null
-      }));
+      const questions: GeneratedQuestion[] = (data || []).map(row => {
+        const acceptableField = row.acceptable_answers;
+        let acceptableAnswers: string[] = [];
+
+        if (Array.isArray(acceptableField)) {
+          acceptableAnswers = acceptableField.filter((answer): answer is string => typeof answer === 'string');
+        } else if (typeof acceptableField === 'string') {
+          try {
+            const parsed = JSON.parse(acceptableField);
+            if (Array.isArray(parsed)) {
+              acceptableAnswers = parsed.filter((answer): answer is string => typeof answer === 'string');
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Failed to parse acceptable_answers JSON from Supabase row:', parseError);
+          }
+        }
+
+        if (acceptableAnswers.length === 0 && typeof acceptableField === 'object' && acceptableField !== null) {
+          acceptableAnswers = Object.values(acceptableField).filter((answer): answer is string => typeof answer === 'string');
+        }
+
+        return {
+          question: row.question,
+          correctAnswer: row.correct_answer,
+          acceptableAnswers,
+          category: row.category,
+          difficulty: row.difficulty,
+          image: row.image ?? null
+        };
+      });
 
       if (questions.length > 0) {
         console.log(`📤 Retrieved ${questions.length} questions from Supabase for "${topic}" (difficulty: ${difficulty})`);

@@ -93,15 +93,48 @@ export class PromptLoader {
       return;
     }
 
-    promptImage.pointer = imageMetadata.pointer ?? "";
-    promptImage.url = imageMetadata.url ?? "";
-    promptImage.altText = imageMetadata.altText ?? "";
-    promptImage.source = imageMetadata.source ?? "";
-    promptImage.attribution = imageMetadata.attribution ?? "";
-    promptImage.width = imageMetadata.width ?? 0;
-    promptImage.height = imageMetadata.height ?? 0;
-    promptImage.blurDataUrl = imageMetadata.blurDataUrl ?? "";
-    promptImage.externalId = imageMetadata.externalId ?? "";
+    promptImage.pointer = this.normalizeImageString(imageMetadata.pointer);
+    promptImage.url = this.normalizeImageString(imageMetadata.url);
+    promptImage.altText = this.normalizeImageString(imageMetadata.altText);
+    promptImage.source = this.normalizeImageString(imageMetadata.source);
+    promptImage.attribution = this.normalizeImageString(imageMetadata.attribution, { stringifyObjects: true });
+    promptImage.width = this.normalizeImageNumber(imageMetadata.width);
+    promptImage.height = this.normalizeImageNumber(imageMetadata.height);
+    promptImage.blurDataUrl = this.normalizeImageString(imageMetadata.blurDataUrl);
+    promptImage.externalId = this.normalizeImageString(imageMetadata.externalId);
+  }
+
+  private normalizeImageString(value: unknown, options: { stringifyObjects?: boolean } = {}): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (value === null || value === undefined) {
+      return "";
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    if (options.stringifyObjects && typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch (error) {
+        console.warn('⚠️ Failed to stringify image metadata value:', error);
+      }
+    }
+    return "";
+  }
+
+  private normalizeImageNumber(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
   }
 
   private mapDifficultyToString(difficulty: number): string {
@@ -121,4 +154,3 @@ export class PromptLoader {
     }
   }
 }
-
