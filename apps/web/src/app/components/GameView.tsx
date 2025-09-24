@@ -42,6 +42,8 @@ export const GameView = memo(function GameView({
   const [activePanel, setActivePanel] = useState<'players' | 'chat'>("players");
   const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [isPromptImageLoading, setIsPromptImageLoading] = useState(false);
+  const [promptImageError, setPromptImageError] = useState(false);
   const chatScrollTopRef = useRef<number>(0);
   const pageScrollYRef = useRef<number>(0);
   
@@ -91,6 +93,54 @@ export const GameView = memo(function GameView({
       (message) => message && typeof message === 'object' && message.id && message.playerName
     );
   }, [gameState.chatMessages]);
+
+  const promptImage = useMemo(() => {
+    const image = gameState.currentPrompt?.image;
+    if (!image) return null;
+
+    const rawUrl = typeof image.url === 'string' ? image.url.trim() : '';
+    const pointer = typeof image.pointer === 'string' ? image.pointer.trim() : '';
+
+    let resolvedUrl: string | null = null;
+    if (rawUrl) {
+      resolvedUrl = rawUrl;
+    } else if (pointer) {
+      if (pointer.startsWith('http://') || pointer.startsWith('https://')) {
+        resolvedUrl = pointer;
+      } else {
+        const base = process.env.NEXT_PUBLIC_IMAGE_POINTER_BASE_URL || process.env.NEXT_PUBLIC_IMAGE_CDN_BASE_URL;
+        if (base) {
+          const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+          const normalizedPointer = pointer.startsWith('/') ? pointer.slice(1) : pointer;
+          resolvedUrl = `${normalizedBase}/${normalizedPointer}`;
+        }
+      }
+    }
+
+    if (!resolvedUrl) {
+      return null;
+    }
+
+    return {
+      url: resolvedUrl,
+      alt: image.altText?.trim() || gameState.currentPrompt?.text || 'Question image',
+      width: typeof image.width === 'number' && image.width > 0 ? image.width : undefined,
+      height: typeof image.height === 'number' && image.height > 0 ? image.height : undefined,
+      blurDataUrl: typeof image.blurDataUrl === 'string' ? image.blurDataUrl : undefined,
+      source: image.source,
+      attribution: image.attribution,
+    };
+  }, [gameState.currentPrompt?.image, gameState.currentPrompt?.text]);
+
+  useEffect(() => {
+    if (promptImage) {
+      setIsPromptImageLoading(true);
+      setPromptImageError(false);
+    } else {
+      setIsPromptImageLoading(false);
+      setPromptImageError(false);
+    }
+  }, [promptImage?.url, gameState.currentPrompt?.id]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -481,6 +531,37 @@ export const GameView = memo(function GameView({
                         {gameState.currentPrompt.category || "General"}
                       </span>
                     </div>
+                    {promptImage && !promptImageError && (
+                      <div className="mb-4 flex justify-center">
+                        <figure className="relative w-full max-w-xl">
+                          {isPromptImageLoading && (
+                            <div className="absolute inset-0 animate-pulse rounded-lg bg-white/5" aria-hidden="true" />
+                          )}
+                          <img
+                            src={promptImage.url}
+                            alt={promptImage.alt}
+                            className="mx-auto max-h-72 w-full rounded-lg border border-white/10 bg-black/40 object-contain"
+                            loading="lazy"
+                            onLoad={() => setIsPromptImageLoading(false)}
+                            onError={() => {
+                              setPromptImageError(true);
+                              setIsPromptImageLoading(false);
+                            }}
+                          />
+                          {promptImage.attribution && (
+                            <figcaption className="mt-2 text-sm text-text-secondary">
+                              {promptImage.attribution}
+                              {promptImage.source ? ` · Source: ${promptImage.source}` : ""}
+                            </figcaption>
+                          )}
+                        </figure>
+                      </div>
+                    )}
+                    {promptImageError && (
+                      <div className="mb-4 text-sm text-red-300">
+                        We couldn't load the image for this question.
+                      </div>
+                    )}
                     <div className="flex-grow flex flex-col justify-center">
                       <h3 className={`${promptMobileClass} ${promptMdClass} font-semibold text-text-main break-words leading-normal md:leading-relaxed`}>
                         {gameState.currentPrompt.text}

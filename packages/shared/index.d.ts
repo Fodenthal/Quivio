@@ -35,6 +35,18 @@ export interface Prompt {
     topic?: string;
     difficultyLevel?: number;
     acceptableAnswers?: string[];
+    image?: PromptImage;
+}
+export interface PromptImage {
+    pointer?: string;
+    url?: string;
+    altText?: string;
+    source?: string;
+    attribution?: string;
+    width?: number;
+    height?: number;
+    blurDataUrl?: string;
+    externalId?: string;
 }
 export interface Guess {
     playerId: string;

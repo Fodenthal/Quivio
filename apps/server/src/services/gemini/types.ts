@@ -3,6 +3,30 @@
  */
 
 /**
+ * Metadata describing an associated media asset for a question.
+ */
+export interface QuestionImageMetadata {
+  /** Identifier or pointer that can be used to resolve an image URL. */
+  pointer?: string;
+  /** Direct URL if already materialized. */
+  url?: string;
+  /** Optional human-friendly description for accessibility. */
+  altText?: string;
+  /** Optional source identifier (e.g. "wikidata", "google-images"). */
+  source?: string;
+  /** Optional attribution or licensing info. */
+  attribution?: string;
+  /** Intrinsic width in pixels when available. */
+  width?: number;
+  /** Intrinsic height in pixels when available. */
+  height?: number;
+  /** Optional blur data URL for progressive loading placeholders. */
+  blurDataUrl?: string;
+  /** Optional external identifier that can be used to fetch the image. */
+  externalId?: string;
+}
+
+/**
  * Structured output for a generated trivia question.
  */
 export interface GeneratedQuestion {
@@ -16,6 +40,8 @@ export interface GeneratedQuestion {
   category: string;
   /** Difficulty on a 1-5 scale. */
   difficulty: number;
+  /** Optional image metadata for visual questions. */
+  image?: QuestionImageMetadata | null;
   /** Web search queries used during fact gathering (if any). */
   webSearchQueries?: string[];
   /** Raw fact-gathering response for similarity detection. */
@@ -39,5 +65,4 @@ export interface QuestionRequest {
   /** Previous raw fact-gathering responses for repetition detection. */
   previousRawResponses?: string[];
 }
-
 

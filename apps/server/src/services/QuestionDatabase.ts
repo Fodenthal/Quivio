@@ -12,6 +12,7 @@ export interface StoredQuestion {
   category: string;
   createdAt: string;
   usedCount: number;
+  imageJson?: string | null;
 }
 
 export class QuestionDatabase {
@@ -56,12 +57,23 @@ export class QuestionDatabase {
         correctAnswer TEXT NOT NULL,
         acceptableAnswers TEXT NOT NULL,
         category TEXT NOT NULL,
+        imageJson TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         usedCount INTEGER DEFAULT 0
       )
     `;
 
     this.db.exec(createTableQuery);
+
+    // Ensure legacy databases receive the imageJson column without failing if it already exists
+    try {
+      this.db.exec('ALTER TABLE questions ADD COLUMN imageJson TEXT');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('duplicate column name')) {
+        console.warn('⚠️ Failed to add imageJson column to questions table:', message);
+      }
+    }
 
     // Create index for efficient lookups
     const createIndexQuery = `
@@ -80,8 +92,8 @@ export class QuestionDatabase {
     
     try {
       const insertQuery = `
-        INSERT INTO questions (topic, difficulty, question, correctAnswer, acceptableAnswers, category)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO questions (topic, difficulty, question, correctAnswer, acceptableAnswers, category, imageJson)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
       const acceptableAnswersJson = JSON.stringify(question.acceptableAnswers);
@@ -93,7 +105,8 @@ export class QuestionDatabase {
         question.question,
         question.correctAnswer,
         acceptableAnswersJson,
-        question.category
+        question.category,
+        question.image ? JSON.stringify(question.image) : null
       );
 
       console.log(`💾 Stored question in database: "${question.question}" (ID: ${result.lastInsertRowid})`);
@@ -126,13 +139,25 @@ export class QuestionDatabase {
       const stmt = this.db.prepare(selectQuery);
       const rows = stmt.all(topic, difficulty, limit) as StoredQuestion[];
 
-      const questions: GeneratedQuestion[] = rows.map(row => ({
-        question: row.question,
-        correctAnswer: row.correctAnswer,
-        acceptableAnswers: JSON.parse(row.acceptableAnswers),
-        category: row.category,
-        difficulty: row.difficulty
-      }));
+      const questions: GeneratedQuestion[] = rows.map(row => {
+        let image = null;
+        if (row.imageJson) {
+          try {
+            image = JSON.parse(row.imageJson);
+          } catch (error) {
+            console.warn('⚠️ Failed to parse image metadata from SQLite cache:', error);
+          }
+        }
+
+        return {
+          question: row.question,
+          correctAnswer: row.correctAnswer,
+          acceptableAnswers: JSON.parse(row.acceptableAnswers),
+          category: row.category,
+          difficulty: row.difficulty,
+          image
+        };
+      });
 
       if (questions.length > 0) {
         console.log(`📤 Retrieved ${questions.length} questions from database for "${topic}" (difficulty: ${difficulty})`);

@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { GeneratedQuestion } from './GeminiService';
+import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
 import { getDatabaseConfig } from '../config';
 
 export interface StoredQuestion {
@@ -12,6 +12,7 @@ export interface StoredQuestion {
   category: string;
   createdAt: string;
   usedCount: number;
+  image?: QuestionImageMetadata | null;
 }
 
 export class SupabaseQuestionDatabase {
@@ -65,7 +66,8 @@ export class SupabaseQuestionDatabase {
           correct_answer: question.correctAnswer,
           acceptable_answers: acceptableAnswersJson,
           category: question.category,
-          used_count: 0
+          used_count: 0,
+          image: question.image ?? null
         })
         .select()
         .single();
@@ -111,7 +113,8 @@ export class SupabaseQuestionDatabase {
         correctAnswer: row.correct_answer,
         acceptableAnswers: JSON.parse(row.acceptable_answers),
         category: row.category,
-        difficulty: row.difficulty
+        difficulty: row.difficulty,
+        image: row.image ?? null
       }));
 
       if (questions.length > 0) {

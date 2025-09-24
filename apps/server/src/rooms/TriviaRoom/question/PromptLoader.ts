@@ -1,4 +1,4 @@
-import { GeneratedQuestion } from "../../../services/GeminiService";
+import { GeneratedQuestion, QuestionImageMetadata } from "../../../services/GeminiService";
 import { TriviaRoomState } from "../../schema/TriviaRoomState";
 import { STATIC_PROMPTS } from "../staticPrompts";
 
@@ -39,6 +39,7 @@ export class PromptLoader {
     this.state.currentPrompt.topic = this.state.currentTopic || "";
     this.state.currentPrompt.difficultyLevel = generated.difficulty;
     this.state.currentPrompt.acceptableAnswers = generated.acceptableAnswers;
+    this.applyPromptImage(generated.image);
 
     return {
       correctAnswer: generated.correctAnswer,
@@ -66,8 +67,41 @@ export class PromptLoader {
     this.state.currentPrompt.topic = "Mixed Topics";
     this.state.currentPrompt.difficultyLevel = this.mapStringToNumber(selected.difficulty);
     this.state.currentPrompt.acceptableAnswers = [selected.answer];
+    this.applyPromptImage(null);
 
     return { correctAnswer: selected.answer, acceptableAnswers: [selected.answer] };
+  }
+
+  private applyPromptImage(imageMetadata: QuestionImageMetadata | null | undefined) {
+    const promptImage = this.state.currentPrompt.image;
+    if (!promptImage) {
+      return;
+    }
+
+    // Reset existing values to avoid leaking data between prompts
+    promptImage.pointer = "";
+    promptImage.url = "";
+    promptImage.altText = "";
+    promptImage.source = "";
+    promptImage.attribution = "";
+    promptImage.width = 0;
+    promptImage.height = 0;
+    promptImage.blurDataUrl = "";
+    promptImage.externalId = "";
+
+    if (!imageMetadata) {
+      return;
+    }
+
+    promptImage.pointer = imageMetadata.pointer ?? "";
+    promptImage.url = imageMetadata.url ?? "";
+    promptImage.altText = imageMetadata.altText ?? "";
+    promptImage.source = imageMetadata.source ?? "";
+    promptImage.attribution = imageMetadata.attribution ?? "";
+    promptImage.width = imageMetadata.width ?? 0;
+    promptImage.height = imageMetadata.height ?? 0;
+    promptImage.blurDataUrl = imageMetadata.blurDataUrl ?? "";
+    promptImage.externalId = imageMetadata.externalId ?? "";
   }
 
   private mapDifficultyToString(difficulty: number): string {
@@ -87,5 +121,4 @@ export class PromptLoader {
     }
   }
 }
-
 

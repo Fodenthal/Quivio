@@ -33,6 +33,18 @@ export class ChatMessageState extends Schema {
   @type("string") type: string = "player";
 }
 
+export class PromptImageState extends Schema {
+  @type("string") pointer: string = "";
+  @type("string") url: string = "";
+  @type("string") altText: string = "";
+  @type("string") source: string = "";
+  @type("string") attribution: string = "";
+  @type("number") width: number = 0;
+  @type("number") height: number = 0;
+  @type("string") blurDataUrl: string = "";
+  @type("string") externalId: string = "";
+}
+
 export class PromptState extends Schema {
   @type("string") id: string = "";
   @type("string") text: string = "";
@@ -41,6 +53,7 @@ export class PromptState extends Schema {
   @type("string") topic: string = "";
   @type("number") difficultyLevel: number = 3; // 1-5 scale
   @type(["string"]) acceptableAnswers: string[] = [];
+  @type(PromptImageState) image: PromptImageState = new PromptImageState();
 }
 
 export class TriviaRoomState extends Schema {
