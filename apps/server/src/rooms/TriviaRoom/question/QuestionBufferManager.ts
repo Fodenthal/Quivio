@@ -488,7 +488,7 @@ export class QuestionBufferManager {
       const recentQuestions = this.getTopicRecentQuestions(topic);
       const availableQuestions = dbQuestions
         .filter((q: GeneratedQuestion) => !recentQuestions.includes(q.question))
-        .map(question => ({
+        .map((question: GeneratedQuestion) => ({
           ...question,
           sourceTopic: question.sourceTopic || topic,
         }));
