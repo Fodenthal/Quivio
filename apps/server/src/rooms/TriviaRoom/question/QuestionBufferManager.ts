@@ -33,7 +33,7 @@ export class QuestionBufferManager {
   private topicQuestionPools: Map<string, GeneratedQuestion[]> = new Map(); // Large pools per topic
   private topicLoadPromises: Map<string, Promise<void>> = new Map(); // Track in-flight loads to avoid duplicates
   private refillMutex: Promise<void> = Promise.resolve(); // Single mutex for all refill operations
-  // RR fairness: pointer independent of this.currentTopicIndex
+  // RR fairness: index independent of this.currentTopicIndex
   private rrIndex = 0;
 
   // Configuration constants

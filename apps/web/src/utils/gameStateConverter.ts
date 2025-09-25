@@ -45,15 +45,15 @@ export interface RawRoomState {
     difficultyLevel?: number;
     acceptableAnswers?: string[];
     image?: {
-      pointer?: string;
       url?: string;
       altText?: string;
-      source?: string;
-      attribution?: string;
       width?: number;
       height?: number;
-      blurDataUrl?: string;
-      externalId?: string;
+      attribution?: string;
+      source?: string;
+      mime?: string;
+      original_url?: string;
+      storage_key?: string;
       [key: string]: unknown;
     };
   };
@@ -172,30 +172,30 @@ export function convertColyseusState(state: unknown): GameState | null {
       return undefined;
     }
 
-    const pointer = typeof rawImage.pointer === 'string' ? rawImage.pointer.trim() : '';
     const url = typeof rawImage.url === 'string' ? rawImage.url.trim() : '';
-    const altText = typeof rawImage.altText === 'string' ? rawImage.altText.trim() : '';
-    const source = typeof rawImage.source === 'string' ? rawImage.source.trim() : '';
-    const attribution = typeof rawImage.attribution === 'string' ? rawImage.attribution.trim() : '';
-    const externalId = typeof rawImage.externalId === 'string' ? rawImage.externalId.trim() : '';
-    const width = typeof rawImage.width === 'number' && rawImage.width > 0 ? rawImage.width : undefined;
-    const height = typeof rawImage.height === 'number' && rawImage.height > 0 ? rawImage.height : undefined;
-    const blurDataUrl = typeof rawImage.blurDataUrl === 'string' ? rawImage.blurDataUrl : '';
-
-    if (!pointer && !url) {
+    if (!url) {
       return undefined;
     }
 
+    const altText = typeof rawImage.altText === 'string' ? rawImage.altText.trim() : '';
+    const attribution = typeof rawImage.attribution === 'string' ? rawImage.attribution.trim() : '';
+    const source = typeof rawImage.source === 'string' ? rawImage.source.trim() : '';
+    const mime = typeof rawImage.mime === 'string' ? rawImage.mime.trim() : '';
+    const originalUrl = typeof rawImage.original_url === 'string' ? rawImage.original_url.trim() : '';
+    const storageKey = typeof rawImage.storage_key === 'string' ? rawImage.storage_key.trim() : '';
+    const width = typeof rawImage.width === 'number' && rawImage.width > 0 ? rawImage.width : undefined;
+    const height = typeof rawImage.height === 'number' && rawImage.height > 0 ? rawImage.height : undefined;
+
     return {
-      pointer: pointer || undefined,
-      url: url || undefined,
+      url,
       altText: altText || undefined,
-      source: source || undefined,
       attribution: attribution || undefined,
+      source: source || undefined,
+      mime: mime || undefined,
+      original_url: originalUrl || undefined,
+      storage_key: storageKey || undefined,
       width,
       height,
-      blurDataUrl: blurDataUrl || undefined,
-      externalId: externalId || undefined,
     };
   })();
 

@@ -79,47 +79,40 @@ export class PromptLoader {
     }
 
     // Reset existing values to avoid leaking data between prompts
-    promptImage.pointer = "";
     promptImage.url = "";
     promptImage.altText = "";
-    promptImage.source = "";
-    promptImage.attribution = "";
     promptImage.width = 0;
     promptImage.height = 0;
-    promptImage.blurDataUrl = "";
-    promptImage.externalId = "";
+    promptImage.attribution = "";
+    promptImage.source = "";
+    promptImage.mime = "";
+    promptImage.original_url = "";
+    promptImage.storage_key = "";
 
-    if (!imageMetadata) {
+    if (!imageMetadata || typeof imageMetadata.url !== 'string' || !imageMetadata.url.trim()) {
       return;
     }
 
-    promptImage.pointer = this.normalizeImageString(imageMetadata.pointer);
     promptImage.url = this.normalizeImageString(imageMetadata.url);
     promptImage.altText = this.normalizeImageString(imageMetadata.altText);
-    promptImage.source = this.normalizeImageString(imageMetadata.source);
-    promptImage.attribution = this.normalizeImageString(imageMetadata.attribution, { stringifyObjects: true });
     promptImage.width = this.normalizeImageNumber(imageMetadata.width);
     promptImage.height = this.normalizeImageNumber(imageMetadata.height);
-    promptImage.blurDataUrl = this.normalizeImageString(imageMetadata.blurDataUrl);
-    promptImage.externalId = this.normalizeImageString(imageMetadata.externalId);
+    promptImage.attribution = this.normalizeImageString(imageMetadata.attribution);
+    promptImage.source = this.normalizeImageString(imageMetadata.source);
+    promptImage.mime = this.normalizeImageString(imageMetadata.mime);
+    promptImage.original_url = this.normalizeImageString(imageMetadata.original_url);
+    promptImage.storage_key = this.normalizeImageString(imageMetadata.storage_key);
   }
 
-  private normalizeImageString(value: unknown, options: { stringifyObjects?: boolean } = {}): string {
+  private normalizeImageString(value: unknown): string {
     if (typeof value === 'string') {
-      return value;
+      return value.trim();
     }
     if (value === null || value === undefined) {
       return "";
     }
     if (typeof value === 'number' || typeof value === 'boolean') {
       return String(value);
-    }
-    if (options.stringifyObjects && typeof value === 'object') {
-      try {
-        return JSON.stringify(value);
-      } catch (error) {
-        console.warn('⚠️ Failed to stringify image metadata value:', error);
-      }
     }
     return "";
   }

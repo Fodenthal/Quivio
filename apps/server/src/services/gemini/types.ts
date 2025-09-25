@@ -6,24 +6,24 @@
  * Metadata describing an associated media asset for a question.
  */
 export interface QuestionImageMetadata {
-  /** Identifier or pointer that can be used to resolve an image URL. */
-  pointer?: string;
-  /** Direct URL if already materialized. */
-  url?: string;
+  /** Fetchable URL rendered by the client. */
+  url: string;
   /** Optional human-friendly description for accessibility. */
   altText?: string;
-  /** Optional source identifier (e.g. "wikidata", "google-images"). */
-  source?: string;
-  /** Optional attribution or licensing info. */
-  attribution?: string;
   /** Intrinsic width in pixels when available. */
   width?: number;
   /** Intrinsic height in pixels when available. */
   height?: number;
-  /** Optional blur data URL for progressive loading placeholders. */
-  blurDataUrl?: string;
-  /** Optional external identifier that can be used to fetch the image. */
-  externalId?: string;
+  /** Optional attribution or licensing info. */
+  attribution?: string;
+  /** Optional source identifier (e.g. "Wikimedia", "User Upload"). */
+  source?: string;
+  /** MIME type such as "image/png" when known. */
+  mime?: string;
+  /** Original remote URL when mirroring an external asset. */
+  original_url?: string;
+  /** Storage key/path when hosted internally. */
+  storage_key?: string;
 }
 
 /**

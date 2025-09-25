@@ -44,15 +44,15 @@ export interface Prompt {
 }
 
 export interface PromptImage {
-  pointer?: string;
-  url?: string;
+  url: string;
   altText?: string;
-  source?: string;
   attribution?: string;
   width?: number;
   height?: number;
-  blurDataUrl?: string;
-  externalId?: string;
+  source?: string;
+  mime?: string;
+  original_url?: string;
+  storage_key?: string;
 }
 
 export interface Guess {

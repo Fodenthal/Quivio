@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
+import Image from "next/image";
 import { GameState, GameStatus } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
@@ -95,19 +96,30 @@ export const GameView = memo(function GameView({
 
   const promptImage = useMemo(() => {
     const image = gameState.currentPrompt?.image;
-    if (!image) return null;
+    if (!image || typeof image.url !== 'string') return null;
 
-    const url = image.url?.trim();
+    const url = image.url.trim();
     if (!url) return null;
+
+    const alt = image.altText?.trim() || gameState.currentPrompt?.text || 'Question image';
+    const width = typeof image.width === 'number' && image.width > 0 ? image.width : undefined;
+    const height = typeof image.height === 'number' && image.height > 0 ? image.height : undefined;
+    const attribution = image.attribution?.trim();
+    const source = image.source?.trim();
+    const mime = image.mime?.trim();
+    const originalUrl = image.original_url?.trim();
+    const storageKey = image.storage_key?.trim();
 
     return {
       url,
-      alt: image.altText?.trim() || gameState.currentPrompt?.text || 'Question image',
-      width: typeof image.width === 'number' && image.width > 0 ? image.width : undefined,
-      height: typeof image.height === 'number' && image.height > 0 ? image.height : undefined,
-      blurDataUrl: typeof image.blurDataUrl === 'string' ? image.blurDataUrl : undefined,
-      source: image.source,
-      attribution: image.attribution,
+      alt,
+      width,
+      height,
+      attribution: attribution || undefined,
+      source: source || undefined,
+      mime: mime || undefined,
+      originalUrl: originalUrl || undefined,
+      storageKey: storageKey || undefined,
     };
   }, [gameState.currentPrompt?.image, gameState.currentPrompt?.text]);
 
@@ -119,7 +131,7 @@ export const GameView = memo(function GameView({
       setIsPromptImageLoading(false);
       setPromptImageError(false);
     }
-  }, [promptImage?.url, gameState.currentPrompt?.id]);
+  }, [promptImage, gameState.currentPrompt?.id]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -516,12 +528,14 @@ export const GameView = memo(function GameView({
                           {isPromptImageLoading && (
                             <div className="absolute inset-0 animate-pulse rounded-lg bg-white/5" aria-hidden="true" />
                           )}
-                          <img
+                          <Image
                             src={promptImage.url}
                             alt={promptImage.alt}
+                            width={promptImage.width ?? 800}
+                            height={promptImage.height ?? 600}
                             className="mx-auto max-h-72 w-full rounded-lg border border-white/10 bg-black/40 object-contain"
-                            loading="lazy"
-                            onLoad={() => setIsPromptImageLoading(false)}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 70vw, 40vw"
+                            onLoadingComplete={() => setIsPromptImageLoading(false)}
                             onError={() => {
                               setPromptImageError(true);
                               setIsPromptImageLoading(false);

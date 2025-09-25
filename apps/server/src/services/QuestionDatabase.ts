@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { GeneratedQuestion } from './GeminiService';
+import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
 
 export interface StoredQuestion {
   id: number;
@@ -98,6 +98,8 @@ export class QuestionDatabase {
 
       const acceptableAnswersJson = JSON.stringify(question.acceptableAnswers);
 
+      const normalizedImage = this.normalizeImageMetadata(question.image);
+
       const stmt = this.db.prepare(insertQuery);
       const result = stmt.run(
         topic,
@@ -106,7 +108,7 @@ export class QuestionDatabase {
         question.correctAnswer,
         acceptableAnswersJson,
         question.category,
-        question.image ? JSON.stringify(question.image) : null
+        normalizedImage ? JSON.stringify(normalizedImage) : null
       );
 
       console.log(`💾 Stored question in database: "${question.question}" (ID: ${result.lastInsertRowid})`);
@@ -143,7 +145,8 @@ export class QuestionDatabase {
         let image = null;
         if (row.imageJson) {
           try {
-            image = JSON.parse(row.imageJson);
+            const parsed = JSON.parse(row.imageJson);
+            image = this.normalizeImageMetadata(parsed);
           } catch (error) {
             console.warn('⚠️ Failed to parse image metadata from SQLite cache:', error);
           }
@@ -358,4 +361,70 @@ export class QuestionDatabase {
       return [];
     }
   }
-} 
+
+  private normalizeImageMetadata(image: unknown): GeneratedQuestion['image'] {
+    if (!image || typeof image !== 'object') {
+      return null;
+    }
+
+    const record = image as Record<string, unknown>;
+    const rawUrl = record.url;
+    if (typeof rawUrl !== 'string') {
+      return null;
+    }
+
+    const url = rawUrl.trim();
+    if (!url) {
+      return null;
+    }
+
+    const toStringOrUndefined = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed ? trimmed : undefined;
+      }
+      return undefined;
+    };
+
+    const toNumberOrUndefined = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+      return undefined;
+    };
+
+    const normalized: QuestionImageMetadata = { url };
+
+    const altText = toStringOrUndefined(record.altText);
+    if (altText) normalized.altText = altText;
+
+    const attribution = toStringOrUndefined(record.attribution);
+    if (attribution) normalized.attribution = attribution;
+
+    const source = toStringOrUndefined(record.source);
+    if (source) normalized.source = source;
+
+    const mime = toStringOrUndefined(record.mime);
+    if (mime) normalized.mime = mime;
+
+    const originalUrl = toStringOrUndefined(record.original_url);
+    if (originalUrl) normalized.original_url = originalUrl;
+
+    const storageKey = toStringOrUndefined(record.storage_key);
+    if (storageKey) normalized.storage_key = storageKey;
+
+    const width = toNumberOrUndefined(record.width);
+    if (typeof width === 'number') normalized.width = width;
+
+    const height = toNumberOrUndefined(record.height);
+    if (typeof height === 'number') normalized.height = height;
+
+    return normalized;
+  }
+}

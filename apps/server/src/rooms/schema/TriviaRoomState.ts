@@ -34,15 +34,15 @@ export class ChatMessageState extends Schema {
 }
 
 export class PromptImageState extends Schema {
-  @type("string") pointer: string = "";
   @type("string") url: string = "";
   @type("string") altText: string = "";
-  @type("string") source: string = "";
-  @type("string") attribution: string = "";
   @type("number") width: number = 0;
   @type("number") height: number = 0;
-  @type("string") blurDataUrl: string = "";
-  @type("string") externalId: string = "";
+  @type("string") attribution: string = "";
+  @type("string") source: string = "";
+  @type("string") mime: string = "";
+  @type("string") original_url: string = "";
+  @type("string") storage_key: string = "";
 }
 
 export class PromptState extends Schema {

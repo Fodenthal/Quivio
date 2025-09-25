@@ -55,6 +55,8 @@ export class SupabaseQuestionDatabase {
     if (!this.client) return false;
     
     try {
+      const normalizedImage = this.normalizeImageMetadata(question.image);
+
       const { data, error } = await this.client
         .from('questions')
         .insert({
@@ -65,7 +67,7 @@ export class SupabaseQuestionDatabase {
           acceptable_answers: question.acceptableAnswers,
           category: question.category,
           used_count: 0,
-          image: question.image ?? null
+          image: normalizedImage
         })
         .select()
         .single();
@@ -133,7 +135,7 @@ export class SupabaseQuestionDatabase {
           acceptableAnswers,
           category: row.category,
           difficulty: row.difficulty,
-          image: row.image ?? null,
+          image: this.normalizeImageMetadata(row.image),
           sourceTopic: row.topic ?? undefined
         };
       });
@@ -411,4 +413,70 @@ export class SupabaseQuestionDatabase {
       return [];
     }
   }
-} 
+
+  private normalizeImageMetadata(image: unknown): QuestionImageMetadata | null {
+    if (!image || typeof image !== 'object') {
+      return null;
+    }
+
+    const record = image as Record<string, unknown>;
+    const rawUrl = record.url;
+    if (typeof rawUrl !== 'string') {
+      return null;
+    }
+
+    const url = rawUrl.trim();
+    if (!url) {
+      return null;
+    }
+
+    const toStringOrUndefined = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed ? trimmed : undefined;
+      }
+      return undefined;
+    };
+
+    const toNumberOrUndefined = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+      return undefined;
+    };
+
+    const normalized: QuestionImageMetadata = { url };
+
+    const altText = toStringOrUndefined(record.altText);
+    if (altText) normalized.altText = altText;
+
+    const attribution = toStringOrUndefined(record.attribution);
+    if (attribution) normalized.attribution = attribution;
+
+    const source = toStringOrUndefined(record.source);
+    if (source) normalized.source = source;
+
+    const mime = toStringOrUndefined(record.mime);
+    if (mime) normalized.mime = mime;
+
+    const originalUrl = toStringOrUndefined(record.original_url);
+    if (originalUrl) normalized.original_url = originalUrl;
+
+    const storageKey = toStringOrUndefined(record.storage_key);
+    if (storageKey) normalized.storage_key = storageKey;
+
+    const width = toNumberOrUndefined(record.width);
+    if (typeof width === 'number') normalized.width = width;
+
+    const height = toNumberOrUndefined(record.height);
+    if (typeof height === 'number') normalized.height = height;
+
+    return normalized;
+  }
+}

@@ -23,7 +23,6 @@ export default function GamePage() {
     startGame,
     submitGuess,
     setTopics,
-    setDifficulty,
     setTargetScore,
     setRoundTime,
     setMaxPlayers,
@@ -290,7 +289,6 @@ export default function GamePage() {
       onStartGame={startGame}
       onSubmitGuess={submitGuess}
       onSetTopics={setTopics}
-      onSetDifficulty={setDifficulty}
       onSetTargetScore={setTargetScore}
       onSetRoundTime={setRoundTime}
       onSetMaxPlayers={setMaxPlayers}

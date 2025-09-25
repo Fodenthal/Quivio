@@ -15,7 +15,6 @@ export interface GameLayoutProps {
   onStartGame: () => void;
   onSubmitGuess: (guess: string) => void;
   onSetTopics: (topics: string[]) => void;
-  onSetDifficulty: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
   onSetRoundTime?: (seconds: number) => void;
   onSetMaxPlayers?: (maxPlayers: number) => void;
@@ -30,7 +29,6 @@ export function GameLayout({
   onStartGame,
   onSubmitGuess,
   onSetTopics,
-  onSetDifficulty,
   onSetTargetScore,
   onSetRoundTime,
   onSetMaxPlayers,
@@ -52,7 +50,6 @@ export function GameLayout({
           onSendChatMessage={onSendChatMessage}
           onStartGame={onStartGame}
           onSetTopics={onSetTopics}
-          onSetDifficulty={onSetDifficulty}
           onSetTargetScore={onSetTargetScore}
           onSetRoundTime={onSetRoundTime}
           onSetMaxPlayers={onSetMaxPlayers}
