@@ -19,7 +19,6 @@ interface GameViewProps {
   // Lobby actions
   onStartGame?: () => void;
   onSetTopics?: (topics: string[]) => void;
-  onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
   onSetRoundTime?: (seconds: number) => void;
   onSetMaxPlayers?: (maxPlayers: number) => void;
@@ -98,31 +97,11 @@ export const GameView = memo(function GameView({
     const image = gameState.currentPrompt?.image;
     if (!image) return null;
 
-    const rawUrl = typeof image.url === 'string' ? image.url.trim() : '';
-    const pointer = typeof image.pointer === 'string' ? image.pointer.trim() : '';
-
-    let resolvedUrl: string | null = null;
-    if (rawUrl) {
-      resolvedUrl = rawUrl;
-    } else if (pointer) {
-      if (pointer.startsWith('http://') || pointer.startsWith('https://')) {
-        resolvedUrl = pointer;
-      } else {
-        const base = process.env.NEXT_PUBLIC_IMAGE_POINTER_BASE_URL || process.env.NEXT_PUBLIC_IMAGE_CDN_BASE_URL;
-        if (base) {
-          const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
-          const normalizedPointer = pointer.startsWith('/') ? pointer.slice(1) : pointer;
-          resolvedUrl = `${normalizedBase}/${normalizedPointer}`;
-        }
-      }
-    }
-
-    if (!resolvedUrl) {
-      return null;
-    }
+    const url = image.url?.trim();
+    if (!url) return null;
 
     return {
-      url: resolvedUrl,
+      url,
       alt: image.altText?.trim() || gameState.currentPrompt?.text || 'Question image',
       width: typeof image.width === 'number' && image.width > 0 ? image.width : undefined,
       height: typeof image.height === 'number' && image.height > 0 ? image.height : undefined,
@@ -805,6 +784,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
     // roundTimeRemaining comparison removed - now using local timer rendering
     prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
+    prevProps.gameState.currentPrompt?.image === nextProps.gameState.currentPrompt?.image &&
     prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
     prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
@@ -842,7 +822,6 @@ export const GameView = memo(function GameView({
     // Lobby action comparisons
     prevProps.onStartGame === nextProps.onStartGame &&
     prevProps.onSetTopics === nextProps.onSetTopics &&
-    prevProps.onSetDifficulty === nextProps.onSetDifficulty &&
     prevProps.onSetTargetScore === nextProps.onSetTargetScore &&
     prevProps.onSetRoundTime === nextProps.onSetRoundTime &&
     prevProps.onSetMaxPlayers === nextProps.onSetMaxPlayers
