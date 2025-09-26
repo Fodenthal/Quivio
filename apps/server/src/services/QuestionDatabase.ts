@@ -349,7 +349,7 @@ export class QuestionDatabase {
         FROM questions
         GROUP BY topic
         HAVING topic IS NOT NULL AND TRIM(topic) <> ''
-        ORDER BY totalUsedCount DESC, questionCount DESC, topic ASC
+        ORDER BY questionCount DESC, topic ASC
         LIMIT ?
       `;
 

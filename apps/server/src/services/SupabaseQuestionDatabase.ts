@@ -402,7 +402,6 @@ export class SupabaseQuestionDatabase {
       }));
 
       results.sort((a, b) => {
-        if (b.totalUsedCount !== a.totalUsedCount) return b.totalUsedCount - a.totalUsedCount;
         if (b.questionCount !== a.questionCount) return b.questionCount - a.questionCount;
         return a.topic.localeCompare(b.topic);
       });

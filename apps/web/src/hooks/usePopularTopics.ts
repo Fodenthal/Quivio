@@ -8,6 +8,12 @@ export interface PopularTopicRow {
   totalUsedCount: number;
 }
 
+const sortTopicsByQuestionCount = (list: PopularTopicRow[]): PopularTopicRow[] =>
+  [...list].sort((a, b) => {
+    if (b.questionCount !== a.questionCount) return b.questionCount - a.questionCount;
+    return a.topic.localeCompare(b.topic);
+  });
+
 export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshMs?: number; limit?: number }) {
   const [topics, setTopics] = useState<PopularTopicRow[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -24,9 +30,10 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
       const data = await res.json();
       if (data?.success && Array.isArray(data.topics)) {
         const next = data.topics as PopularTopicRow[];
-        setTopics(next);
+        const sorted = sortTopicsByQuestionCount(next);
+        setTopics(sorted);
         try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), topics: next }));
+          sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), topics: sorted }));
         } catch {}
       }
     } catch (e) {
@@ -45,7 +52,7 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
         if (parsed && Array.isArray(parsed.topics) && typeof parsed.ts === 'number') {
           const isFresh = Date.now() - parsed.ts < refreshMs;
           if (isFresh) {
-            setTopics(parsed.topics);
+            setTopics(sortTopicsByQuestionCount(parsed.topics));
           }
         }
       }
@@ -61,4 +68,3 @@ export function usePopularTopics({ refreshMs = 120000, limit = 100 }: { refreshM
 
   return { topics, isLoading, error, refetch: fetchOnce };
 }
-
