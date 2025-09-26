@@ -101,25 +101,28 @@ export const GameView = memo(function GameView({
     const url = image.url.trim();
     if (!url) return null;
 
-    const alt = image.altText?.trim() || gameState.currentPrompt?.text || 'Question image';
     const width = typeof image.width === 'number' && image.width > 0 ? image.width : undefined;
     const height = typeof image.height === 'number' && image.height > 0 ? image.height : undefined;
-    const attribution = image.attribution?.trim();
-    const source = image.source?.trim();
-    const mime = image.mime?.trim();
-    const originalUrl = image.original_url?.trim();
-    const storageKey = image.storage_key?.trim();
+    const aspectRatio = width && height ? width / height : undefined;
+
+    const rawAlt = image.altText?.trim() || gameState.currentPrompt?.text?.trim();
+    const attribution = image.attribution?.trim() || undefined;
+    const source = image.source?.trim() || undefined;
+    const mime = image.mime?.trim() || undefined;
+    const originalUrl = image.original_url?.trim() || undefined;
+    const storageKey = image.storage_key?.trim() || undefined;
 
     return {
       url,
-      alt,
+      alt: rawAlt || 'Question image',
       width,
       height,
-      attribution: attribution || undefined,
-      source: source || undefined,
-      mime: mime || undefined,
-      originalUrl: originalUrl || undefined,
-      storageKey: storageKey || undefined,
+      aspectRatio,
+      attribution,
+      source,
+      mime,
+      originalUrl,
+      storageKey,
     };
   }, [gameState.currentPrompt?.image, gameState.currentPrompt?.text]);
 
@@ -527,7 +530,7 @@ export const GameView = memo(function GameView({
                         <figure className="w-full max-w-xl">
                           <div
                             className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40"
-                            style={{ aspectRatio: '4 / 3' }}
+                            style={{ aspectRatio: promptImage.aspectRatio ? `${promptImage.aspectRatio}` : '4 / 3' }}
                           >
                             {isPromptImageLoading && (
                               <div className="absolute inset-0 animate-pulse bg-white/5" aria-hidden="true" />
@@ -537,7 +540,9 @@ export const GameView = memo(function GameView({
                               alt={promptImage.alt}
                               fill
                               className="object-contain"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 70vw, 40vw"
+                              sizes="(max-width: 768px) 95vw, 640px"
+                              decoding="async"
+                              loading="lazy"
                               onLoadingComplete={() => setIsPromptImageLoading(false)}
                               onError={() => {
                                 setPromptImageError(true);
