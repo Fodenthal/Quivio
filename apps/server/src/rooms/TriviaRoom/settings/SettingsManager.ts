@@ -19,11 +19,15 @@ export class SettingsManager {
   }
 
   setTopics(topics: string[]): void {
-    if (!topics || topics.length === 0) return;
-    const validTopics = topics.filter(t => t && t.trim().length > 0).map(t => t.trim());
-    if (validTopics.length === 0) return;
+    if (!Array.isArray(topics)) return;
+
+    const validTopics = topics
+      .filter((topic): topic is string => typeof topic === "string")
+      .map(topic => topic.trim())
+      .filter(topic => topic.length > 0);
+
     this.state.topics = validTopics;
-    this.state.currentTopic = validTopics[0];
+    this.state.currentTopic = validTopics[0] || "";
     this.state.currentTopicIndex = 0;
     this.onBufferReset();
     this.onRegistryUpdate();
@@ -43,5 +47,4 @@ export class SettingsManager {
     this.onRegistryUpdate();
   }
 }
-
 

@@ -53,20 +53,41 @@ export function AISettingsPanel({
   }, [gameState.maxPlayers]);
 
   // Memoize valid topics calculation for performance
-  const validTopics = useMemo(() => 
+  const validTopics = useMemo(() =>
     topics.filter(t => t.trim().length > 0).map(t => t.trim()),
     [topics]
   );
 
+  const normalizedServerTopics = useMemo(() => {
+    const topicList = gameState.topics || [];
+    return Array.prototype.reduce.call(
+      topicList,
+      (acc: string[], topic: unknown) => {
+        if (typeof topic === "string") {
+          const trimmed = topic.trim();
+          if (trimmed.length > 0) acc.push(trimmed);
+        }
+        return acc;
+      },
+      [] as string[]
+    );
+  }, [gameState.topics]);
+
   // Unified auto-update logic: always use onSetTopics regardless of count
   const handleAutoTopicUpdate = useCallback(() => {
-    if (onSetTopics && validTopics.length > 0) {
-      onSetTopics(validTopics);
-    }
-  }, [validTopics, onSetTopics]);
+    if (!onSetTopics) return;
+
+    const arraysMatch =
+      validTopics.length === normalizedServerTopics.length &&
+      validTopics.every((topic, index) => topic === normalizedServerTopics[index]);
+
+    if (arraysMatch) return;
+
+    onSetTopics(validTopics);
+  }, [normalizedServerTopics, onSetTopics, validTopics]);
 
   // Apply updates automatically with debounce
-  useDebouncedEffect(handleAutoTopicUpdate, [validTopics], 500);
+  useDebouncedEffect(handleAutoTopicUpdate, [validTopics, normalizedServerTopics, onSetTopics], 500);
 
   const handleAddTopicChip = () => {
     const trimmed = newTopic.trim();
@@ -83,10 +104,8 @@ export function AISettingsPanel({
   };
 
   const handleRemoveTopic = (index: number) => {
-    if (topics.length > 1) {
-      const newTopics = topics.filter((_, i) => i !== index);
-      setTopics(newTopics);
-    }
+    const newTopics = topics.filter((_, i) => i !== index);
+    setTopics(newTopics);
   };
 
 

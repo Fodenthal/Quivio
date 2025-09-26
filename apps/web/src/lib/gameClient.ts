@@ -328,13 +328,15 @@ export class GameClient {
    * Set multiple topics for AI question generation with equal rotation (host only)
    */
   setTopics(topics: string[]): void {
-    if (!topics || topics.length === 0) {
-      throw new Error("Topics array cannot be empty");
+    if (!Array.isArray(topics)) {
+      throw new Error("Topics must be an array");
     }
-    const validTopics = topics.filter(t => t && t.trim().length > 0).map(t => t.trim());
-    if (validTopics.length === 0) {
-      throw new Error("At least one valid topic is required");
-    }
+
+    const validTopics = topics
+      .filter((topic): topic is string => typeof topic === "string")
+      .map(topic => topic.trim())
+      .filter(topic => topic.length > 0);
+
     this.sendMessage(MSG.SET_TOPICS, { topics: validTopics });
   }
 
