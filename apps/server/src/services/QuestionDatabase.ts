@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
+import { QuestionIdentifier } from './questionTypes';
 
 export interface StoredQuestion {
   id: number;
@@ -153,6 +154,7 @@ export class QuestionDatabase {
         }
 
         return {
+          questionId: row.id,
           question: row.question,
           correctAnswer: row.correctAnswer,
           acceptableAnswers: JSON.parse(row.acceptableAnswers),
@@ -178,18 +180,29 @@ export class QuestionDatabase {
   /**
    * Mark a question as used (increment usage count)
    */
-  public async markQuestionAsUsed(questionText: string): Promise<void> {
+  public async markQuestionAsUsed(identifier: QuestionIdentifier): Promise<void> {
     if (!this.db) return;
     
     try {
-      const updateQuery = `
+      if (identifier.id !== undefined && identifier.id !== null && `${identifier.id}`.trim().length > 0) {
+        const updateByIdQuery = `
+          UPDATE questions
+          SET usedCount = usedCount + 1
+          WHERE id = ?
+        `;
+        const stmtById = this.db.prepare(updateByIdQuery);
+        stmtById.run(identifier.id);
+        return;
+      }
+
+      const updateByQuestionQuery = `
         UPDATE questions 
         SET usedCount = usedCount + 1 
         WHERE question = ?
       `;
 
-      const stmt = this.db.prepare(updateQuery);
-      stmt.run(questionText);
+      const stmt = this.db.prepare(updateByQuestionQuery);
+      stmt.run(identifier.question);
 
     } catch (error) {
       console.error('Failed to mark question as used:', error);

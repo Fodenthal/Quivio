@@ -434,7 +434,9 @@ export class QuestionBufferManager {
     }
   
     // Non-blocking write; player shouldn't wait on DB I/O
-    void this.questionDatabase.markQuestionAsUsed(q.question).catch((err: unknown) => this.log("markQuestionAsUsed failed", err));
+    void this.questionDatabase
+      .markQuestionAsUsed({ id: q.questionId, question: q.question })
+      .catch((err: unknown) => this.log("markQuestionAsUsed failed", err));
   
     // Keep topping up in the background; no duplicate work thanks to the mutex
     void this.fillToTarget(this.questionBufferSize).catch(err =>

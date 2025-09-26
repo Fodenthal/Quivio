@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
+import { QuestionIdentifier } from './questionTypes';
 import { getDatabaseConfig } from '../config';
 
 export interface StoredQuestion {
@@ -130,6 +131,7 @@ export class SupabaseQuestionDatabase {
         }
 
         return {
+          questionId: row.id,
           question: row.question,
           correctAnswer: row.correct_answer,
           acceptableAnswers,
@@ -155,31 +157,51 @@ export class SupabaseQuestionDatabase {
   /**
    * Mark a question as used (increment usage count)
    */
-  public async markQuestionAsUsed(questionText: string): Promise<void> {
+  public async markQuestionAsUsed(identifier: QuestionIdentifier): Promise<void> {
     if (!this.client) return;
     
     try {
-      // First get the current used_count
-      const { data: currentData, error: selectError } = await this.client
-        .from('questions')
-        .select('used_count')
-        .eq('question', questionText)
-        .single();
+      let targetId = identifier.id;
+      let currentUsedCount = 0;
 
-      if (selectError) {
-        throw selectError;
+      if (targetId !== undefined && targetId !== null && `${targetId}`.trim().length > 0) {
+        const { data, error } = await this.client
+          .from('questions')
+          .select('id, used_count')
+          .eq('id', targetId)
+          .single();
+
+        if (error) throw error;
+        if (!data) return;
+
+        targetId = data.id;
+        currentUsedCount = data.used_count || 0;
+      } else {
+        const { data, error } = await this.client
+          .from('questions')
+          .select('id, used_count')
+          .eq('question', identifier.question)
+          .order('id', { ascending: true })
+          .limit(1);
+
+        if (error) throw error;
+
+        const record = data?.[0];
+        if (!record) return;
+
+        targetId = record.id;
+        currentUsedCount = record.used_count || 0;
       }
 
-      if (currentData) {
-        // Update with incremented value
-        const { error: updateError } = await this.client
-          .from('questions')
-          .update({ used_count: (currentData.used_count || 0) + 1 })
-          .eq('question', questionText);
+      if (targetId === undefined || targetId === null) return;
 
-        if (updateError) {
-          throw updateError;
-        }
+      const { error: updateError } = await this.client
+        .from('questions')
+        .update({ used_count: currentUsedCount + 1 })
+        .eq('id', targetId);
+
+      if (updateError) {
+        throw updateError;
       }
 
     } catch (error) {

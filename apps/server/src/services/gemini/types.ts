@@ -30,6 +30,8 @@ export interface QuestionImageMetadata {
  * Structured output for a generated trivia question.
  */
 export interface GeneratedQuestion {
+  /** Optional database identifier when sourced from persistent storage. */
+  questionId?: number | string;
   /** The trivia question text. */
   question: string;
   /** The primary factual answer. */
