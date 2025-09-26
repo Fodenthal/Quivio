@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, memo, useRef, useEffect, useId } from "react";
 import Image from "next/image";
 import { GameState, GameStatus } from "@shared/index";
 import { PlayerList } from "./PlayerList";
@@ -44,6 +44,7 @@ export const GameView = memo(function GameView({
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [isPromptImageLoading, setIsPromptImageLoading] = useState(false);
   const [promptImageError, setPromptImageError] = useState(false);
+  const [showImageCredit, setShowImageCredit] = useState(false);
   const chatScrollTopRef = useRef<number>(0);
   const pageScrollYRef = useRef<number>(0);
   
@@ -135,6 +136,16 @@ export const GameView = memo(function GameView({
       setPromptImageError(false);
     }
   }, [promptImage, gameState.currentPrompt?.id]);
+
+  useEffect(() => {
+    setShowImageCredit(false);
+  }, [promptImage?.url]);
+
+  const imageCreditPopoverId = useId();
+  const hasImageCredit = useMemo(() => {
+    if (!promptImage) return false;
+    return Boolean(promptImage.attribution || promptImage.source || promptImage.originalUrl);
+  }, [promptImage]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -527,7 +538,7 @@ export const GameView = memo(function GameView({
                     </div>
                     {promptImage && !promptImageError && (
                       <div className="mb-4 flex justify-center">
-                        <figure className="w-full max-w-xl">
+                        <figure className="relative w-full max-w-xl">
                           <div
                             className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40"
                             style={{ aspectRatio: promptImage.aspectRatio ? `${promptImage.aspectRatio}` : '4 / 3' }}
@@ -549,12 +560,52 @@ export const GameView = memo(function GameView({
                                 setIsPromptImageLoading(false);
                               }}
                             />
+                            {hasImageCredit && (
+                              <div className="absolute right-3 top-3 z-20">
+                                <button
+                                  type="button"
+                                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-sm font-semibold text-white transition hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-white/80"
+                                  onClick={() => setShowImageCredit(prev => !prev)}
+                                  aria-expanded={showImageCredit}
+                                  aria-controls={imageCreditPopoverId}
+                                  aria-label={showImageCredit ? 'Hide image credit' : 'Show image credit'}
+                                >
+                                  ⓘ
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          {promptImage.attribution && (
-                            <figcaption className="mt-2 text-center text-sm text-text-secondary">
-                              {promptImage.attribution}
-                              {promptImage.source ? ` · Source: ${promptImage.source}` : ""}
-                            </figcaption>
+                          {hasImageCredit && showImageCredit && (
+                            <div
+                              id={imageCreditPopoverId}
+                              role="dialog"
+                              aria-label="Image credit"
+                              className="absolute right-3 top-14 z-30 w-52 rounded-lg border border-white/10 bg-slate-900/80 p-2 text-[11px] leading-tight text-white shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg"
+                            >
+                              <div className="space-y-1">
+                                {promptImage.attribution && (
+                                  <p><span className="font-semibold text-white/80">Credit:</span> {promptImage.attribution}</p>
+                                )}
+                                {promptImage.source && (
+                                  <p><span className="font-semibold text-white/80">Source:</span> {promptImage.source}</p>
+                                )}
+                                {promptImage.originalUrl && (
+                                  <p>
+                                    <a
+                                      href={promptImage.originalUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-accent underline"
+                                    >
+                                      View original
+                                    </a>
+                                  </p>
+                                )}
+                                {promptImage.mime && (
+                                  <p className="text-[9px] uppercase tracking-wider text-white/50">Format: {promptImage.mime}</p>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </figure>
                       </div>
