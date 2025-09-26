@@ -53,20 +53,37 @@ export function AISettingsPanel({
   }, [gameState.maxPlayers]);
 
   // Memoize valid topics calculation for performance
-  const validTopics = useMemo(() => 
+  const validTopics = useMemo(() =>
     topics.filter(t => t.trim().length > 0).map(t => t.trim()),
     [topics]
   );
 
+  const normalizedServerTopics = useMemo(() => {
+    const topicList = gameState.topics || [];
+    return topicList.reduce<string[]>((acc: string[], topic: string) => {
+      if (typeof topic === "string") {
+        const trimmed = topic.trim();
+        if (trimmed.length > 0) acc.push(trimmed);
+      }
+      return acc;
+    }, []);
+  }, [gameState.topics]);
+
   // Unified auto-update logic: always use onSetTopics regardless of count
   const handleAutoTopicUpdate = useCallback(() => {
-    if (onSetTopics && validTopics.length > 0) {
-      onSetTopics(validTopics);
-    }
-  }, [validTopics, onSetTopics]);
+    if (!onSetTopics) return;
+
+    const arraysMatch =
+      validTopics.length === normalizedServerTopics.length &&
+      validTopics.every((topic, index) => topic === normalizedServerTopics[index]);
+
+    if (arraysMatch) return;
+
+    onSetTopics(validTopics);
+  }, [normalizedServerTopics, onSetTopics, validTopics]);
 
   // Apply updates automatically with debounce
-  useDebouncedEffect(handleAutoTopicUpdate, [validTopics], 500);
+  useDebouncedEffect(handleAutoTopicUpdate, [validTopics, normalizedServerTopics, onSetTopics], 500);
 
   const handleAddTopicChip = () => {
     const trimmed = newTopic.trim();
@@ -83,10 +100,8 @@ export function AISettingsPanel({
   };
 
   const handleRemoveTopic = (index: number) => {
-    if (topics.length > 1) {
-      const newTopics = topics.filter((_, i) => i !== index);
-      setTopics(newTopics);
-    }
+    const newTopics = topics.filter((_, i) => i !== index);
+    setTopics(newTopics);
   };
 
 
@@ -159,9 +174,9 @@ export function AISettingsPanel({
           </div>
           
           {/* Topic validation error message */}
-          {!isReadOnly && validTopics.length < 3 && (
+          {!isReadOnly && validTopics.length === 0 && (
             <p className="text-yellow-300 text-sm mt-2">
-              Please add at least 3 topics to start the game.
+              Please add at least one topic to start the game.
             </p>
           )}
 

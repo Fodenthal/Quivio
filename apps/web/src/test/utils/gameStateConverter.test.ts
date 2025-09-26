@@ -49,7 +49,8 @@ describe("gameStateConverter", () => {
           answer: "",
           topic: "",
           difficultyLevel: 5,
-          acceptableAnswers: []
+          acceptableAnswers: [],
+          image: undefined
         },
         roundGuesses: new Map(),
         playerIncorrectGuesses: new Map(),
@@ -118,7 +119,8 @@ describe("gameStateConverter", () => {
           answer: "Paris",
           topic: "European Capitals",
           difficultyLevel: 8,
-          acceptableAnswers: ["Paris", "paris"]
+          acceptableAnswers: ["Paris", "paris"],
+          image: undefined
         }
       });
     });
@@ -439,7 +441,8 @@ describe("gameStateConverter", () => {
           answer: "",
           topic: "",
           difficultyLevel: 5,
-          acceptableAnswers: []
+          acceptableAnswers: [],
+          image: undefined
         });
       });
 
@@ -467,7 +470,8 @@ describe("gameStateConverter", () => {
           answer: "1945",
           topic: "World War II",
           difficultyLevel: 6,
-          acceptableAnswers: ["1945", "nineteen forty-five"]
+          acceptableAnswers: ["1945", "nineteen forty-five"],
+          image: undefined
         });
       });
     });

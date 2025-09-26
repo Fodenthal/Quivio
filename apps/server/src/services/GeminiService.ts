@@ -4,9 +4,9 @@ import { shouldSkipSearch } from './SearchDecision';
 import { gatherFacts } from './gemini/factGatherer';
 import { formatQuestion } from './gemini/formatter';
 import { isAnswerAcceptable as acceptAnswer, normalizeAnswer as normalizeAns } from './gemini/answerMatching';
-import type { GeneratedQuestion, QuestionRequest } from './gemini/types';
+import type { GeneratedQuestion, QuestionImageMetadata, QuestionRequest } from './gemini/types';
 import { Logger } from '../utils/logger';
-export type { GeneratedQuestion, QuestionRequest };
+export type { GeneratedQuestion, QuestionImageMetadata, QuestionRequest };
 
 /**
  * Service for generating trivia questions using Google Gemini API

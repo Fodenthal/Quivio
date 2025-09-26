@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { GeneratedQuestion } from './GeminiService';
+import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
+import { QuestionIdentifier } from './questionTypes';
 import { getDatabaseConfig } from '../config';
 
 export interface StoredQuestion {
@@ -12,6 +13,7 @@ export interface StoredQuestion {
   category: string;
   createdAt: string;
   usedCount: number;
+  image?: QuestionImageMetadata | null;
 }
 
 export class SupabaseQuestionDatabase {
@@ -54,7 +56,7 @@ export class SupabaseQuestionDatabase {
     if (!this.client) return false;
     
     try {
-      const acceptableAnswersJson = JSON.stringify(question.acceptableAnswers);
+      const normalizedImage = this.normalizeImageMetadata(question.image);
 
       const { data, error } = await this.client
         .from('questions')
@@ -63,9 +65,10 @@ export class SupabaseQuestionDatabase {
           difficulty,
           question: question.question,
           correct_answer: question.correctAnswer,
-          acceptable_answers: acceptableAnswersJson,
+          acceptable_answers: question.acceptableAnswers,
           category: question.category,
-          used_count: 0
+          used_count: 0,
+          image: normalizedImage
         })
         .select()
         .single();
@@ -106,13 +109,38 @@ export class SupabaseQuestionDatabase {
         throw error;
       }
 
-      const questions: GeneratedQuestion[] = (data || []).map(row => ({
-        question: row.question,
-        correctAnswer: row.correct_answer,
-        acceptableAnswers: JSON.parse(row.acceptable_answers),
-        category: row.category,
-        difficulty: row.difficulty
-      }));
+      const questions: GeneratedQuestion[] = (data || []).map(row => {
+        const acceptableField = row.acceptable_answers;
+        let acceptableAnswers: string[] = [];
+
+        if (Array.isArray(acceptableField)) {
+          acceptableAnswers = acceptableField.filter((answer): answer is string => typeof answer === 'string');
+        } else if (typeof acceptableField === 'string') {
+          try {
+            const parsed = JSON.parse(acceptableField);
+            if (Array.isArray(parsed)) {
+              acceptableAnswers = parsed.filter((answer): answer is string => typeof answer === 'string');
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Failed to parse acceptable_answers JSON from Supabase row:', parseError);
+          }
+        }
+
+        if (acceptableAnswers.length === 0 && typeof acceptableField === 'object' && acceptableField !== null) {
+          acceptableAnswers = Object.values(acceptableField).filter((answer): answer is string => typeof answer === 'string');
+        }
+
+        return {
+          questionId: row.id,
+          question: row.question,
+          correctAnswer: row.correct_answer,
+          acceptableAnswers,
+          category: row.category,
+          difficulty: row.difficulty,
+          image: this.normalizeImageMetadata(row.image),
+          sourceTopic: row.topic ?? undefined
+        };
+      });
 
       if (questions.length > 0) {
         console.log(`📤 Retrieved ${questions.length} questions from Supabase for "${topic}" (difficulty: ${difficulty})`);
@@ -129,31 +157,51 @@ export class SupabaseQuestionDatabase {
   /**
    * Mark a question as used (increment usage count)
    */
-  public async markQuestionAsUsed(questionText: string): Promise<void> {
+  public async markQuestionAsUsed(identifier: QuestionIdentifier): Promise<void> {
     if (!this.client) return;
     
     try {
-      // First get the current used_count
-      const { data: currentData, error: selectError } = await this.client
-        .from('questions')
-        .select('used_count')
-        .eq('question', questionText)
-        .single();
+      let targetId = identifier.id;
+      let currentUsedCount = 0;
 
-      if (selectError) {
-        throw selectError;
+      if (targetId !== undefined && targetId !== null && `${targetId}`.trim().length > 0) {
+        const { data, error } = await this.client
+          .from('questions')
+          .select('id, used_count')
+          .eq('id', targetId)
+          .single();
+
+        if (error) throw error;
+        if (!data) return;
+
+        targetId = data.id;
+        currentUsedCount = data.used_count || 0;
+      } else {
+        const { data, error } = await this.client
+          .from('questions')
+          .select('id, used_count')
+          .eq('question', identifier.question)
+          .order('id', { ascending: true })
+          .limit(1);
+
+        if (error) throw error;
+
+        const record = data?.[0];
+        if (!record) return;
+
+        targetId = record.id;
+        currentUsedCount = record.used_count || 0;
       }
 
-      if (currentData) {
-        // Update with incremented value
-        const { error: updateError } = await this.client
-          .from('questions')
-          .update({ used_count: (currentData.used_count || 0) + 1 })
-          .eq('question', questionText);
+      if (targetId === undefined || targetId === null) return;
 
-        if (updateError) {
-          throw updateError;
-        }
+      const { error: updateError } = await this.client
+        .from('questions')
+        .update({ used_count: currentUsedCount + 1 })
+        .eq('id', targetId);
+
+      if (updateError) {
+        throw updateError;
       }
 
     } catch (error) {
@@ -376,7 +424,6 @@ export class SupabaseQuestionDatabase {
       }));
 
       results.sort((a, b) => {
-        if (b.totalUsedCount !== a.totalUsedCount) return b.totalUsedCount - a.totalUsedCount;
         if (b.questionCount !== a.questionCount) return b.questionCount - a.questionCount;
         return a.topic.localeCompare(b.topic);
       });
@@ -387,4 +434,70 @@ export class SupabaseQuestionDatabase {
       return [];
     }
   }
-} 
+
+  private normalizeImageMetadata(image: unknown): QuestionImageMetadata | null {
+    if (!image || typeof image !== 'object') {
+      return null;
+    }
+
+    const record = image as Record<string, unknown>;
+    const rawUrl = record.url;
+    if (typeof rawUrl !== 'string') {
+      return null;
+    }
+
+    const url = rawUrl.trim();
+    if (!url) {
+      return null;
+    }
+
+    const toStringOrUndefined = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed ? trimmed : undefined;
+      }
+      return undefined;
+    };
+
+    const toNumberOrUndefined = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+      return undefined;
+    };
+
+    const normalized: QuestionImageMetadata = { url };
+
+    const altText = toStringOrUndefined(record.altText);
+    if (altText) normalized.altText = altText;
+
+    const attribution = toStringOrUndefined(record.attribution);
+    if (attribution) normalized.attribution = attribution;
+
+    const source = toStringOrUndefined(record.source);
+    if (source) normalized.source = source;
+
+    const mime = toStringOrUndefined(record.mime);
+    if (mime) normalized.mime = mime;
+
+    const originalUrl = toStringOrUndefined(record.original_url);
+    if (originalUrl) normalized.original_url = originalUrl;
+
+    const storageKey = toStringOrUndefined(record.storage_key);
+    if (storageKey) normalized.storage_key = storageKey;
+
+    const width = toNumberOrUndefined(record.width);
+    if (typeof width === 'number') normalized.width = width;
+
+    const height = toNumberOrUndefined(record.height);
+    if (typeof height === 'number') normalized.height = height;
+
+    return normalized;
+  }
+}

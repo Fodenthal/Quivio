@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, memo, useRef, useEffect, useId } from "react";
+import Image from "next/image";
 import { GameState, GameStatus } from "@shared/index";
 import { PlayerList } from "./PlayerList";
 import { WinnerScreen } from "./WinnerScreen";
@@ -19,7 +20,6 @@ interface GameViewProps {
   // Lobby actions
   onStartGame?: () => void;
   onSetTopics?: (topics: string[]) => void;
-  onSetDifficulty?: (difficulty: number) => void;
   onSetTargetScore?: (score: number) => void;
   onSetRoundTime?: (seconds: number) => void;
   onSetMaxPlayers?: (maxPlayers: number) => void;
@@ -42,6 +42,9 @@ export const GameView = memo(function GameView({
   const [activePanel, setActivePanel] = useState<'players' | 'chat'>("players");
   const [isPhonePanelOpen, setIsPhonePanelOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [isPromptImageLoading, setIsPromptImageLoading] = useState(false);
+  const [promptImageError, setPromptImageError] = useState(false);
+  const [showImageCredit, setShowImageCredit] = useState(false);
   const chatScrollTopRef = useRef<number>(0);
   const pageScrollYRef = useRef<number>(0);
   
@@ -91,6 +94,65 @@ export const GameView = memo(function GameView({
       (message) => message && typeof message === 'object' && message.id && message.playerName
     );
   }, [gameState.chatMessages]);
+
+  const promptImage = useMemo(() => {
+    const image = gameState.currentPrompt?.image;
+    if (!image || typeof image.url !== 'string') return null;
+
+    const url = image.url.trim();
+    if (!url) return null;
+
+    const width = typeof image.width === 'number' && image.width > 0 ? image.width : undefined;
+    const height = typeof image.height === 'number' && image.height > 0 ? image.height : undefined;
+    const aspectRatio = width && height ? width / height : undefined;
+
+    const rawAlt = image.altText?.trim() || gameState.currentPrompt?.text?.trim();
+    const attribution = image.attribution?.trim() || undefined;
+    const source = image.source?.trim() || undefined;
+    const mime = image.mime?.trim() || undefined;
+    const originalUrl = image.original_url?.trim() || undefined;
+    const storageKey = image.storage_key?.trim() || undefined;
+
+    const clampedAspectRatio = (() => {
+      if (!aspectRatio) return undefined;
+      const minRatio = 0.85; // Prevent overly tall frames
+      const maxRatio = 1.45; // Prevent overly wide frames
+      return Math.min(Math.max(aspectRatio, minRatio), maxRatio);
+    })();
+
+    return {
+      url,
+      alt: rawAlt || 'Question image',
+      width,
+      height,
+      aspectRatio: clampedAspectRatio,
+      attribution,
+      source,
+      mime,
+      originalUrl,
+      storageKey,
+    };
+  }, [gameState.currentPrompt?.image, gameState.currentPrompt?.text]);
+
+  useEffect(() => {
+    if (promptImage) {
+      setIsPromptImageLoading(true);
+      setPromptImageError(false);
+    } else {
+      setIsPromptImageLoading(false);
+      setPromptImageError(false);
+    }
+  }, [promptImage, gameState.currentPrompt?.id]);
+
+  useEffect(() => {
+    setShowImageCredit(false);
+  }, [promptImage?.url]);
+
+  const imageCreditPopoverId = useId();
+  const hasImageCredit = useMemo(() => {
+    if (!promptImage) return false;
+    return Boolean(promptImage.attribution || promptImage.source || promptImage.originalUrl);
+  }, [promptImage]);
   
   const getGamePhase = useMemo((): string => {
     if (gameState.gameStatus === GameStatus.GAME_ENDED) return "ended";
@@ -375,8 +437,12 @@ export const GameView = memo(function GameView({
         {gameState.gameStatus === GameStatus.WAITING && (() => {
           const currentPlayer = gameState.players.get(currentPlayerId);
           const isHost = currentPlayer?.isHost || false;
-          const hasMinTopics = gameState.topics && gameState.topics.length >= 3 && gameState.topics.filter(topic => topic.trim().length > 0).length >= 3;
-          const canStartGame = hasMinTopics && isHost;
+          const topicList = gameState.topics || [];
+          const hasRequiredTopics = Array.prototype.some.call(
+            topicList,
+            (topic: string) => typeof topic === "string" && topic.trim().length > 0
+          );
+          const canStartGame = hasRequiredTopics && isHost;
 
           return (
             <div className="flex flex-col h-full">
@@ -423,13 +489,13 @@ export const GameView = memo(function GameView({
         {/* Existing game content - only show when not in lobby and not ended */}
         {gameState.gameStatus !== GameStatus.WAITING && phase !== "ended" && (
           <>
-            <div className="flex items-center justify-between pb-4 border-b border-white/20">
-              <h2 className="text-3xl font-bold text-text-main">
+            <div className="flex flex-col items-center gap-3 pb-4 border-b border-white/20 md:flex-row md:justify-between">
+              <h2 className="text-3xl font-bold text-text-main text-center md:text-left">
                 Round {gameState.currentRound}
               </h2>
               {/* Only show timer if not loading/AD */}
               {phase !== "loading" && (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 md:self-center">
                   <span className="text-lg font-medium text-text-secondary">Time:</span>
                   <span className={`text-2xl font-bold ${
                     timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
@@ -476,11 +542,88 @@ export const GameView = memo(function GameView({
                 ) : (
                   // Normal question display during round
                   <>
-                    <div className="mb-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
-                        {gameState.currentPrompt.category || "General"}
-                      </span>
-                    </div>
+                    {promptImage && !promptImageError && (
+                      <div className="mb-4 flex justify-center">
+                        <figure className="relative w-full max-w-xl">
+                          <div
+                            className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40"
+                            style={{
+                              aspectRatio: promptImage.aspectRatio ? `${promptImage.aspectRatio}` : '4 / 3',
+                              maxHeight: '420px',
+                            }}
+                          >
+                            {isPromptImageLoading && (
+                              <div className="absolute inset-0 animate-pulse bg-white/5" aria-hidden="true" />
+                            )}
+                            <Image
+                              src={promptImage.url}
+                              alt={promptImage.alt}
+                              fill
+                              className="object-contain"
+                              sizes="(max-width: 768px) 95vw, 640px"
+                              decoding="async"
+                              loading="lazy"
+                              onLoadingComplete={() => setIsPromptImageLoading(false)}
+                              onError={() => {
+                                setPromptImageError(true);
+                                setIsPromptImageLoading(false);
+                              }}
+                            />
+                            {hasImageCredit && (
+                              <div className="absolute right-3 top-3 z-20">
+                                <button
+                                  type="button"
+                                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-sm font-semibold text-white transition hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-white/80"
+                                  onClick={() => setShowImageCredit(prev => !prev)}
+                                  aria-expanded={showImageCredit}
+                                  aria-controls={imageCreditPopoverId}
+                                  aria-label={showImageCredit ? 'Hide image credit' : 'Show image credit'}
+                                >
+                                  ⓘ
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {hasImageCredit && showImageCredit && (
+                            <div
+                              id={imageCreditPopoverId}
+                              role="dialog"
+                              aria-label="Image credit"
+                              className="absolute right-3 top-14 z-30 w-52 rounded-lg border border-white/10 bg-slate-900/80 p-2 text-[11px] leading-tight text-white shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg"
+                            >
+                              <div className="space-y-1">
+                                {promptImage.attribution && (
+                                  <p><span className="font-semibold text-white/80">Credit:</span> {promptImage.attribution}</p>
+                                )}
+                                {promptImage.source && (
+                                  <p><span className="font-semibold text-white/80">Source:</span> {promptImage.source}</p>
+                                )}
+                                {promptImage.originalUrl && (
+                                  <p>
+                                    <a
+                                      href={promptImage.originalUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-accent underline"
+                                    >
+                                      View original
+                                    </a>
+                                  </p>
+                                )}
+                                {promptImage.mime && (
+                                  <p className="text-[9px] uppercase tracking-wider text-white/50">Format: {promptImage.mime}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </figure>
+                      </div>
+                    )}
+                    {promptImageError && (
+                      <div className="mb-4 text-sm text-red-300">
+                        We couldn't load the image for this question.
+                      </div>
+                    )}
                     <div className="flex-grow flex flex-col justify-center">
                       <h3 className={`${promptMobileClass} ${promptMdClass} font-semibold text-text-main break-words leading-normal md:leading-relaxed`}>
                         {gameState.currentPrompt.text}
@@ -724,6 +867,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
     // roundTimeRemaining comparison removed - now using local timer rendering
     prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
+    prevProps.gameState.currentPrompt?.image === nextProps.gameState.currentPrompt?.image &&
     prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
     prevProps.gameState.restartCountdown === nextProps.gameState.restartCountdown &&
@@ -761,7 +905,6 @@ export const GameView = memo(function GameView({
     // Lobby action comparisons
     prevProps.onStartGame === nextProps.onStartGame &&
     prevProps.onSetTopics === nextProps.onSetTopics &&
-    prevProps.onSetDifficulty === nextProps.onSetDifficulty &&
     prevProps.onSetTargetScore === nextProps.onSetTargetScore &&
     prevProps.onSetRoundTime === nextProps.onSetRoundTime &&
     prevProps.onSetMaxPlayers === nextProps.onSetMaxPlayers

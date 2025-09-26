@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { GeneratedQuestion } from './GeminiService';
+import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
+import { QuestionIdentifier } from './questionTypes';
 
 export interface StoredQuestion {
   id: number;
@@ -12,6 +13,7 @@ export interface StoredQuestion {
   category: string;
   createdAt: string;
   usedCount: number;
+  imageJson?: string | null;
 }
 
 export class QuestionDatabase {
@@ -56,12 +58,23 @@ export class QuestionDatabase {
         correctAnswer TEXT NOT NULL,
         acceptableAnswers TEXT NOT NULL,
         category TEXT NOT NULL,
+        imageJson TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         usedCount INTEGER DEFAULT 0
       )
     `;
 
     this.db.exec(createTableQuery);
+
+    // Ensure legacy databases receive the imageJson column without failing if it already exists
+    try {
+      this.db.exec('ALTER TABLE questions ADD COLUMN imageJson TEXT');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('duplicate column name')) {
+        console.warn('⚠️ Failed to add imageJson column to questions table:', message);
+      }
+    }
 
     // Create index for efficient lookups
     const createIndexQuery = `
@@ -80,11 +93,13 @@ export class QuestionDatabase {
     
     try {
       const insertQuery = `
-        INSERT INTO questions (topic, difficulty, question, correctAnswer, acceptableAnswers, category)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO questions (topic, difficulty, question, correctAnswer, acceptableAnswers, category, imageJson)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
       const acceptableAnswersJson = JSON.stringify(question.acceptableAnswers);
+
+      const normalizedImage = this.normalizeImageMetadata(question.image);
 
       const stmt = this.db.prepare(insertQuery);
       const result = stmt.run(
@@ -93,7 +108,8 @@ export class QuestionDatabase {
         question.question,
         question.correctAnswer,
         acceptableAnswersJson,
-        question.category
+        question.category,
+        normalizedImage ? JSON.stringify(normalizedImage) : null
       );
 
       console.log(`💾 Stored question in database: "${question.question}" (ID: ${result.lastInsertRowid})`);
@@ -126,13 +142,28 @@ export class QuestionDatabase {
       const stmt = this.db.prepare(selectQuery);
       const rows = stmt.all(topic, difficulty, limit) as StoredQuestion[];
 
-      const questions: GeneratedQuestion[] = rows.map(row => ({
-        question: row.question,
-        correctAnswer: row.correctAnswer,
-        acceptableAnswers: JSON.parse(row.acceptableAnswers),
-        category: row.category,
-        difficulty: row.difficulty
-      }));
+      const questions: GeneratedQuestion[] = rows.map(row => {
+        let image = null;
+        if (row.imageJson) {
+          try {
+            const parsed = JSON.parse(row.imageJson);
+            image = this.normalizeImageMetadata(parsed);
+          } catch (error) {
+            console.warn('⚠️ Failed to parse image metadata from SQLite cache:', error);
+          }
+        }
+
+        return {
+          questionId: row.id,
+          question: row.question,
+          correctAnswer: row.correctAnswer,
+          acceptableAnswers: JSON.parse(row.acceptableAnswers),
+          category: row.category,
+          difficulty: row.difficulty,
+          image,
+          sourceTopic: row.topic ?? undefined
+        };
+      });
 
       if (questions.length > 0) {
         console.log(`📤 Retrieved ${questions.length} questions from database for "${topic}" (difficulty: ${difficulty})`);
@@ -149,18 +180,29 @@ export class QuestionDatabase {
   /**
    * Mark a question as used (increment usage count)
    */
-  public async markQuestionAsUsed(questionText: string): Promise<void> {
+  public async markQuestionAsUsed(identifier: QuestionIdentifier): Promise<void> {
     if (!this.db) return;
     
     try {
-      const updateQuery = `
+      if (identifier.id !== undefined && identifier.id !== null && `${identifier.id}`.trim().length > 0) {
+        const updateByIdQuery = `
+          UPDATE questions
+          SET usedCount = usedCount + 1
+          WHERE id = ?
+        `;
+        const stmtById = this.db.prepare(updateByIdQuery);
+        stmtById.run(identifier.id);
+        return;
+      }
+
+      const updateByQuestionQuery = `
         UPDATE questions 
         SET usedCount = usedCount + 1 
         WHERE question = ?
       `;
 
-      const stmt = this.db.prepare(updateQuery);
-      stmt.run(questionText);
+      const stmt = this.db.prepare(updateByQuestionQuery);
+      stmt.run(identifier.question);
 
     } catch (error) {
       console.error('Failed to mark question as used:', error);
@@ -320,7 +362,7 @@ export class QuestionDatabase {
         FROM questions
         GROUP BY topic
         HAVING topic IS NOT NULL AND TRIM(topic) <> ''
-        ORDER BY totalUsedCount DESC, questionCount DESC, topic ASC
+        ORDER BY questionCount DESC, topic ASC
         LIMIT ?
       `;
 
@@ -332,4 +374,70 @@ export class QuestionDatabase {
       return [];
     }
   }
-} 
+
+  private normalizeImageMetadata(image: unknown): GeneratedQuestion['image'] {
+    if (!image || typeof image !== 'object') {
+      return null;
+    }
+
+    const record = image as Record<string, unknown>;
+    const rawUrl = record.url;
+    if (typeof rawUrl !== 'string') {
+      return null;
+    }
+
+    const url = rawUrl.trim();
+    if (!url) {
+      return null;
+    }
+
+    const toStringOrUndefined = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed ? trimmed : undefined;
+      }
+      return undefined;
+    };
+
+    const toNumberOrUndefined = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+      return undefined;
+    };
+
+    const normalized: QuestionImageMetadata = { url };
+
+    const altText = toStringOrUndefined(record.altText);
+    if (altText) normalized.altText = altText;
+
+    const attribution = toStringOrUndefined(record.attribution);
+    if (attribution) normalized.attribution = attribution;
+
+    const source = toStringOrUndefined(record.source);
+    if (source) normalized.source = source;
+
+    const mime = toStringOrUndefined(record.mime);
+    if (mime) normalized.mime = mime;
+
+    const originalUrl = toStringOrUndefined(record.original_url);
+    if (originalUrl) normalized.original_url = originalUrl;
+
+    const storageKey = toStringOrUndefined(record.storage_key);
+    if (storageKey) normalized.storage_key = storageKey;
+
+    const width = toNumberOrUndefined(record.width);
+    if (typeof width === 'number') normalized.width = width;
+
+    const height = toNumberOrUndefined(record.height);
+    if (typeof height === 'number') normalized.height = height;
+
+    return normalized;
+  }
+}

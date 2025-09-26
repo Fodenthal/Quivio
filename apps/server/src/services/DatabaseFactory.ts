@@ -1,6 +1,7 @@
 import { isUsingSupabase } from '../config';
 import { QuestionDatabase } from './QuestionDatabase';
 import { SupabaseQuestionDatabase } from './SupabaseQuestionDatabase';
+import { QuestionIdentifier } from './questionTypes';
 
 /**
  * Database interface that both implementations must follow
@@ -8,7 +9,7 @@ import { SupabaseQuestionDatabase } from './SupabaseQuestionDatabase';
 export interface IQuestionDatabase {
   storeQuestion(topic: string, difficulty: number, question: any): Promise<boolean> | boolean;
   getQuestions(topic: string, difficulty: number, limit?: number): Promise<any[]> | any[];
-  markQuestionAsUsed(questionText: string): Promise<void> | void;
+  markQuestionAsUsed(question: QuestionIdentifier): Promise<void> | void;
   getStats(): Promise<{ totalQuestions: number; topicCount: number; avgUsagePerQuestion: number }> | { totalQuestions: number; topicCount: number; avgUsagePerQuestion: number };
   close(): void;
   hasEnoughQuestions(topic: string, difficulty: number, minRequired?: number): Promise<boolean> | boolean;

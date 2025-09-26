@@ -1,4 +1,4 @@
-import { GeneratedQuestion } from "../../../services/GeminiService";
+import { GeneratedQuestion, QuestionImageMetadata } from "../../../services/GeminiService";
 import { TriviaRoomState } from "../../schema/TriviaRoomState";
 import { STATIC_PROMPTS } from "../staticPrompts";
 
@@ -39,6 +39,7 @@ export class PromptLoader {
     this.state.currentPrompt.topic = this.state.currentTopic || "";
     this.state.currentPrompt.difficultyLevel = generated.difficulty;
     this.state.currentPrompt.acceptableAnswers = generated.acceptableAnswers;
+    this.applyPromptImage(generated.image);
 
     return {
       correctAnswer: generated.correctAnswer,
@@ -66,8 +67,67 @@ export class PromptLoader {
     this.state.currentPrompt.topic = "Mixed Topics";
     this.state.currentPrompt.difficultyLevel = this.mapStringToNumber(selected.difficulty);
     this.state.currentPrompt.acceptableAnswers = [selected.answer];
+    this.applyPromptImage(null);
 
     return { correctAnswer: selected.answer, acceptableAnswers: [selected.answer] };
+  }
+
+  private applyPromptImage(imageMetadata: QuestionImageMetadata | null | undefined) {
+    const promptImage = this.state.currentPrompt.image;
+    if (!promptImage) {
+      return;
+    }
+
+    // Reset existing values to avoid leaking data between prompts
+    promptImage.url = "";
+    promptImage.altText = "";
+    promptImage.width = 0;
+    promptImage.height = 0;
+    promptImage.attribution = "";
+    promptImage.source = "";
+    promptImage.mime = "";
+    promptImage.original_url = "";
+    promptImage.storage_key = "";
+
+    if (!imageMetadata || typeof imageMetadata.url !== 'string' || !imageMetadata.url.trim()) {
+      return;
+    }
+
+    promptImage.url = this.normalizeImageString(imageMetadata.url);
+    promptImage.altText = this.normalizeImageString(imageMetadata.altText);
+    promptImage.width = this.normalizeImageNumber(imageMetadata.width);
+    promptImage.height = this.normalizeImageNumber(imageMetadata.height);
+    promptImage.attribution = this.normalizeImageString(imageMetadata.attribution);
+    promptImage.source = this.normalizeImageString(imageMetadata.source);
+    promptImage.mime = this.normalizeImageString(imageMetadata.mime);
+    promptImage.original_url = this.normalizeImageString(imageMetadata.original_url);
+    promptImage.storage_key = this.normalizeImageString(imageMetadata.storage_key);
+  }
+
+  private normalizeImageString(value: unknown): string {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    if (value === null || value === undefined) {
+      return "";
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    return "";
+  }
+
+  private normalizeImageNumber(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
   }
 
   private mapDifficultyToString(difficulty: number): string {
@@ -87,5 +147,3 @@ export class PromptLoader {
     }
   }
 }
-
-

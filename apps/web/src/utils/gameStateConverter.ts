@@ -44,6 +44,18 @@ export interface RawRoomState {
     topic?: string;
     difficultyLevel?: number;
     acceptableAnswers?: string[];
+    image?: {
+      url?: string;
+      altText?: string;
+      width?: number;
+      height?: number;
+      attribution?: string;
+      source?: string;
+      mime?: string;
+      original_url?: string;
+      storage_key?: string;
+      [key: string]: unknown;
+    };
   };
   roundGuesses?: MapSchemaLike | Record<string, unknown>;
   playerIncorrectGuesses?: MapSchemaLike | Record<string, unknown>;
@@ -154,6 +166,39 @@ export function convertColyseusState(state: unknown): GameState | null {
     }
   }
 
+  const promptImage = (() => {
+    const rawImage = roomState.currentPrompt?.image;
+    if (!rawImage || typeof rawImage !== 'object') {
+      return undefined;
+    }
+
+    const url = typeof rawImage.url === 'string' ? rawImage.url.trim() : '';
+    if (!url) {
+      return undefined;
+    }
+
+    const altText = typeof rawImage.altText === 'string' ? rawImage.altText.trim() : '';
+    const attribution = typeof rawImage.attribution === 'string' ? rawImage.attribution.trim() : '';
+    const source = typeof rawImage.source === 'string' ? rawImage.source.trim() : '';
+    const mime = typeof rawImage.mime === 'string' ? rawImage.mime.trim() : '';
+    const originalUrl = typeof rawImage.original_url === 'string' ? rawImage.original_url.trim() : '';
+    const storageKey = typeof rawImage.storage_key === 'string' ? rawImage.storage_key.trim() : '';
+    const width = typeof rawImage.width === 'number' && rawImage.width > 0 ? rawImage.width : undefined;
+    const height = typeof rawImage.height === 'number' && rawImage.height > 0 ? rawImage.height : undefined;
+
+    return {
+      url,
+      altText: altText || undefined,
+      attribution: attribution || undefined,
+      source: source || undefined,
+      mime: mime || undefined,
+      original_url: originalUrl || undefined,
+      storage_key: storageKey || undefined,
+      width,
+      height,
+    };
+  })();
+
   return {
     targetScore: roomState.targetScore || 10,
     roundTime: roomState.roundTime || 30000,
@@ -190,7 +235,8 @@ export function convertColyseusState(state: unknown): GameState | null {
       // Include AI-specific fields
       topic: roomState.currentPrompt?.topic || "",
       difficultyLevel: roomState.currentPrompt?.difficultyLevel || 5,
-      acceptableAnswers: roomState.currentPrompt?.acceptableAnswers || []
+      acceptableAnswers: roomState.currentPrompt?.acceptableAnswers || [],
+      image: promptImage
     },
     roundGuesses,
     playerIncorrectGuesses,

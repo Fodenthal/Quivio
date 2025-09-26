@@ -40,6 +40,19 @@ export interface Prompt {
   topic?: string;
   difficultyLevel?: number; // 1-5 scale
   acceptableAnswers?: string[];
+  image?: PromptImage;
+}
+
+export interface PromptImage {
+  url: string;
+  altText?: string;
+  attribution?: string;
+  width?: number;
+  height?: number;
+  source?: string;
+  mime?: string;
+  original_url?: string;
+  storage_key?: string;
 }
 
 export interface Guess {
