@@ -113,12 +113,19 @@ export const GameView = memo(function GameView({
     const originalUrl = image.original_url?.trim() || undefined;
     const storageKey = image.storage_key?.trim() || undefined;
 
+    const clampedAspectRatio = (() => {
+      if (!aspectRatio) return undefined;
+      const minRatio = 0.85; // Prevent overly tall frames
+      const maxRatio = 1.45; // Prevent overly wide frames
+      return Math.min(Math.max(aspectRatio, minRatio), maxRatio);
+    })();
+
     return {
       url,
       alt: rawAlt || 'Question image',
       width,
       height,
-      aspectRatio,
+      aspectRatio: clampedAspectRatio,
       attribution,
       source,
       mime,
@@ -478,13 +485,13 @@ export const GameView = memo(function GameView({
         {/* Existing game content - only show when not in lobby and not ended */}
         {gameState.gameStatus !== GameStatus.WAITING && phase !== "ended" && (
           <>
-            <div className="flex items-center justify-between pb-4 border-b border-white/20">
-              <h2 className="text-3xl font-bold text-text-main">
+            <div className="flex flex-col items-center gap-3 pb-4 border-b border-white/20 md:flex-row md:justify-between">
+              <h2 className="text-3xl font-bold text-text-main text-center md:text-left">
                 Round {gameState.currentRound}
               </h2>
               {/* Only show timer if not loading/AD */}
               {phase !== "loading" && (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 md:self-center">
                   <span className="text-lg font-medium text-text-secondary">Time:</span>
                   <span className={`text-2xl font-bold ${
                     timerDisplay.isUrgent ? 'text-red-500' : 'text-text-main'
@@ -531,17 +538,15 @@ export const GameView = memo(function GameView({
                 ) : (
                   // Normal question display during round
                   <>
-                    <div className="mb-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/20 text-accent text-base font-medium">
-                        {gameState.currentPrompt.category || "General"}
-                      </span>
-                    </div>
                     {promptImage && !promptImageError && (
                       <div className="mb-4 flex justify-center">
                         <figure className="relative w-full max-w-xl">
                           <div
                             className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40"
-                            style={{ aspectRatio: promptImage.aspectRatio ? `${promptImage.aspectRatio}` : '4 / 3' }}
+                            style={{
+                              aspectRatio: promptImage.aspectRatio ? `${promptImage.aspectRatio}` : '4 / 3',
+                              maxHeight: '420px',
+                            }}
                           >
                             {isPromptImageLoading && (
                               <div className="absolute inset-0 animate-pulse bg-white/5" aria-hidden="true" />
