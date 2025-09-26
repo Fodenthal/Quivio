@@ -60,17 +60,13 @@ export function AISettingsPanel({
 
   const normalizedServerTopics = useMemo(() => {
     const topicList = gameState.topics || [];
-    return Array.prototype.reduce.call(
-      topicList,
-      (acc: string[], topic: unknown) => {
-        if (typeof topic === "string") {
-          const trimmed = topic.trim();
-          if (trimmed.length > 0) acc.push(trimmed);
-        }
-        return acc;
-      },
-      [] as string[]
-    );
+    return topicList.reduce<string[]>((acc: string[], topic: string) => {
+      if (typeof topic === "string") {
+        const trimmed = topic.trim();
+        if (trimmed.length > 0) acc.push(trimmed);
+      }
+      return acc;
+    }, []);
   }, [gameState.topics]);
 
   // Unified auto-update logic: always use onSetTopics regardless of count
