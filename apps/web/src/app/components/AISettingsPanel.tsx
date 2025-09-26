@@ -159,9 +159,9 @@ export function AISettingsPanel({
           </div>
           
           {/* Topic validation error message */}
-          {!isReadOnly && validTopics.length < 3 && (
+          {!isReadOnly && validTopics.length === 0 && (
             <p className="text-yellow-300 text-sm mt-2">
-              Please add at least 3 topics to start the game.
+              Please add at least one topic to start the game.
             </p>
           )}
 

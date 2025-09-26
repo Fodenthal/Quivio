@@ -437,8 +437,12 @@ export const GameView = memo(function GameView({
         {gameState.gameStatus === GameStatus.WAITING && (() => {
           const currentPlayer = gameState.players.get(currentPlayerId);
           const isHost = currentPlayer?.isHost || false;
-          const hasMinTopics = gameState.topics && gameState.topics.length >= 3 && gameState.topics.filter(topic => topic.trim().length > 0).length >= 3;
-          const canStartGame = hasMinTopics && isHost;
+          const topicList = gameState.topics || [];
+          const hasRequiredTopics = Array.prototype.some.call(
+            topicList,
+            (topic: string) => typeof topic === "string" && topic.trim().length > 0
+          );
+          const canStartGame = hasRequiredTopics && isHost;
 
           return (
             <div className="flex flex-col h-full">
