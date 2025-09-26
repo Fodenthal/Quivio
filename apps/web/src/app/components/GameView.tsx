@@ -524,25 +524,29 @@ export const GameView = memo(function GameView({
                     </div>
                     {promptImage && !promptImageError && (
                       <div className="mb-4 flex justify-center">
-                        <figure className="relative w-full max-w-xl">
-                          {isPromptImageLoading && (
-                            <div className="absolute inset-0 animate-pulse rounded-lg bg-white/5" aria-hidden="true" />
-                          )}
-                          <Image
-                            src={promptImage.url}
-                            alt={promptImage.alt}
-                            width={promptImage.width ?? 800}
-                            height={promptImage.height ?? 600}
-                            className="mx-auto max-h-72 w-full rounded-lg border border-white/10 bg-black/40 object-contain"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 70vw, 40vw"
-                            onLoadingComplete={() => setIsPromptImageLoading(false)}
-                            onError={() => {
-                              setPromptImageError(true);
-                              setIsPromptImageLoading(false);
-                            }}
-                          />
+                        <figure className="w-full max-w-xl">
+                          <div
+                            className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40"
+                            style={{ aspectRatio: '4 / 3' }}
+                          >
+                            {isPromptImageLoading && (
+                              <div className="absolute inset-0 animate-pulse bg-white/5" aria-hidden="true" />
+                            )}
+                            <Image
+                              src={promptImage.url}
+                              alt={promptImage.alt}
+                              fill
+                              className="object-contain"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 70vw, 40vw"
+                              onLoadingComplete={() => setIsPromptImageLoading(false)}
+                              onError={() => {
+                                setPromptImageError(true);
+                                setIsPromptImageLoading(false);
+                              }}
+                            />
+                          </div>
                           {promptImage.attribution && (
-                            <figcaption className="mt-2 text-sm text-text-secondary">
+                            <figcaption className="mt-2 text-center text-sm text-text-secondary">
                               {promptImage.attribution}
                               {promptImage.source ? ` · Source: ${promptImage.source}` : ""}
                             </figcaption>
