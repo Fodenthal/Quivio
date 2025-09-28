@@ -10,6 +10,7 @@ import { useDisplayName } from "../../../contexts/DisplayNameContext";
 import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
 import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
 import { QuivioLogo } from "../QuivioLogo";
+import { QuestionUploadPanel } from "../QuestionUploadPanel";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
@@ -134,7 +135,10 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
             <AnnouncementsPanel />
           </div>
         </div>
+        <div className="mt-10">
+          <QuestionUploadPanel />
+        </div>
       </main>
     </div>
   );
-}; 
+};
