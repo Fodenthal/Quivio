@@ -1,19 +1,19 @@
 export interface QuestionSubmissionInput {
-  topic: string;
-  category: string;
-  difficulty: number;
+  topic?: string | null;
+  category?: string | null;
+  difficulty?: number | null;
   question: string;
   correctAnswer: string;
-  acceptableAnswers: string[];
+  acceptableAnswers?: string[] | null;
   externalSource?: string | null;
   externalId?: string | null;
   imageUrl?: string | null;
 }
 
 export interface NormalizedQuestionSubmission {
-  topic: string;
-  category: string;
-  difficulty: number;
+  topic: string | null;
+  category: string | null;
+  difficulty: number | null;
   question: string;
   correctAnswer: string;
   acceptableAnswers: string[];
@@ -22,7 +22,9 @@ export interface NormalizedQuestionSubmission {
   image: { url: string; source?: string | null } | null;
 }
 
-export type SubmissionValidationErrors = Partial<Record<keyof QuestionSubmissionInput | "acceptableAnswers", string>>;
+export type SubmissionValidationErrors = Partial<
+  Record<keyof QuestionSubmissionInput | "acceptableAnswers", string>
+>;
 
 export interface ValidationResult {
   success: boolean;
@@ -52,14 +54,6 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
     ? payload.acceptableAnswers.map(trim).filter(Boolean)
     : [];
 
-  if (!topic) {
-    errors.topic = "Topic is required";
-  }
-
-  if (!category) {
-    errors.category = "Category is required";
-  }
-
   if (!question) {
     errors.question = "Question text is required";
   }
@@ -68,12 +62,10 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
     errors.correctAnswer = "Correct answer is required";
   }
 
-  if (!Number.isFinite(difficulty) || difficulty < 1 || difficulty > 5) {
-    errors.difficulty = "Difficulty must be between 1 and 5";
-  }
-
-  if (acceptableAnswers.length === 0) {
-    errors.acceptableAnswers = "Provide at least one acceptable answer";
+  if (payload.difficulty !== undefined && payload.difficulty !== null) {
+    if (!Number.isFinite(difficulty) || difficulty < 1 || difficulty > 5) {
+      errors.difficulty = "Difficulty must be between 1 and 5";
+    }
   }
 
   const externalSource = payload.externalSource ? trim(payload.externalSource) : "";
@@ -92,16 +84,22 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
     return { success: false, errors };
   }
 
+  const normalizedAcceptableAnswers = acceptableAnswers.length > 0
+    ? acceptableAnswers
+    : [correctAnswer];
+
   return {
     success: true,
     errors: {},
     submission: {
-      topic,
-      category,
-      difficulty,
+      topic: topic || null,
+      category: category || null,
+      difficulty: payload.difficulty !== undefined && payload.difficulty !== null
+        ? Math.min(Math.max(difficulty, 1), 5)
+        : null,
       question,
       correctAnswer,
-      acceptableAnswers,
+      acceptableAnswers: normalizedAcceptableAnswers,
       externalSource: externalSource || null,
       externalId: externalId || null,
       image: imageUrl ? { url: imageUrl, source: "uploader" } : null,
@@ -161,9 +159,11 @@ export const deserializeAcceptableAnswers = (value: unknown): string[] => {
 };
 
 export const mapBulkRecordToSubmission = (record: Record<string, unknown>): QuestionSubmissionInput => ({
-  topic: String(record.topic ?? ""),
-  category: String(record.category ?? ""),
-  difficulty: Number(record.difficulty ?? 0),
+  topic: record.topic ? String(record.topic) : null,
+  category: record.category ? String(record.category) : null,
+  difficulty: record.difficulty !== undefined && record.difficulty !== null
+    ? Number(record.difficulty)
+    : null,
   question: String(record.question ?? ""),
   correctAnswer: String(record.correct_answer ?? record.correctAnswer ?? ""),
   acceptableAnswers: deserializeAcceptableAnswers(

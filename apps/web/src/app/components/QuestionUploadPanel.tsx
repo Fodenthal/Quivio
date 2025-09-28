@@ -15,8 +15,6 @@ const INPUT_CLASS =
   "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
 const TEXTAREA_CLASS =
   "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
-const RANGE_CLASS =
-  "w-full h-2 cursor-pointer accent-indigo-400";
 
 const STATUS_STYLES: Record<StoredSubmissionRecord["status"], { label: string; className: string }> = {
   pending: {
@@ -36,24 +34,18 @@ const STATUS_STYLES: Record<StoredSubmissionRecord["status"], { label: string; c
 interface SingleQuestionFormState {
   topic: string;
   category: string;
-  difficulty: number;
   question: string;
   correctAnswer: string;
   acceptableAnswersText: string;
-  externalSource: string;
-  externalId: string;
   imageUrl: string;
 }
 
 interface SingleQuestionValidationErrors {
   topic?: string;
   category?: string;
-  difficulty?: string;
   question?: string;
   correctAnswer?: string;
   acceptableAnswers?: string;
-  externalSource?: string;
-  externalId?: string;
   imageUrl?: string;
   general?: string;
 }
@@ -74,12 +66,9 @@ interface BulkUploadSummary {
 const createInitialSingleFormState = (): SingleQuestionFormState => ({
   topic: "",
   category: "",
-  difficulty: 2,
   question: "",
   correctAnswer: "",
   acceptableAnswersText: "",
-  externalSource: "",
-  externalId: "",
   imageUrl: "",
 });
 
@@ -123,7 +112,11 @@ export const QuestionUploadPanel: React.FC = () => {
 
   const acceptableAnswersPreview = useMemo(() => {
     const trimmed = singleFormState.acceptableAnswersText.trim();
-    if (!trimmed) return [];
+    if (!trimmed) {
+      const correct = singleFormState.correctAnswer.trim();
+      return correct ? [correct] : [];
+    }
+
     return Array.from(
       new Set(
         trimmed
@@ -132,24 +125,9 @@ export const QuestionUploadPanel: React.FC = () => {
           .filter(Boolean),
       ),
     );
-  }, [singleFormState.acceptableAnswersText]);
+  }, [singleFormState.acceptableAnswersText, singleFormState.correctAnswer]);
 
-  const difficultyLabel = useMemo(() => {
-    switch (singleFormState.difficulty) {
-      case 1:
-        return "Very Easy";
-      case 2:
-        return "Easy";
-      case 3:
-        return "Medium";
-      case 4:
-        return "Hard";
-      case 5:
-        return "Very Hard";
-      default:
-        return "Medium";
-    }
-  }, [singleFormState.difficulty]);
+  const hasCustomAlternatives = singleFormState.acceptableAnswersText.trim().length > 0;
 
   const refreshHistory = useCallback(async () => {
     setIsHistoryLoading(true);
@@ -189,32 +167,12 @@ export const QuestionUploadPanel: React.FC = () => {
   const validateSingleForm = (state: SingleQuestionFormState): SingleQuestionValidationErrors => {
     const errors: SingleQuestionValidationErrors = {};
 
-    if (!state.topic.trim()) {
-      errors.topic = "Topic is required";
-    }
-
-    if (!state.category.trim()) {
-      errors.category = "Category is required";
-    }
-
     if (!state.question.trim()) {
       errors.question = "Question text is required";
     }
 
     if (!state.correctAnswer.trim()) {
       errors.correctAnswer = "Correct answer is required";
-    }
-
-    if (state.difficulty < 1 || state.difficulty > 5) {
-      errors.difficulty = "Difficulty must be between 1 and 5";
-    }
-
-    if (!acceptableAnswersPreview.length) {
-      errors.acceptableAnswers = "Provide at least one acceptable answer";
-    }
-
-    if (state.externalSource.trim() && !isValidUrl(state.externalSource.trim())) {
-      errors.externalSource = "External source must be a valid URL";
     }
 
     if (state.imageUrl.trim() && !isValidUrl(state.imageUrl.trim())) {
@@ -235,14 +193,11 @@ export const QuestionUploadPanel: React.FC = () => {
     }
 
     const payload = {
-      topic: singleFormState.topic.trim(),
-      category: singleFormState.category.trim(),
-      difficulty: singleFormState.difficulty,
+      topic: singleFormState.topic.trim() || null,
+      category: singleFormState.category.trim() || null,
       question: singleFormState.question.trim(),
       correctAnswer: singleFormState.correctAnswer.trim(),
       acceptableAnswers: acceptableAnswersPreview,
-      externalSource: singleFormState.externalSource.trim() || null,
-      externalId: singleFormState.externalId.trim() || null,
       imageUrl: singleFormState.imageUrl.trim() || null,
     };
 
@@ -400,6 +355,16 @@ export const QuestionUploadPanel: React.FC = () => {
       <div className="px-6 pb-6 space-y-4">
         {history.map((entry) => {
           const statusStyle = STATUS_STYLES[entry.status] ?? STATUS_STYLES.pending;
+          const rawTopic = entry.topic?.trim() ?? "";
+          const rawCategory = entry.category?.trim() ?? "";
+          const topicLabel = rawTopic || "General";
+          const categoryLabel = rawCategory || null;
+          const metaItems: string[] = [];
+          if (topicLabel) metaItems.push(`Topic: ${topicLabel}`);
+          if (categoryLabel) metaItems.push(`Category: ${categoryLabel}`);
+          if (entry.difficulty !== null && entry.difficulty !== undefined) {
+            metaItems.push(`Difficulty: ${entry.difficulty}`);
+          }
           return (
             <article
               key={`${entry.id}-${entry.submittedAt}`}
@@ -421,11 +386,9 @@ export const QuestionUploadPanel: React.FC = () => {
                     )}
                   </div>
                   <p className="text-base font-semibold text-white line-clamp-2">{entry.question}</p>
-                  <p className="text-sm text-white/70">
-                    <span className="font-medium text-white">Topic:</span> {entry.topic} ·
-                    <span className="ml-1 font-medium text-white">Category:</span> {entry.category} ·
-                    <span className="ml-1 font-medium text-white">Difficulty:</span> {entry.difficulty}
-                  </p>
+                  {metaItems.length > 0 && (
+                    <p className="text-sm text-white/70">{metaItems.join(" · ")}</p>
+                  )}
                 </div>
                 <div className="text-right text-xs text-white/50">
                   <p>Submitted {formatSubmittedAt(entry.submittedAt)}</p>
@@ -479,7 +442,7 @@ export const QuestionUploadPanel: React.FC = () => {
         <form className="px-6 pb-8 pt-6 space-y-6" onSubmit={handleSingleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Topic *</span>
+              <span className="text-sm font-medium text-white">Topic (optional)</span>
               <input
                 type="text"
                 value={singleFormState.topic}
@@ -493,7 +456,7 @@ export const QuestionUploadPanel: React.FC = () => {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Category *</span>
+              <span className="text-sm font-medium text-white">Category (optional)</span>
               <input
                 type="text"
                 value={singleFormState.category}
@@ -536,78 +499,33 @@ export const QuestionUploadPanel: React.FC = () => {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Difficulty: {difficultyLabel}</span>
+              <span className="text-sm font-medium text-white">Image URL (optional)</span>
               <input
-                type="range"
-                min={1}
-                max={5}
-                value={singleFormState.difficulty}
-                onChange={(event) => handleSingleFormChange("difficulty", Number(event.target.value))}
-                className={RANGE_CLASS}
+                type="url"
+                value={singleFormState.imageUrl}
+                onChange={(event) => handleSingleFormChange("imageUrl", event.target.value)}
+                className={INPUT_CLASS}
+                placeholder="https://images.com/mars.jpg"
               />
-              {singleFormErrors.difficulty && (
-                <span className="text-xs text-red-300">{singleFormErrors.difficulty}</span>
+              {singleFormErrors.imageUrl && (
+                <span className="text-xs text-red-300">{singleFormErrors.imageUrl}</span>
               )}
             </label>
           </div>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-white">Acceptable Answers *</span>
+            <span className="text-sm font-medium text-white">Acceptable Answers</span>
             <textarea
               value={singleFormState.acceptableAnswersText}
               onChange={(event) => handleSingleFormChange("acceptableAnswersText", event.target.value)}
               className={`${TEXTAREA_CLASS} min-h-[100px]`}
               placeholder="Comma or newline separated alternatives"
             />
+            <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
             {singleFormErrors.acceptableAnswers && (
               <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
             )}
           </label>
-
-          <details className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <summary className="cursor-pointer text-white">Optional metadata</summary>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <label className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wide text-white/60">External Source URL</span>
-                <input
-                  type="url"
-                  value={singleFormState.externalSource}
-                  onChange={(event) => handleSingleFormChange("externalSource", event.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="https://example.com/trivia"
-                />
-                {singleFormErrors.externalSource && (
-                  <span className="text-xs text-red-300">{singleFormErrors.externalSource}</span>
-                )}
-              </label>
-              <label className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wide text-white/60">External ID</span>
-                <input
-                  type="text"
-                  value={singleFormState.externalId}
-                  onChange={(event) => handleSingleFormChange("externalId", event.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="Source identifier"
-                />
-                {singleFormErrors.externalId && (
-                  <span className="text-xs text-red-300">{singleFormErrors.externalId}</span>
-                )}
-              </label>
-              <label className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wide text-white/60">Image URL</span>
-                <input
-                  type="url"
-                  value={singleFormState.imageUrl}
-                  onChange={(event) => handleSingleFormChange("imageUrl", event.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="https://images.com/mars.jpg"
-                />
-                {singleFormErrors.imageUrl && (
-                  <span className="text-xs text-red-300">{singleFormErrors.imageUrl}</span>
-                )}
-              </label>
-            </div>
-          </details>
 
           {acceptableAnswersPreview.length > 0 && (
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
@@ -619,6 +537,11 @@ export const QuestionUploadPanel: React.FC = () => {
                   </li>
                 ))}
               </ul>
+              {!hasCustomAlternatives && (
+                <p className="mt-2 text-xs text-white/60">
+                  We already accept the correct answer by default. Add more above if you'd like alternatives.
+                </p>
+              )}
             </div>
           )}
 
@@ -631,7 +554,7 @@ export const QuestionUploadPanel: React.FC = () => {
               disabled={isSubmittingSingle}
               className="rounded-full bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmittingSingle ? "Saving…" : "Save question draft"}
+              {isSubmittingSingle ? "Saving…" : "Upload Question"}
             </button>
           </div>
 
@@ -653,7 +576,7 @@ export const QuestionUploadPanel: React.FC = () => {
             <h3 className="text-base font-semibold text-white">Bulk upload basics</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-white/70">
               <li>Use CSV or JSON with the headers/keys shown in our template.</li>
-              <li>Keep difficulty between 1-5 and make sure acceptable answers are arrays.</li>
+              <li>Difficulty is optional—we’ll infer it when you leave the field blank.</li>
               <li>We validate everything in staging and send you a report for fixes.</li>
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">

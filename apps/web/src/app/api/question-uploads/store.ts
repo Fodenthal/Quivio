@@ -8,6 +8,9 @@ import {
 } from "@/utils/questionSubmission";
 
 const TABLE_NAME = process.env.QUESTION_STAGING_TABLE ?? "questions_staging";
+const FALLBACK_TOPIC = "General";
+const FALLBACK_CATEGORY = "Community";
+const FALLBACK_DIFFICULTY = 3;
 
 interface MemoryStore {
   submissions: StoredSubmissionRecord[];
@@ -92,9 +95,9 @@ const storeInSupabase = async (
 
   try {
     const payload = submissions.map((submission) => ({
-      topic: submission.topic,
-      category: submission.category,
-      difficulty: submission.difficulty,
+      topic: submission.topic?.trim() || FALLBACK_TOPIC,
+      category: submission.category?.trim() || FALLBACK_CATEGORY,
+      difficulty: submission.difficulty ?? FALLBACK_DIFFICULTY,
       question: submission.question,
       correct_answer: submission.correctAnswer,
       acceptable_answers: submission.acceptableAnswers,
@@ -170,7 +173,7 @@ export const fetchRecentSubmissions = async (
           id: String(row.id),
           topic: row.topic,
           category: row.category,
-          difficulty: row.difficulty,
+          difficulty: row.difficulty ?? null,
           question: row.question,
           correctAnswer: row.correct_answer,
           acceptableAnswers: deserializeAcceptableAnswers(row.acceptable_answers ?? []),
