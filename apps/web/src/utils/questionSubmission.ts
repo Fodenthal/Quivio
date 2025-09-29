@@ -10,6 +10,20 @@ export interface QuestionSubmissionInput {
   imageUrl?: string | null;
 }
 
+export interface NormalizedQuestionImage {
+  url: string;
+  source?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  size?: number | null;
+  bucket?: string | null;
+  path?: string | null;
+  sha256?: string | null;
+  originalUrl?: string | null;
+  storageKey?: string | null;
+  blurDataUrl?: string | null;
+}
+
 export interface NormalizedQuestionSubmission {
   topic: string | null;
   category: string | null;
@@ -19,7 +33,7 @@ export interface NormalizedQuestionSubmission {
   acceptableAnswers: string[];
   externalSource: string | null;
   externalId: string | null;
-  image: { url: string; source?: string | null } | null;
+  image: NormalizedQuestionImage | null;
 }
 
 export type SubmissionValidationErrors = Partial<
@@ -102,7 +116,13 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
       acceptableAnswers: normalizedAcceptableAnswers,
       externalSource: externalSource || null,
       externalId: externalId || null,
-      image: imageUrl ? { url: imageUrl, source: "uploader" } : null,
+      image: imageUrl
+        ? {
+            url: imageUrl,
+            originalUrl: imageUrl,
+            source: "url",
+          }
+        : null,
     },
   };
 };

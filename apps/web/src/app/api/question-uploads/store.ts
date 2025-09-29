@@ -73,7 +73,7 @@ const storeInMemory = (
   origin: "single" | "bulk",
   batchId: string | null,
 ): StoreResult => {
-  console.warn("📦 Falling back to in-memory question staging store. Configure SUPABASE_URL/SUPABASE_ANON_KEY for persistence.");
+  console.warn("📦 Falling back to in-memory question staging store. Configure NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY for persistence.");
   const memory = getMemoryStore();
   const stored: StoredSubmissionRecord[] = submissions.map((submission) => {
     const id = String(memory.nextId++);

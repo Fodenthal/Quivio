@@ -12,9 +12,18 @@ import type { StoredSubmissionRecord } from "@/utils/questionSubmission";
 
 const ACCEPTABLE_ANSWER_DELIMITER = /\r?\n|\s*,\s*/;
 const INPUT_CLASS =
-  "w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
+  "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
 const TEXTAREA_CLASS =
-  "w-full h-20 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition resize-none";
+  "w-full min-h-[48px] rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition resize-none";
+
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
 
 const STATUS_STYLES: Record<StoredSubmissionRecord["status"], { label: string; className: string }> = {
   pending: {
@@ -61,6 +70,12 @@ interface BulkUploadSummary {
   }[];
 }
 
+type SubmissionResponse = {
+  stored?: StoredSubmissionRecord[];
+  error?: string;
+  issues?: Record<string, string>;
+};
+
 const createInitialSingleFormState = (): SingleQuestionFormState => ({
   topic: "",
   question: "",
@@ -88,7 +103,7 @@ const formatSubmittedAt = (timestamp: string) => {
 };
 
 export const QuestionUploadPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+  const [activeTab, setActiveTab] = useState<"single" | "bulk" | "history">("single");
   const [singleFormState, setSingleFormState] = useState<SingleQuestionFormState>(
     createInitialSingleFormState,
   );
@@ -106,6 +121,11 @@ export const QuestionUploadPanel: React.FC = () => {
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   const bulkInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const acceptableAnswersPreview = useMemo(() => {
     const trimmed = singleFormState.acceptableAnswersText.trim();
@@ -125,6 +145,14 @@ export const QuestionUploadPanel: React.FC = () => {
   }, [singleFormState.acceptableAnswersText, singleFormState.correctAnswer]);
 
   const hasCustomAlternatives = singleFormState.acceptableAnswersText.trim().length > 0;
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const refreshHistory = useCallback(async () => {
     setIsHistoryLoading(true);
@@ -159,6 +187,62 @@ export const QuestionUploadPanel: React.FC = () => {
     setSingleFormErrors((prev) => ({ ...prev, [key]: undefined, general: undefined }));
     setSingleSubmitStatus(null);
     setSingleSubmitError(null);
+    if (key === "imageUrl") {
+      setImageError(null);
+    }
+  };
+
+  const resetImageUpload = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+  };
+
+  const handleImageSelection = (file: File | null) => {
+    if (!file) {
+      resetImageUpload();
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      const maxMb = (MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024)).toFixed(1);
+      setImageError(`Image is too large. Maximum size is ${maxMb} MB.`);
+      return;
+    }
+
+    if (file.type && !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Unsupported file type. Please upload PNG, JPEG, WebP, GIF, or SVG.");
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageError(null);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    handleImageSelection(file);
+    // Allow re-selecting the same file consecutively.
+    event.target.value = "";
+  };
+
+  const handleImageDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0] ?? null;
+    handleImageSelection(file);
+  };
+
+  const handleImageDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
   };
 
   const validateSingleForm = (state: SingleQuestionFormState): SingleQuestionValidationErrors => {
@@ -189,12 +273,14 @@ export const QuestionUploadPanel: React.FC = () => {
       return;
     }
 
-    const payload = {
+    const submissionPayload = {
       topic: singleFormState.topic.trim() || null,
+      category: null,
       question: singleFormState.question.trim(),
       correctAnswer: singleFormState.correctAnswer.trim(),
       acceptableAnswers: acceptableAnswersPreview,
       imageUrl: singleFormState.imageUrl.trim() || null,
+      difficulty: null,
     };
 
     setIsSubmittingSingle(true);
@@ -202,22 +288,50 @@ export const QuestionUploadPanel: React.FC = () => {
     setSingleSubmitError(null);
 
     try {
-      const response = await fetch("/api/question-uploads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let response: Response;
+      let data: SubmissionResponse = {};
 
-      const data = await response.json();
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("question", submissionPayload.question);
+        formData.append("correctAnswer", submissionPayload.correctAnswer);
+        formData.append("acceptableAnswers", JSON.stringify(submissionPayload.acceptableAnswers));
+        if (submissionPayload.topic) {
+          formData.append("topic", submissionPayload.topic);
+        }
+        if (submissionPayload.imageUrl) {
+          formData.append("imageUrl", submissionPayload.imageUrl);
+        }
+        formData.append("imageFile", imageFile);
+
+        response = await fetch("/api/question-uploads", {
+          method: "POST",
+          body: formData,
+        });
+        data = (await response.json().catch(() => ({} as SubmissionResponse))) || {};
+      } else {
+        response = await fetch("/api/question-uploads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(submissionPayload),
+        });
+        data = (await response.json()) as SubmissionResponse;
+      }
 
       if (response.status === 400 && data?.issues) {
         setSingleFormErrors((prev) => ({ ...prev, ...data.issues }));
         setSingleSubmitError("Please address the highlighted fields and try again.");
+        if (data?.error && imageFile) {
+          setImageError(data.error);
+        }
         return;
       }
 
       if (!response.ok) {
         setSingleSubmitError(data?.error ?? "Something went wrong while saving your question.");
+        if (imageFile && data?.error) {
+          setImageError(data.error);
+        }
         return;
       }
 
@@ -233,6 +347,7 @@ export const QuestionUploadPanel: React.FC = () => {
 
       setSingleFormState(createInitialSingleFormState());
       setSingleFormErrors({});
+      resetImageUpload();
       void refreshHistory();
     } catch (error) {
       console.error("Failed to upload question", error);
@@ -424,11 +539,35 @@ export const QuestionUploadPanel: React.FC = () => {
           >
             Bulk Upload
           </button>
+          <button
+            type="button"
+            className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
+              activeTab === "history"
+                ? "bg-indigo-500/20 text-indigo-200 border border-white/10 border-b-transparent"
+                : "text-white/60 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("history")}
+          >
+            History
+          </button>
         </div>
       </div>
 
       {activeTab === "single" ? (
         <form className="px-6 pb-8 pt-6 space-y-6" onSubmit={handleSingleSubmit}>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-white">Topic (optional)</span>
+            <input
+              type="text"
+              value={singleFormState.topic}
+              onChange={(event) => handleSingleFormChange("topic", event.target.value)}
+              className={INPUT_CLASS}
+              placeholder="e.g. Solar System"
+            />
+            {singleFormErrors.topic && (
+              <span className="text-xs text-red-300">{singleFormErrors.topic}</span>
+            )}
+          </label>
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-white">Question *</span>
@@ -437,6 +576,7 @@ export const QuestionUploadPanel: React.FC = () => {
               onChange={(event) => handleSingleFormChange("question", event.target.value)}
               className={TEXTAREA_CLASS}
               placeholder="Ask something interesting..."
+              rows={2}
             />
             {singleFormErrors.question && (
               <span className="text-xs text-red-300">{singleFormErrors.question}</span>
@@ -459,14 +599,64 @@ export const QuestionUploadPanel: React.FC = () => {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Image URL (optional)</span>
-              <input
-                type="url"
-                value={singleFormState.imageUrl}
-                onChange={(event) => handleSingleFormChange("imageUrl", event.target.value)}
-                className={INPUT_CLASS}
-                placeholder="https://images.com/mars.jpg"
-              />
+              <span className="text-sm font-medium text-white">Image (optional)</span>
+              <div
+                className="flex flex-col gap-3 rounded-xl border border-dashed border-white/15 bg-white/5 p-4 text-sm text-white/70 transition hover:border-indigo-400/60"
+                onDragOver={handleImageDragOver}
+                onDrop={handleImageDrop}
+              >
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white/80 transition hover:border-indigo-400 hover:text-white"
+                  >
+                    {imageFile ? "Replace image" : "Upload image"}
+                  </button>
+                  <p className="text-xs text-white/60">
+                    Drag & drop or browse. Max size {(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024)).toFixed(1)} MB.
+                  </p>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                    className="hidden"
+                    onChange={handleImageInputChange}
+                  />
+                </div>
+                {imagePreview && (
+                  <div className="overflow-hidden rounded-lg border border-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imagePreview} alt="Uploaded preview" className="h-40 w-full object-cover" />
+                  </div>
+                )}
+                {imageFile && (
+                  <div className="flex items-center justify-between text-xs text-white/60">
+                    <span className="truncate" title={imageFile.name}>{imageFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={resetImageUpload}
+                      className="text-indigo-200 hover:text-indigo-100"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <p className="text-xs text-white/70">or paste an image URL:</p>
+                  <input
+                    type="url"
+                    value={singleFormState.imageUrl}
+                    onChange={(event) => handleSingleFormChange("imageUrl", event.target.value)}
+                    className={INPUT_CLASS}
+                    placeholder="https://images.com/mars.jpg"
+                  />
+                </div>
+                <p className="text-xs text-white/60">
+                  Uploaded files take priority over URLs. Supported: PNG, JPEG, WebP, GIF, SVG.
+                </p>
+              </div>
+              {imageError && <span className="text-xs text-red-300">{imageError}</span>}
               {singleFormErrors.imageUrl && (
                 <span className="text-xs text-red-300">{singleFormErrors.imageUrl}</span>
               )}
@@ -480,8 +670,9 @@ export const QuestionUploadPanel: React.FC = () => {
               onChange={(event) => handleSingleFormChange("acceptableAnswersText", event.target.value)}
               className={TEXTAREA_CLASS}
               placeholder="Comma or newline separated alternatives"
+              rows={2}
             />
-            <p className="text-sm text-white/60">Leave blank to accept the correct answer automatically.</p>
+            <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
             {singleFormErrors.acceptableAnswers && (
               <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
             )}
@@ -544,7 +735,7 @@ export const QuestionUploadPanel: React.FC = () => {
             </div>
           )}
         </form>
-      ) : (
+      ) : activeTab === "bulk" ? (
         <div className="px-6 pb-8 pt-6 space-y-6">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <h3 className="text-base font-semibold text-white">Bulk upload basics</h3>
@@ -660,24 +851,24 @@ export const QuestionUploadPanel: React.FC = () => {
             </ul>
           </div>
         </div>
-      )}
-
-      <div className="border-t border-white/10 bg-white/5">
-        <div className="flex items-center justify-between px-6 py-5">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Submission history</h3>
-            <p className="text-sm text-white/60">Your last few uploads and where they are in the moderation pipeline.</p>
+      ) : (
+        <div className="px-6 pb-8 pt-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Submission history</h3>
+              <p className="text-sm text-white/60">Your last few uploads and where they are in the moderation pipeline.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshHistory()}
+              className="h-10 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white"
+            >
+              Refresh
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void refreshHistory()}
-            className="h-10 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white"
-          >
-            Refresh
-          </button>
+          {renderHistory()}
         </div>
-        {renderHistory()}
-      </div>
+      )}
     </section>
   );
 };
