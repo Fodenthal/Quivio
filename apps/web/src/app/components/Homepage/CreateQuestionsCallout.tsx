@@ -23,9 +23,7 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
 
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/question-stats", {
-          next: { revalidate: 60 },
-        });
+        const response = await fetch("/api/question-stats");
         if (!response.ok) {
           throw new Error("Failed to load question stats");
         }
