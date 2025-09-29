@@ -144,8 +144,6 @@ export const QuestionUploadPanel: React.FC = () => {
     );
   }, [singleFormState.acceptableAnswersText, singleFormState.correctAnswer]);
 
-  const hasCustomAlternatives = singleFormState.acceptableAnswersText.trim().length > 0;
-
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -584,19 +582,35 @@ export const QuestionUploadPanel: React.FC = () => {
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Correct Answer *</span>
-              <input
-                type="text"
-                value={singleFormState.correctAnswer}
-                onChange={(event) => handleSingleFormChange("correctAnswer", event.target.value)}
-                className={INPUT_CLASS}
-                placeholder="e.g. Mars"
-              />
-              {singleFormErrors.correctAnswer && (
-                <span className="text-xs text-red-300">{singleFormErrors.correctAnswer}</span>
-              )}
-            </label>
+            <div className="flex flex-col gap-4">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-white">Correct Answer *</span>
+                <input
+                  type="text"
+                  value={singleFormState.correctAnswer}
+                  onChange={(event) => handleSingleFormChange("correctAnswer", event.target.value)}
+                  className={INPUT_CLASS}
+                  placeholder="e.g. Mars"
+                />
+                {singleFormErrors.correctAnswer && (
+                  <span className="text-xs text-red-300">{singleFormErrors.correctAnswer}</span>
+                )}
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-white">Acceptable Answers (optional)</span>
+                <textarea
+                  value={singleFormState.acceptableAnswersText}
+                  onChange={(event) => handleSingleFormChange("acceptableAnswersText", event.target.value)}
+                  className={`${TEXTAREA_CLASS} h-32`}
+                  placeholder="Comma or newline separated alternatives"
+                />
+                <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
+                {singleFormErrors.acceptableAnswers && (
+                  <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
+                )}
+              </label>
+            </div>
 
             <label className="flex flex-col gap-2">
               <span className="text-sm font-medium text-white">Image (optional)</span>
@@ -663,53 +677,6 @@ export const QuestionUploadPanel: React.FC = () => {
             </label>
           </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-white">Acceptable Answers (optional)</span>
-            <textarea
-              value={singleFormState.acceptableAnswersText}
-              onChange={(event) => handleSingleFormChange("acceptableAnswersText", event.target.value)}
-              className={TEXTAREA_CLASS}
-              placeholder="Comma or newline separated alternatives"
-              rows={2}
-            />
-            <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
-            {singleFormErrors.acceptableAnswers && (
-              <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
-            )}
-          </label>
-
-          {acceptableAnswersPreview.length > 0 && (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-semibold uppercase tracking-wide text-white/60">Preview</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {acceptableAnswersPreview.map((answer) => (
-                  <li key={answer} className="rounded-full bg-indigo-500/20 px-3 py-1 text-xs text-indigo-100">
-                    {answer}
-                  </li>
-                ))}
-              </ul>
-              {!hasCustomAlternatives && (
-                <p className="mt-2 text-sm text-white/60">
-                  We already accept the correct answer by default. Add more above if you'd like alternatives.
-                </p>
-              )}
-            </div>
-          )}
-
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-white">Topic (optional)</span>
-            <input
-              type="text"
-              value={singleFormState.topic}
-              onChange={(event) => handleSingleFormChange("topic", event.target.value)}
-              className={INPUT_CLASS}
-              placeholder="e.g. Solar System"
-            />
-            {singleFormErrors.topic && (
-              <span className="text-xs text-red-300">{singleFormErrors.topic}</span>
-            )}
-          </label>
-
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-white/60">
               Submissions land in the staging queue first so we can sanity check before going live.
@@ -719,7 +686,7 @@ export const QuestionUploadPanel: React.FC = () => {
               disabled={isSubmittingSingle}
               className="h-10 rounded-full bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmittingSingle ? "Saving…" : "Save question draft"}
+              {isSubmittingSingle ? "Saving…" : "Upload Question"}
             </button>
           </div>
 
