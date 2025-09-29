@@ -605,7 +605,7 @@ export const QuestionUploadPanel: React.FC = () => {
                   className={`${TEXTAREA_CLASS} h-32`}
                   placeholder="Comma or newline separated alternatives"
                 />
-                <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
+                <p className="text-xs text-white/60">Leave blank to accept only the correct answer.</p>
                 {singleFormErrors.acceptableAnswers && (
                   <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
                 )}

@@ -32,12 +32,17 @@ const getMemoryStore = (): MemoryStore => {
 };
 
 const getSupabaseClient = (): SupabaseClient | null => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
     return null;
   }
-  return createClient(url, anonKey, {
+
+  return createClient(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -73,7 +78,9 @@ const storeInMemory = (
   origin: "single" | "bulk",
   batchId: string | null,
 ): StoreResult => {
-  console.warn("📦 Falling back to in-memory question staging store. Configure NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY for persistence.");
+  console.warn(
+    "📦 Falling back to in-memory question staging store. Configure SUPABASE_URL and SUPABASE_ANON_KEY (or SUPABASE_SERVICE_ROLE_KEY) for persistence.",
+  );
   const memory = getMemoryStore();
   const stored: StoredSubmissionRecord[] = submissions.map((submission) => {
     const id = String(memory.nextId++);
