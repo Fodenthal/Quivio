@@ -55,18 +55,17 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
   const displayTotal = formatCount(totalQuestions);
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
+    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-slate-100">Create Questions</h3>
           <p className="text-sm text-slate-300/80">
-            The question database is largely built out by the community.
+            The database is built out by the community.
           </p>
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-xs uppercase tracking-wide text-white/50">Community total</span>
-          <span className="text-lg font-semibold text-indigo-200">
-            {isLoading ? "…" : displayTotal}
+        <div className="flex-shrink-0 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 shadow-sm">
+          <span className="text-xs font-medium text-slate-300 whitespace-nowrap">
+            {isLoading ? "…" : `${displayTotal} questions`}
           </span>
         </div>
       </div>
