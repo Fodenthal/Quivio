@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   const limit = limitParam ? Math.min(Math.max(Number(limitParam), 1), 100) : 15;
 
   try {
+    console.log(`📥 Fetching recent question submissions (limit=${limit})`);
     const submissions = await fetchRecentSubmissions(limit);
     return NextResponse.json({ submissions });
   } catch (error) {
@@ -19,9 +20,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
+    console.log("📨 Incoming question submission", payload);
     const validation = validateSubmission(payload);
 
     if (!validation.success || !validation.submission) {
+      console.warn("🚫 Question submission failed validation", validation.errors);
       return NextResponse.json(
         {
           error: "Validation failed",
@@ -32,6 +35,7 @@ export async function POST(request: Request) {
     }
 
     const result = await storeSubmissions([validation.submission], "single", null);
+    console.log("✅ Submission stored", result.stored.map((record) => ({ id: record.id, origin: record.origin, status: record.status })));
 
     return NextResponse.json(
       {

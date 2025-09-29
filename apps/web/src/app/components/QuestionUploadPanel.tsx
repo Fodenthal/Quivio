@@ -12,9 +12,9 @@ import type { StoredSubmissionRecord } from "@/utils/questionSubmission";
 
 const ACCEPTABLE_ANSWER_DELIMITER = /\r?\n|\s*,\s*/;
 const INPUT_CLASS =
-  "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
+  "w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
 const TEXTAREA_CLASS =
-  "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition";
+  "w-full h-20 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 transition resize-none";
 
 const STATUS_STYLES: Record<StoredSubmissionRecord["status"], { label: string; className: string }> = {
   pending: {
@@ -33,7 +33,6 @@ const STATUS_STYLES: Record<StoredSubmissionRecord["status"], { label: string; c
 
 interface SingleQuestionFormState {
   topic: string;
-  category: string;
   question: string;
   correctAnswer: string;
   acceptableAnswersText: string;
@@ -42,7 +41,6 @@ interface SingleQuestionFormState {
 
 interface SingleQuestionValidationErrors {
   topic?: string;
-  category?: string;
   question?: string;
   correctAnswer?: string;
   acceptableAnswers?: string;
@@ -65,7 +63,6 @@ interface BulkUploadSummary {
 
 const createInitialSingleFormState = (): SingleQuestionFormState => ({
   topic: "",
-  category: "",
   question: "",
   correctAnswer: "",
   acceptableAnswersText: "",
@@ -194,7 +191,6 @@ export const QuestionUploadPanel: React.FC = () => {
 
     const payload = {
       topic: singleFormState.topic.trim() || null,
-      category: singleFormState.category.trim() || null,
       question: singleFormState.question.trim(),
       correctAnswer: singleFormState.correctAnswer.trim(),
       acceptableAnswers: acceptableAnswersPreview,
@@ -247,8 +243,8 @@ export const QuestionUploadPanel: React.FC = () => {
   };
 
   const handleDownloadTemplate = (type: "csv" | "json") => {
-    const csvTemplate = `topic,category,difficulty,question,correct_answer,acceptable_answers,external_source,external_id,image_url\n`;
-    const jsonTemplate = `[{\n  "topic": "Science",\n  "category": "Space",\n  "difficulty": 2,\n  "question": "What planet is known as the Red Planet?",\n  "correct_answer": "Mars",\n  "acceptable_answers": ["Mars", "The Red Planet"],\n  "external_source": "",\n  "external_id": "",\n  "image_url": ""\n}]`;
+    const csvTemplate = `topic,question,correct_answer,acceptable_answers,image_url,difficulty\n`;
+    const jsonTemplate = `[{\n  "topic": "Science",\n  "question": "What planet is known as the Red Planet?",\n  "correct_answer": "Mars",\n  "acceptable_answers": ["Mars", "The Red Planet"],\n  "image_url": "https://images.nasa.gov/mars.jpg",\n  "difficulty": null\n}]`;
 
     const content = type === "csv" ? csvTemplate : jsonTemplate;
     const mime = type === "csv" ? "text/csv" : "application/json";
@@ -404,13 +400,6 @@ export const QuestionUploadPanel: React.FC = () => {
 
   return (
     <section className="bg-white/5 border border-white/10 rounded-2xl shadow-glass overflow-hidden">
-      <div className="border-b border-white/10 bg-white/5 px-6 py-5">
-        <h2 className="text-2xl font-semibold text-white">Contribute Questions</h2>
-        <p className="mt-2 text-sm text-white/70">
-          Share your best trivia with the community. Submit single questions for quick edits or upload a whole batch once you have a set ready.
-        </p>
-      </div>
-
       <div className="px-6 pt-4">
         <div className="flex gap-2 border-b border-white/10">
           <button
@@ -440,42 +429,13 @@ export const QuestionUploadPanel: React.FC = () => {
 
       {activeTab === "single" ? (
         <form className="px-6 pb-8 pt-6 space-y-6" onSubmit={handleSingleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Topic (optional)</span>
-              <input
-                type="text"
-                value={singleFormState.topic}
-                onChange={(event) => handleSingleFormChange("topic", event.target.value)}
-                className={INPUT_CLASS}
-                placeholder="e.g. Solar System"
-              />
-              {singleFormErrors.topic && (
-                <span className="text-xs text-red-300">{singleFormErrors.topic}</span>
-              )}
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white">Category (optional)</span>
-              <input
-                type="text"
-                value={singleFormState.category}
-                onChange={(event) => handleSingleFormChange("category", event.target.value)}
-                className={INPUT_CLASS}
-                placeholder="e.g. Science & Nature"
-              />
-              {singleFormErrors.category && (
-                <span className="text-xs text-red-300">{singleFormErrors.category}</span>
-              )}
-            </label>
-          </div>
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-white">Question *</span>
             <textarea
               value={singleFormState.question}
               onChange={(event) => handleSingleFormChange("question", event.target.value)}
-              className={`${TEXTAREA_CLASS} min-h-[120px]`}
+              className={TEXTAREA_CLASS}
               placeholder="Ask something interesting..."
             />
             {singleFormErrors.question && (
@@ -514,14 +474,14 @@ export const QuestionUploadPanel: React.FC = () => {
           </div>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-white">Acceptable Answers</span>
+            <span className="text-sm font-medium text-white">Acceptable Answers (optional)</span>
             <textarea
               value={singleFormState.acceptableAnswersText}
               onChange={(event) => handleSingleFormChange("acceptableAnswersText", event.target.value)}
-              className={`${TEXTAREA_CLASS} min-h-[100px]`}
+              className={TEXTAREA_CLASS}
               placeholder="Comma or newline separated alternatives"
             />
-            <p className="text-xs text-white/60">Leave blank to accept the correct answer automatically.</p>
+            <p className="text-sm text-white/60">Leave blank to accept the correct answer automatically.</p>
             {singleFormErrors.acceptableAnswers && (
               <span className="text-xs text-red-300">{singleFormErrors.acceptableAnswers}</span>
             )}
@@ -529,7 +489,7 @@ export const QuestionUploadPanel: React.FC = () => {
 
           {acceptableAnswersPreview.length > 0 && (
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Preview</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-white/60">Preview</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {acceptableAnswersPreview.map((answer) => (
                   <li key={answer} className="rounded-full bg-indigo-500/20 px-3 py-1 text-xs text-indigo-100">
@@ -538,23 +498,37 @@ export const QuestionUploadPanel: React.FC = () => {
                 ))}
               </ul>
               {!hasCustomAlternatives && (
-                <p className="mt-2 text-xs text-white/60">
+                <p className="mt-2 text-sm text-white/60">
                   We already accept the correct answer by default. Add more above if you'd like alternatives.
                 </p>
               )}
             </div>
           )}
 
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-white">Topic (optional)</span>
+            <input
+              type="text"
+              value={singleFormState.topic}
+              onChange={(event) => handleSingleFormChange("topic", event.target.value)}
+              className={INPUT_CLASS}
+              placeholder="e.g. Solar System"
+            />
+            {singleFormErrors.topic && (
+              <span className="text-xs text-red-300">{singleFormErrors.topic}</span>
+            )}
+          </label>
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-white/60">
+            <p className="text-sm text-white/60">
               Submissions land in the staging queue first so we can sanity check before going live.
             </p>
             <button
               type="submit"
               disabled={isSubmittingSingle}
-              className="rounded-full bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-10 rounded-full bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmittingSingle ? "Saving…" : "Upload Question"}
+              {isSubmittingSingle ? "Saving…" : "Save question draft"}
             </button>
           </div>
 
@@ -583,14 +557,14 @@ export const QuestionUploadPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDownloadTemplate("csv")}
-                className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
+                className="h-10 rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
               >
                 Download CSV template
               </button>
               <button
                 type="button"
                 onClick={() => handleDownloadTemplate("json")}
-                className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
+                className="h-10 rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 hover:text-white"
               >
                 Download JSON template
               </button>
@@ -610,8 +584,8 @@ export const QuestionUploadPanel: React.FC = () => {
               onChange={handleBulkInput}
             />
             <span className="text-base font-semibold">Drop your file here or click to browse</span>
-            <span className="text-xs text-white/60">CSV or JSON (max 5MB). One header row, UTF-8 please.</span>
-            {isUploadingBulk && <span className="text-xs text-indigo-200">Uploading & validating…</span>}
+            <span className="text-sm text-white/60">CSV or JSON (max 5MB). One header row, UTF-8 please.</span>
+            {isUploadingBulk && <span className="text-sm text-indigo-200">Uploading & validating…</span>}
           </label>
 
           {(bulkUploadSummary || bulkUploadError) && (
@@ -621,14 +595,14 @@ export const QuestionUploadPanel: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-white">{bulkUploadSummary.fileName}</p>
-                      <p className="text-xs text-white/60">
+                      <p className="text-sm text-white/60">
                         Batch {bulkUploadSummary.batchId.slice(0, 8)} · {bulkUploadSummary.accepted} accepted · {bulkUploadSummary.rejected} flagged
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={resetBulkUpload}
-                      className="text-xs text-indigo-200 hover:text-indigo-100"
+                      className="text-sm text-indigo-200 hover:text-indigo-100"
                     >
                       Remove
                     </button>
@@ -636,21 +610,21 @@ export const QuestionUploadPanel: React.FC = () => {
 
                   <dl className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border border-white/10 bg-black/10 p-3">
-                      <dt className="text-xs uppercase tracking-wide text-white/60">Rows processed</dt>
+                      <dt className="text-sm uppercase tracking-wide text-white/60">Rows processed</dt>
                       <dd className="text-lg font-semibold text-white">{bulkUploadSummary.totalRows}</dd>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-black/10 p-3">
-                      <dt className="text-xs uppercase tracking-wide text-lime-200/80">Queued</dt>
+                      <dt className="text-sm uppercase tracking-wide text-lime-200/80">Queued</dt>
                       <dd className="text-lg font-semibold text-lime-200">{bulkUploadSummary.accepted}</dd>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-black/10 p-3">
-                      <dt className="text-xs uppercase tracking-wide text-amber-200/80">Needs fixes</dt>
+                      <dt className="text-sm uppercase tracking-wide text-amber-200/80">Needs fixes</dt>
                       <dd className="text-lg font-semibold text-amber-200">{bulkUploadSummary.rejected}</dd>
                     </div>
                   </dl>
 
                   {bulkUploadSummary.invalidRows.length > 0 && (
-                    <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100">
+                    <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-100">
                       <p className="font-semibold">Rows to revisit:</p>
                       <ul className="mt-2 space-y-2">
                         {bulkUploadSummary.invalidRows.map((row) => (
@@ -667,7 +641,7 @@ export const QuestionUploadPanel: React.FC = () => {
                     </div>
                   )}
 
-                  <p className="text-xs text-white/60">
+                  <p className="text-sm text-white/60">
                     Staged rows show up below once the moderator queue picks them up. Fix flagged entries and upload them again when ready.
                   </p>
                 </div>
@@ -677,7 +651,7 @@ export const QuestionUploadPanel: React.FC = () => {
             </div>
           )}
 
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
             <p className="font-semibold text-white">Coming soon:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>Auto-detect duplicates and suggest edits before you upload.</li>
@@ -692,12 +666,12 @@ export const QuestionUploadPanel: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-5">
           <div>
             <h3 className="text-lg font-semibold text-white">Submission history</h3>
-            <p className="text-xs text-white/60">Your last few uploads and where they are in the moderation pipeline.</p>
+            <p className="text-sm text-white/60">Your last few uploads and where they are in the moderation pipeline.</p>
           </div>
           <button
             type="button"
             onClick={() => void refreshHistory()}
-            className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/70 transition hover:text-white"
+            className="h-10 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white"
           >
             Refresh
           </button>

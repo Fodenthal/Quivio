@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CreateRoomPanel } from "./CreateRoomPanel";
 import { JoinRoomPanel } from "./JoinRoomPanel";
 import { ActiveRoomsList } from "../ActiveRoomsList";
@@ -10,7 +11,7 @@ import { useDisplayName } from "../../../contexts/DisplayNameContext";
 import { InfoPanel } from "@/app/components/Homepage/InfoPanel";
 import { AnnouncementsPanel } from "@/app/components/Homepage/AnnouncementsPanel";
 import { QuivioLogo } from "../QuivioLogo";
-import { QuestionUploadPanel } from "../QuestionUploadPanel";
+import { CreateQuestionsCallout } from "./CreateQuestionsCallout";
 
 export interface HomepageProps {
   onJoinRoom: (playerName: string, gamePin: string) => void;
@@ -18,6 +19,7 @@ export interface HomepageProps {
 }
 
 export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) => {
+  const router = useRouter();
   const { displayName } = useDisplayName();
   const [roomName, setRoomName] = useState("");
   const [gamePin, setGamePin] = useState("");
@@ -57,6 +59,10 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleNavigateToQuestions = () => {
+    router.push("/questions");
   };
 
   return (
@@ -103,6 +109,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                 isJoining={isJoining}
                 error={joinError}
               />
+              <CreateQuestionsCallout onCreateClick={handleNavigateToQuestions} />
               <AnnouncementsPanel />
             </div>
           </div>
@@ -132,11 +139,9 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
               isJoining={isJoining}
               error={joinError}
             />
+            <CreateQuestionsCallout onCreateClick={handleNavigateToQuestions} />
             <AnnouncementsPanel />
           </div>
-        </div>
-        <div className="mt-10">
-          <QuestionUploadPanel />
         </div>
       </main>
     </div>

@@ -32,8 +32,8 @@ const getMemoryStore = (): MemoryStore => {
 };
 
 const getSupabaseClient = (): SupabaseClient | null => {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
     return null;
   }
@@ -73,6 +73,7 @@ const storeInMemory = (
   origin: "single" | "bulk",
   batchId: string | null,
 ): StoreResult => {
+  console.warn("📦 Falling back to in-memory question staging store. Configure SUPABASE_URL/SUPABASE_ANON_KEY for persistence.");
   const memory = getMemoryStore();
   const stored: StoredSubmissionRecord[] = submissions.map((submission) => {
     const id = String(memory.nextId++);
@@ -127,6 +128,7 @@ const storeInSupabase = async (
       });
     });
 
+    console.info(`✅ Stored ${stored.length} submission(s) in Supabase staging table "${TABLE_NAME}"`);
     return { stored };
   } catch (error) {
     console.error("Error inserting submissions into Supabase", error);
@@ -150,6 +152,7 @@ export const storeSubmissions = async (
       });
       return supabaseResult;
     }
+    console.warn("⚠️ Supabase store failed; falling back to in-memory queue.");
   }
 
   return storeInMemory(submissions, origin, batchId);
