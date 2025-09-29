@@ -56,18 +56,18 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1 flex-1 min-w-0">
+      <div className="relative">
+        <div className="flex items-center justify-between gap-3 mb-1">
           <h3 className="text-lg font-semibold text-slate-100">Create Questions</h3>
-          <p className="text-sm text-slate-300/80">
-            The database is built out by the community.
-          </p>
+          <div className="flex-shrink-0 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 backdrop-blur-sm">
+            <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
+              {isLoading ? "…" : `${displayTotal} questions`}
+            </span>
+          </div>
         </div>
-        <div className="flex-shrink-0 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 shadow-sm">
-          <span className="text-xs font-medium text-slate-300 whitespace-nowrap">
-            {isLoading ? "…" : `${displayTotal} questions`}
-          </span>
-        </div>
+        <p className="mt-2 text-sm text-slate-300/80">
+          The question database is built by the community.
+        </p>
       </div>
       <button
         type="button"
