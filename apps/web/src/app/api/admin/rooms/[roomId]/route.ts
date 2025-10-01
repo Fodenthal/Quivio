@@ -1,17 +1,19 @@
 import type { NextRequest } from 'next/server';
 import { proxyAdminRequest } from '../utils';
 
-interface RouteParams {
-  roomId: string;
-}
+type RouteContext = {
+  params: {
+    roomId: string;
+  };
+};
 
-export async function GET(request: NextRequest, { params }: { params: RouteParams }) {
-  const { roomId } = params;
+export async function GET(request: NextRequest, context: RouteContext) {
+  const { roomId } = context.params;
   return proxyAdminRequest(request, `/api/admin/rooms/${roomId}`);
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: RouteParams }) {
-  const { roomId } = params;
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const { roomId } = context.params;
   let reason: string | undefined;
 
   try {
