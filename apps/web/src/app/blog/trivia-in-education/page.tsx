@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function TriviaInEducation() {
   return (
@@ -83,6 +84,9 @@ export default function TriviaInEducation() {
         <p>
           <strong>Professional Benefits:</strong> Trivia games in corporate settings improve engagement, increase retention of important information, and create a more positive learning environment than traditional training methods.
         </p>
+
+        {/* Ad Slot - Top */}
+        <BlogAd slot="3229802831" />
 
         <h2>Subject-Specific Applications</h2>
 
@@ -188,6 +192,9 @@ export default function TriviaInEducation() {
         <p>
           <strong>Review and Testing:</strong> Trivia games can be used as review tools before traditional tests or as alternative assessment methods for students who struggle with traditional testing formats.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="3536283962" />
 
         <h2>Challenges and Solutions</h2>
 

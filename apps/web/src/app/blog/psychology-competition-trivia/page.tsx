@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function PsychologyCompetitionTrivia() {
   return (
@@ -47,6 +48,9 @@ export default function PsychologyCompetitionTrivia() {
           Research shows that moderate levels of competitive stress actually improve cognitive performance. Your brain becomes more alert, your memory sharpens, and you're able to access information more quickly. This explains why many people perform better in competitive trivia settings than when answering questions alone.
         </p>
 
+        {/* Ad Slot - Top */}
+        <BlogAd slot="1170615708" />
+
         <h2>Social Comparison Theory in Action</h2>
 
         <p>
@@ -76,6 +80,9 @@ export default function PsychologyCompetitionTrivia() {
         <p>
           Team competition, on the other hand, satisfies our need for belonging and cooperation. Research shows that people often perform better in team settings because they don't want to let their teammates down. The combination of individual contribution and team success creates a powerful motivational cocktail.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="5800125854" />
 
         <h2>How Competition Enhances Learning</h2>
 

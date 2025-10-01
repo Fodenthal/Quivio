@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function PopCultureTrivia() {
   return (
@@ -107,6 +108,9 @@ export default function PopCultureTrivia() {
           <strong>Elvis Presley's "Heartbreak Hotel" (1956):</strong> This song wasn't just a hit—it marked the beginning of rock 'n' roll as a cultural force that would challenge social norms and unite generations.
         </p>
 
+        {/* Ad Slot - Top */}
+        <BlogAd slot="4849365639" />
+
         <h2>The 1960s: Cultural Revolution and the British Invasion</h2>
 
         <p>
@@ -186,6 +190,9 @@ export default function PopCultureTrivia() {
         <p>
           <strong>"The Simpsons" (1989-present):</strong> This show wasn't just animation—it revolutionized television comedy and became a cultural institution that continues to influence pop culture today.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="4542884508" />
 
         <h2>The 2000s: Reality TV, Social Media, and the Digital Revolution</h2>
 

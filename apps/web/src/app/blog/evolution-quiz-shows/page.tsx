@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function EvolutionQuizShows() {
   return (
@@ -67,6 +68,9 @@ export default function EvolutionQuizShows() {
           The scandals of the late 1950s had a profound impact on the industry. Congress held hearings, new regulations were implemented, and networks became more cautious about quiz show formats. This period of reform led to more honest, transparent programming that would characterize the next generation of shows.
         </p>
 
+        {/* Ad Slot - Top */}
+        <BlogAd slot="2438824717" />
+
         <h2>The Game Show Renaissance: Jeopardy! and Beyond (1970s-1990s)</h2>
 
         <p>
@@ -130,6 +134,9 @@ export default function EvolutionQuizShows() {
         <p>
           Mobile quiz games like "Trivia Crack" and "QuizUp" brought the format to smartphones, making trivia accessible to millions of people who might never watch traditional quiz shows. These games introduced new mechanics like power-ups, multiplayer modes, and global leaderboards.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="7012494543" />
 
         <h2>The Streaming Era: Quiz Shows Reimagined (2010s-Present)</h2>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function FamousTriviaChampions() {
   return (
@@ -55,6 +56,9 @@ export default function FamousTriviaChampions() {
           <strong>How to Apply It:</strong> In trivia games with scoring systems, identify your strongest categories early and maximize your points there. Don't be afraid to take calculated risks on high-value questions when you're confident. The psychological impact of an early lead can be significant.
         </p>
 
+        {/* Ad Slot - Top */}
+        <BlogAd slot="2223202290" />
+
         <h2>Brad Rutter: The Preparation Master</h2>
 
         <p>
@@ -96,6 +100,9 @@ export default function FamousTriviaChampions() {
         <p>
           <strong>How to Apply It:</strong> If you're playing team trivia, identify each member's strengths and assign them primary responsibility for those categories. However, encourage everyone to contribute to every question—diverse perspectives often lead to better answers.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="9910120623" />
 
         <h2>The Mental Game: What Champions Do Differently</h2>
 

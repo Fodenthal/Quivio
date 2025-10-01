@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 const ScienceBehindLearningPage: React.FC = () => {
   return (
@@ -104,6 +105,9 @@ const ScienceBehindLearningPage: React.FC = () => {
             involves strengthening neural connections and creating new pathways in the brain.
           </p>
         </section>
+
+        {/* Ad Slot - Top */}
+        <BlogAd slot="5514568289" />
 
         <section className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-white">Why Trivia Improves Brain Health</h2>
@@ -339,6 +343,9 @@ const ScienceBehindLearningPage: React.FC = () => {
             </ul>
           </div>
         </section>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="8948392745" />
 
         <section className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-white">The Future of Cognitive Enhancement</h2>

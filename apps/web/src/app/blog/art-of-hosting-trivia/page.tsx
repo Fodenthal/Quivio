@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function ArtOfHostingTrivia() {
   return (
@@ -22,6 +23,9 @@ export default function ArtOfHostingTrivia() {
             <strong>Key Insight:</strong> Hosting a successful trivia night is an art that combines preparation, personality, and performance—creating an experience that's as entertaining for the host as it is for the players.
           </p>
         </div>
+
+        {/* Ad Slot 1 - Top of Article */}
+        <BlogAd slot="4599564177" />
 
         <p>
           Every great trivia night has one thing in common: a great host. Whether you're running a weekly pub quiz, hosting a corporate team-building event, or organizing a family game night, the quality of your hosting can make the difference between a forgettable evening and an unforgettable experience. Hosting trivia is more than just reading questions—it's about creating atmosphere, managing energy, and ensuring everyone has a fantastic time. Let's explore the art of hosting and discover how to transform any trivia event into a memorable occasion.
@@ -195,6 +199,9 @@ export default function ArtOfHostingTrivia() {
           <strong>Unexpected Elements:</strong> Surprise players with bonus questions, special challenges, or unexpected twists that keep the experience fresh and exciting.
         </p>
 
+        {/* Ad Slot 2 - Mid Article */}
+        <BlogAd slot="3919427349" />
+
         <h2>Handling Difficult Situations</h2>
 
         <p>
@@ -366,6 +373,9 @@ export default function ArtOfHostingTrivia() {
             Start Playing Quivio
           </Link>
         </div>
+
+        {/* Ad Slot 3 - Bottom of Article */}
+        <BlogAd slot="4870187564" />
 
         <div className="border-t border-gray-200 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
