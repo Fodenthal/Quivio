@@ -1,5 +1,6 @@
+import type { NextRequest } from 'next/server';
 import { proxyAdminRequest } from './utils';
 
-export async function GET() {
-  return proxyAdminRequest('/api/admin/rooms');
+export async function GET(request: NextRequest) {
+  return proxyAdminRequest(request, '/api/admin/rooms');
 }

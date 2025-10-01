@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AdminRoomSnapshot } from "@shared/index";
 import { GameStatus } from "@shared/index";
 
@@ -59,6 +60,7 @@ function formatDateTime(timestamp?: number | null): string {
 }
 
 export default function AdminRoomsDashboard() {
+  const router = useRouter();
   const [rooms, setRooms] = useState<AdminRoomSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,6 +78,13 @@ export default function AdminRoomsDashboard() {
 
     try {
       const response = await fetch("/api/admin/rooms");
+      if (response.status === 401) {
+        setRooms([]);
+        setLoading(false);
+        setRefreshing(false);
+        router.replace("/admin/login");
+        return;
+      }
       const payload = (await response.json().catch(() => ({}))) as AdminRoomsResponse;
 
       if (!response.ok || !payload.success) {
@@ -95,7 +104,7 @@ export default function AdminRoomsDashboard() {
         setRefreshing(false);
       }
     }
-  }, []);
+  }, [router]);
 
   const handleManualRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -183,6 +192,16 @@ export default function AdminRoomsDashboard() {
     [expandedRoomId, fetchRooms]
   );
 
+  const handleSignOut = useCallback(async () => {
+    try {
+      await fetch("/api/admin/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+    } finally {
+      router.replace("/admin/login");
+    }
+  }, [router]);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -192,7 +211,7 @@ export default function AdminRoomsDashboard() {
             Monitor active trivia rooms, track engagement, and take administrative actions in real time.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleManualRefresh}
@@ -211,6 +230,13 @@ export default function AdminRoomsDashboard() {
             }`}
           >
             {autoRefresh ? "Auto-refresh On" : "Auto-refresh Off"}
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700/50"
+          >
+            Sign out
           </button>
         </div>
       </div>

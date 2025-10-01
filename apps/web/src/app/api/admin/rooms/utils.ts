@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSecret, getSessionCookieName, verifySessionToken } from '@/app/admin/utils/adminAuth';
 
 type FetchOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -13,13 +14,27 @@ function buildServerUrl(path: string): string {
   return `${httpServerUrl}${path}`;
 }
 
-export async function proxyAdminRequest(path: string, options: FetchOptions = {}) {
-  const adminSecret = process.env.ADMIN_DASHBOARD_SECRET;
-  if (!adminSecret) {
+export async function proxyAdminRequest(request: NextRequest, path: string, options: FetchOptions = {}) {
+  const sessionToken = request.cookies.get(getSessionCookieName())?.value;
+  if (!verifySessionToken(sessionToken)) {
     return NextResponse.json(
       {
         success: false,
-        error: 'ADMIN_DASHBOARD_SECRET environment variable is not configured',
+        error: 'Unauthorized',
+      },
+      { status: 401 }
+    );
+  }
+
+  let adminSecret: string;
+  try {
+    adminSecret = getAdminSecret();
+  } catch (error) {
+    console.error('❌ Admin proxy misconfiguration:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Admin secret misconfigured',
       },
       { status: 500 }
     );

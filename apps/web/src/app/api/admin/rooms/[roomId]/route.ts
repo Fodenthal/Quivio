@@ -1,13 +1,17 @@
 import type { NextRequest } from 'next/server';
 import { proxyAdminRequest } from '../utils';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
-  const { roomId } = await params;
-  return proxyAdminRequest(`/api/admin/rooms/${roomId}`);
+interface RouteParams {
+  roomId: string;
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
-  const { roomId } = await params;
+export async function GET(request: NextRequest, { params }: { params: RouteParams }) {
+  const { roomId } = params;
+  return proxyAdminRequest(request, `/api/admin/rooms/${roomId}`);
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: RouteParams }) {
+  const { roomId } = params;
   let reason: string | undefined;
 
   try {
@@ -27,7 +31,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
 
   const query = reason ? `?reason=${encodeURIComponent(reason)}` : '';
-  return proxyAdminRequest(`/api/admin/rooms/${roomId}${query}`, {
+  return proxyAdminRequest(request, `/api/admin/rooms/${roomId}${query}`, {
     method: 'DELETE',
   });
 }
