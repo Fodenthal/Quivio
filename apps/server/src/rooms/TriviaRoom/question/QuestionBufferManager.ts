@@ -317,6 +317,18 @@ export class QuestionBufferManager {
   }
 
   /**
+   * Lightweight metrics about the in-memory question buffer.
+   * @returns Object describing buffer fill level and tracked topics
+   */
+  getBufferMetrics(): { pendingQuestions: number; bufferCapacity: number; topicsTracked: number } {
+    return {
+      pendingQuestions: this.questionBuffer.length,
+      bufferCapacity: this.questionBufferSize,
+      topicsTracked: this.topicRecentQuestions.size,
+    };
+  }
+
+  /**
    * Perform automatic cleanup and maintenance.
    * Removes stale topics and trims oversized histories.
    * @param activeTopics - Current active topics list

@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage, AdminRoomDetails } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -74,6 +74,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private promptLoader!: PromptLoader;
   private guessManager!: GuessManager;
   private roundManager!: RoundManager;
+  private readonly createdAt = Date.now();
 
   onCreate(options: RoomOptions = {}) {
     // Initialize room-specific logger
@@ -224,6 +225,121 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private updateRoomMetadata() {
     this.registrySync.update();
+  }
+
+  public getAdminState(): AdminRoomDetails {
+    const serverTime = Date.now();
+    const registry = GamePinRegistry.getInstance().getRoomMetadata(this.roomId);
+    const registrySummary = registry
+      ? {
+          roomName: registry.roomName,
+          topics: registry.topics,
+          difficulty: registry.difficulty,
+          playerCount: registry.playerCount,
+          maxPlayers: registry.maxPlayers,
+          isPrivate: registry.isPrivate,
+          gameStarted: registry.gameStarted,
+          canStart: registry.canStart,
+          createdAt: registry.createdAt,
+        }
+      : null;
+
+    const players = Array.from(this.state.players.values())
+      .map((player) => ({
+        id: player.id,
+        name: player.name,
+        score: player.score,
+        ready: player.ready,
+        isHost: player.isHost,
+        joinedAt: player.joinedAt,
+        avatarHue: player.avatarHue,
+        connected: this.clients.some((client) => client.sessionId === player.id),
+      }))
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return a.joinedAt - b.joinedAt;
+      });
+
+    const roundGuesses = Array.from(this.state.roundGuesses.values())
+      .map((guess) => ({
+        playerId: guess.playerId,
+        guess: guess.guess,
+        isCorrect: guess.isCorrect,
+        timestamp: guess.timestamp,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    const prompt = this.state.currentPrompt;
+    const promptSummary = prompt && prompt.id
+      ? {
+          id: prompt.id,
+          text: prompt.text,
+          topic: prompt.topic,
+          difficultyLevel: prompt.difficultyLevel,
+          acceptableAnswers: Array.isArray(prompt.acceptableAnswers) ? prompt.acceptableAnswers.length : 0,
+          hasImage: !!prompt.image?.url,
+        }
+      : null;
+
+    const bufferMetrics = this.questionBufferManager.getBufferMetrics();
+    const bufferAnalytics = this.questionBufferManager.getTopicAnalytics();
+
+    return {
+      roomId: this.roomId,
+      roomName: this.state.roomName,
+      gamePin: this.state.gamePin,
+      createdAt: registry?.createdAt ?? this.createdAt ?? null,
+      isPrivate: this.state.isPrivate,
+      targetScore: this.state.targetScore,
+      roundTime: this.state.roundTime,
+      state: {
+        gameStatus: this.state.gameStatus as GameStatus,
+        gamePaused: this.state.gamePaused,
+        canStart: this.state.canStart,
+        currentRound: this.state.currentRound,
+        currentTopic: this.state.currentTopic,
+        currentDifficulty: this.state.currentDifficulty,
+        hostId: this.state.hostId,
+        winnerId: this.state.winnerId,
+        restartCountdown: this.state.restartCountdown,
+        roundStartTime: this.state.roundStartTime,
+        roundEnded: this.state.roundEnded,
+        correctAnswer: this.state.correctAnswer,
+      },
+      players,
+      roundGuesses,
+      currentPrompt: promptSummary,
+      registry: registrySummary,
+      questionBuffer: {
+        pendingQuestions: bufferMetrics.pendingQuestions,
+        bufferCapacity: bufferMetrics.bufferCapacity,
+        topicsTracked: bufferMetrics.topicsTracked,
+        totalQuestions: bufferAnalytics.totalQuestions,
+        totalQueries: bufferAnalytics.totalQueries,
+        totalRawResponses: bufferAnalytics.totalRawResponses,
+      },
+      connectedClients: this.clients.length,
+      maxClients: this.maxClients,
+      autoDispose: this.autoDispose,
+      serverTime,
+    };
+  }
+
+  public async adminShutdown(reason?: string): Promise<{ success: boolean; roomId: string }> {
+    this.log.system("Admin initiated shutdown", { reason });
+    try {
+      await this.disconnect(4100);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.log.error("Error during admin shutdown", error, { reason });
+      } else {
+        this.log.error("Error during admin shutdown", undefined, { reason, raw: error });
+      }
+      throw error;
+    }
+    return { success: true, roomId: this.roomId };
   }
 
   onDispose() {
