@@ -1,24 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function TriviaInEducation() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Trivia in Education: Using Games to Teach - Making Learning Fun and Effective
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 10 min read</p>
         </div>
 
-        <div className="bg-teal-50 border-l-4 border-teal-400 p-6 mb-8">
-          <p className="text-teal-800 m-0">
+        <div className="bg-teal-500/20 border-l-4 border-teal-400 p-6 mb-8">
+          <p className="text-teal-300 m-0">
             <strong>Key Insight:</strong> Trivia games are powerful educational tools that can transform traditional learning by making it engaging, interactive, and memorable through the principles of gamification and active learning.
           </p>
         </div>
@@ -83,6 +84,9 @@ export default function TriviaInEducation() {
         <p>
           <strong>Professional Benefits:</strong> Trivia games in corporate settings improve engagement, increase retention of important information, and create a more positive learning environment than traditional training methods.
         </p>
+
+        {/* Ad Slot - Top */}
+        <BlogAd slot="3229802831" />
 
         <h2>Subject-Specific Applications</h2>
 
@@ -189,6 +193,9 @@ export default function TriviaInEducation() {
           <strong>Review and Testing:</strong> Trivia games can be used as review tools before traditional tests or as alternative assessment methods for students who struggle with traditional testing formats.
         </p>
 
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="3536283962" />
+
         <h2>Challenges and Solutions</h2>
 
         <p>
@@ -288,7 +295,7 @@ export default function TriviaInEducation() {
           The key to success lies in thoughtful design, appropriate implementation, and continuous evaluation. When done well, trivia games can become an integral part of modern education, helping students develop not just knowledge, but also critical thinking skills, confidence, and a love of learning that will serve them throughout their lives.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Experience Educational Trivia</h3>
           <p className="mb-4">
             Discover how trivia games can enhance learning and engagement. Whether you're an educator looking for new teaching tools or a student seeking more engaging ways to learn, trivia games offer a proven path to better educational outcomes.
@@ -301,16 +308,16 @@ export default function TriviaInEducation() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/science-behind-learning" className="block p-4 border border-gray-200 rounded-lg hover:border-teal-300 transition-colors">
               <h4 className="font-semibold text-teal-600">The Science Behind Learning and Memory</h4>
-              <p className="text-sm text-gray-600">Understand how your brain processes and retains information</p>
+              <p className="text-sm text-gray-400">Understand how your brain processes and retains information</p>
             </Link>
             <Link href="/blog/trivia-improves-social-skills" className="block p-4 border border-gray-200 rounded-lg hover:border-teal-300 transition-colors">
               <h4 className="font-semibold text-teal-600">How Trivia Games Improve Social Skills</h4>
-              <p className="text-sm text-gray-600">Learn about the social benefits of trivia games</p>
+              <p className="text-sm text-gray-400">Learn about the social benefits of trivia games</p>
             </Link>
           </div>
         </div>

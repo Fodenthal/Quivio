@@ -1,24 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function EvolutionQuizShows() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           The Evolution of Quiz Shows: From Radio to Streaming - A Century of Trivia Entertainment
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 11 min read</p>
         </div>
 
-        <div className="bg-orange-50 border-l-4 border-orange-400 p-6 mb-8">
-          <p className="text-orange-800 m-0">
+        <div className="bg-orange-500/20 border-l-4 border-orange-400 p-6 mb-8">
+          <p className="text-orange-300 m-0">
             <strong>Key Insight:</strong> Quiz shows have evolved dramatically over the past century, adapting to new technologies while maintaining their core appeal of testing knowledge and creating suspense.
           </p>
         </div>
@@ -66,6 +67,9 @@ export default function EvolutionQuizShows() {
         <p>
           The scandals of the late 1950s had a profound impact on the industry. Congress held hearings, new regulations were implemented, and networks became more cautious about quiz show formats. This period of reform led to more honest, transparent programming that would characterize the next generation of shows.
         </p>
+
+        {/* Ad Slot - Top */}
+        <BlogAd slot="2438824717" />
 
         <h2>The Game Show Renaissance: Jeopardy! and Beyond (1970s-1990s)</h2>
 
@@ -130,6 +134,9 @@ export default function EvolutionQuizShows() {
         <p>
           Mobile quiz games like "Trivia Crack" and "QuizUp" brought the format to smartphones, making trivia accessible to millions of people who might never watch traditional quiz shows. These games introduced new mechanics like power-ups, multiplayer modes, and global leaderboards.
         </p>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="7012494543" />
 
         <h2>The Streaming Era: Quiz Shows Reimagined (2010s-Present)</h2>
 
@@ -209,7 +216,7 @@ export default function EvolutionQuizShows() {
           What remains constant is the fundamental human desire to test knowledge, compete with others, and experience the thrill of learning something new. Whether through traditional television, mobile apps, or futuristic VR experiences, quiz shows will continue to satisfy this deep-seated need while adapting to whatever technologies the future brings.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Experience the Future of Quiz Shows</h3>
           <p className="mb-4">
             Join the evolution of trivia entertainment with Quivio. Experience how modern technology can enhance the classic appeal of testing knowledge and competing with others.
@@ -222,16 +229,16 @@ export default function EvolutionQuizShows() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/history-of-trivia-games" className="block p-4 border border-gray-200 rounded-lg hover:border-orange-300 transition-colors">
               <h4 className="font-semibold text-orange-600">History of Trivia Games</h4>
-              <p className="text-sm text-gray-600">Explore the ancient origins of trivia and knowledge testing</p>
+              <p className="text-sm text-gray-400">Explore the ancient origins of trivia and knowledge testing</p>
             </Link>
             <Link href="/blog/famous-trivia-champions" className="block p-4 border border-gray-200 rounded-lg hover:border-orange-300 transition-colors">
               <h4 className="font-semibold text-orange-600">Famous Trivia Champions and Their Strategies</h4>
-              <p className="text-sm text-gray-600">Learn from the best players in the world</p>
+              <p className="text-sm text-gray-400">Learn from the best players in the world</p>
             </Link>
           </div>
         </div>

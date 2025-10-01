@@ -2,6 +2,8 @@ import config from "@colyseus/tools";
 import { monitor } from "@colyseus/monitor";
 import { playground } from "@colyseus/playground";
 import cors from "cors"; // Add this import
+import { matchMaker, type IRoomCache } from "@colyseus/core";
+import type { Request, Response } from "express";
 
 /**
  * Import your Room files
@@ -10,8 +12,98 @@ import { TriviaRoom } from "./rooms/TriviaRoom";
 import { GamePinRegistry } from "./services/GamePinRegistry";
 import { QuestionDatabase } from "./services/QuestionDatabase";
 import { DatabaseFactory } from "./services/DatabaseFactory";
+import type { AdminRoomDetails, AdminRoomSnapshot } from "@shared/index";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+
+const ADMIN_SECRET_HEADER = "x-admin-secret";
+
+function normalizeToString(value: unknown): string | undefined {
+    if (typeof value === "string") {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            if (typeof item === "string") {
+                return item;
+            }
+        }
+    }
+    return undefined;
+}
+
+function readAdminSecret(req: Request): string | undefined {
+    const headerSecret = normalizeToString(req.headers[ADMIN_SECRET_HEADER]);
+    if (headerSecret) {
+        return headerSecret;
+    }
+
+    const authHeader = req.headers.authorization;
+    if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        return authHeader.slice(7);
+    }
+
+    const querySecret = normalizeToString(req.query.secret);
+    if (querySecret) {
+        return querySecret;
+    }
+
+    return undefined;
+}
+
+function ensureAdminAuthorized(req: Request, res: Response): boolean {
+    const configuredSecret = process.env.ADMIN_DASHBOARD_SECRET;
+    if (!configuredSecret) {
+        res.status(500).json({
+            success: false,
+            error: "ADMIN_DASHBOARD_SECRET environment variable is not configured",
+        });
+        return false;
+    }
+
+    const providedSecret = readAdminSecret(req);
+    if (!providedSecret || providedSecret !== configuredSecret) {
+        res.status(401).json({
+            success: false,
+            error: "Unauthorized",
+        });
+        return false;
+    }
+
+    return true;
+}
+
+async function fetchAdminRoomDetails(roomId: string): Promise<AdminRoomDetails | null> {
+    const localRoom = matchMaker.getLocalRoomById(roomId) as TriviaRoom | undefined;
+
+    if (localRoom && typeof localRoom.getAdminState === "function") {
+        try {
+            return localRoom.getAdminState();
+        } catch (error) {
+            console.error(`❌ Failed to gather local admin state for room ${roomId}:`, error);
+        }
+    }
+
+    try {
+        return await matchMaker.remoteRoomCall<AdminRoomDetails>(roomId, "getAdminState");
+    } catch (error) {
+        console.error(`❌ Failed to gather remote admin state for room ${roomId}:`, error);
+        return null;
+    }
+}
+
+async function buildAdminRoomSnapshot(roomCache: IRoomCache): Promise<AdminRoomSnapshot> {
+    const details = await fetchAdminRoomDetails(roomCache.roomId);
+    return {
+        roomId: roomCache.roomId,
+        processId: roomCache.processId ?? null,
+        locked: roomCache.locked ?? false,
+        clients: typeof roomCache.clients === "number" ? roomCache.clients : 0,
+        maxClients: typeof roomCache.maxClients === "number" ? roomCache.maxClients : 0,
+        metadata: roomCache.metadata ?? null,
+        details,
+    };
+}
 
 export default config({
 
@@ -129,6 +221,122 @@ export default config({
                     error: "Internal server error",
                     code: "INTERNAL_ERROR",
                     success: false
+                });
+            }
+        });
+
+        /**
+         * Admin: List all rooms with detailed metadata
+         */
+        app.get("/api/admin/rooms", async (req, res) => {
+            if (!ensureAdminAuthorized(req, res)) {
+                return;
+            }
+
+            try {
+                const snapshots: IRoomCache[] = await matchMaker.query({ name: "trivia_room" });
+                const rooms: AdminRoomSnapshot[] = await Promise.all(
+                    snapshots.map((room): Promise<AdminRoomSnapshot> => buildAdminRoomSnapshot(room))
+                );
+
+                res.json({
+                    success: true,
+                    totalRooms: rooms.length,
+                    serverTime: Date.now(),
+                    rooms,
+                });
+            } catch (error) {
+                console.error("❌ Admin rooms listing failed:", error);
+                res.status(500).json({
+                    success: false,
+                    error: "Failed to retrieve admin room listing",
+                });
+            }
+        });
+
+        /**
+         * Admin: Fetch a single room snapshot
+         */
+        app.get("/api/admin/rooms/:roomId", async (req, res) => {
+            if (!ensureAdminAuthorized(req, res)) {
+                return;
+            }
+
+            const { roomId } = req.params;
+
+            try {
+                let roomCache: IRoomCache | undefined;
+                try {
+                    roomCache = await matchMaker.getRoomById(roomId);
+                } catch {
+                    roomCache = undefined;
+                }
+                if (!roomCache) {
+                    return res.status(404).json({
+                        success: false,
+                        error: "Room not found",
+                    });
+                }
+
+                const snapshot = await buildAdminRoomSnapshot(roomCache);
+                res.json({
+                    success: true,
+                    room: snapshot,
+                });
+            } catch (error) {
+                console.error(`❌ Admin room lookup failed for ${roomId}:`, error);
+                res.status(500).json({
+                    success: false,
+                    error: "Failed to fetch room",
+                });
+            }
+        });
+
+        /**
+         * Admin: Forcefully close a room
+         */
+        app.delete("/api/admin/rooms/:roomId", async (req, res) => {
+            if (!ensureAdminAuthorized(req, res)) {
+                return;
+            }
+
+            const { roomId } = req.params;
+            const reason = normalizeToString(req.query.reason);
+
+            try {
+                let roomCache: IRoomCache | undefined;
+                try {
+                    roomCache = await matchMaker.getRoomById(roomId);
+                } catch {
+                    roomCache = undefined;
+                }
+                if (!roomCache) {
+                    return res.status(404).json({
+                        success: false,
+                        error: "Room not found",
+                    });
+                }
+
+                const localRoom = matchMaker.getLocalRoomById(roomId) as TriviaRoom | undefined;
+
+                if (localRoom && typeof localRoom.adminShutdown === "function") {
+                    await localRoom.adminShutdown(reason);
+                } else {
+                    await matchMaker.remoteRoomCall(roomId, "adminShutdown", [reason]);
+                }
+
+                res.json({
+                    success: true,
+                    roomId,
+                    reason: reason ?? null,
+                });
+            } catch (error) {
+                console.error(`❌ Admin shutdown failed for room ${roomId}:`, error);
+                const message = error instanceof Error ? error.message : String(error);
+                const status = message.includes("not found") ? 404 : 500;
+                res.status(status).json({
+                    success: false,
+                    error: status === 404 ? "Room not found" : "Failed to close room",
                 });
             }
         });

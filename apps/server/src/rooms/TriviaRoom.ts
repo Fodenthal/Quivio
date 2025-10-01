@@ -1,6 +1,6 @@
 import { Room, Client } from "@colyseus/core";
 import { TriviaRoomState } from "./schema/TriviaRoomState";
-import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
+import { MSG, TopicMessage, TopicsMessage, DifficultyMessage, GameStatus, RoundStartMessage, RoundEndMessage, ClockSyncMessage, AdminRoomDetails } from "@shared/index";
 import { GeminiService, GeneratedQuestion } from "../services/GeminiService";
 import { DatabaseFactory } from "../services/DatabaseFactory";
 import { GamePinRegistry } from "../services/GamePinRegistry";
@@ -15,6 +15,7 @@ import { PlayerManager } from "./TriviaRoom/players/PlayerManager";
 import { GuessManager } from "./TriviaRoom/guess/GuessManager";
 import { RoundManager } from "./TriviaRoom/round/RoundManager";
 import { Logger, createChildLogger } from "../utils/logger";
+import { buildAdminRoomDetails } from "./TriviaRoom/admin/buildAdminRoomDetails";
 
 export interface RoomOptions {
   targetScore?: number;
@@ -74,6 +75,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private promptLoader!: PromptLoader;
   private guessManager!: GuessManager;
   private roundManager!: RoundManager;
+  private readonly createdAt = Date.now();
 
   onCreate(options: RoomOptions = {}) {
     // Initialize room-specific logger
@@ -224,6 +226,46 @@ export class TriviaRoom extends Room<TriviaRoomState> {
 
   private updateRoomMetadata() {
     this.registrySync.update();
+  }
+
+  public getAdminState(): AdminRoomDetails {
+    const registry = GamePinRegistry.getInstance().getRoomMetadata(this.roomId);
+    const bufferMetrics = this.questionBufferManager.getBufferMetrics();
+    const bufferAnalytics = this.questionBufferManager.getTopicAnalytics();
+    const connectedClientIds = new Set(this.clients.map((client) => client.sessionId));
+
+    return buildAdminRoomDetails({
+      roomId: this.roomId,
+      roomName: this.state.roomName,
+      gamePin: this.state.gamePin,
+      isPrivate: this.state.isPrivate,
+      targetScore: this.state.targetScore,
+      roundTime: this.state.roundTime,
+      state: this.state,
+      registry,
+      bufferMetrics,
+      bufferAnalytics,
+      serverTime: Date.now(),
+      maxClients: this.maxClients,
+      autoDispose: this.autoDispose,
+      fallbackCreatedAt: this.createdAt,
+      connectedClientIds,
+    });
+  }
+
+  public async adminShutdown(reason?: string): Promise<{ success: boolean; roomId: string }> {
+    this.log.system("Admin initiated shutdown", { reason });
+    try {
+      await this.disconnect(4100);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.log.error("Error during admin shutdown", error, { reason });
+      } else {
+        this.log.error("Error during admin shutdown", undefined, { reason, raw: error });
+      }
+      throw error;
+    }
+    return { success: true, roomId: this.roomId };
   }
 
   onDispose() {

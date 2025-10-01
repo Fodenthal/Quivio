@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 const ImproveTriviaSkillsPage: React.FC = () => {
   return (
@@ -160,6 +161,9 @@ const ImproveTriviaSkillsPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* Ad Slot - Top */}
+        <BlogAd slot="2483697377" />
 
         <section className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-white">Subject-Specific Strategies</h2>
@@ -330,6 +334,9 @@ const ImproveTriviaSkillsPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* Ad Slot - Mid Article */}
+        <BlogAd slot="8325576215" />
 
         <section className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-white">Advanced Techniques for Serious Players</h2>

@@ -4,16 +4,16 @@ import Link from 'next/link';
 export default function FoodTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Food Trivia: The Cultural History of Cuisine - How Meals Shape Our World
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 10 min read</p>
         </div>
 
@@ -281,7 +281,7 @@ export default function FoodTrivia() {
           When we explore food trivia, we're not just memorizing facts about ingredients and recipes—we're understanding how cuisine has connected people across cultures and time periods, how it has influenced social movements and cultural development, and how it continues to be one of humanity's most powerful tools for communication and community building. Food trivia is about celebrating the universal language of taste that speaks to the heart of what it means to be human.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Food?</h3>
           <p className="mb-4">
             Test your knowledge of culinary history and discover how cuisine has shaped our world. From ancient traditions to modern fusion, food trivia reveals the cultural history of taste.
@@ -294,16 +294,16 @@ export default function FoodTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/geography-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-yellow-300 transition-colors">
               <h4 className="font-semibold text-yellow-600">Geography Trivia: Exploring the World</h4>
-              <p className="text-sm text-gray-600">Understand how geography connects people, places, and the natural world</p>
+              <p className="text-sm text-gray-400">Understand how geography connects people, places, and the natural world</p>
             </Link>
             <Link href="/blog/history-of-trivia-games" className="block p-4 border border-gray-200 rounded-lg hover:border-yellow-300 transition-colors">
               <h4 className="font-semibold text-yellow-600">History of Trivia Games</h4>
-              <p className="text-sm text-gray-600">Explore the ancient origins of trivia and knowledge testing</p>
+              <p className="text-sm text-gray-400">Explore the ancient origins of trivia and knowledge testing</p>
             </Link>
           </div>
         </div>

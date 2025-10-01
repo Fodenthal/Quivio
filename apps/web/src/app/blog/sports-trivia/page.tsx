@@ -4,16 +4,16 @@ import Link from 'next/link';
 export default function SportsTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Sports Trivia: More Than Just Numbers - The Stories Behind the Stats
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 9 min read</p>
         </div>
 
@@ -204,7 +204,7 @@ export default function SportsTrivia() {
           The next time you encounter a sports trivia question, look beyond the statistic to the story behind it. You might discover that you're not just learning about sports—you're learning about people, culture, and the world we share.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Sports Trivia?</h3>
           <p className="mb-4">
             Test your knowledge of sports history, culture, and human stories. Whether you're a die-hard fan or a casual observer, sports trivia offers insights into the human condition that go far beyond the playing field.
@@ -217,16 +217,16 @@ export default function SportsTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/history-of-trivia-games" className="block p-4 border border-gray-200 rounded-lg hover:border-red-300 transition-colors">
               <h4 className="font-semibold text-red-600">History of Trivia Games</h4>
-              <p className="text-sm text-gray-600">Explore the ancient origins of trivia and knowledge testing</p>
+              <p className="text-sm text-gray-400">Explore the ancient origins of trivia and knowledge testing</p>
             </Link>
             <Link href="/blog/evolution-quiz-shows" className="block p-4 border border-gray-200 rounded-lg hover:border-red-300 transition-colors">
               <h4 className="font-semibold text-red-600">The Evolution of Quiz Shows</h4>
-              <p className="text-sm text-gray-600">Discover how quiz shows have evolved over the decades</p>
+              <p className="text-sm text-gray-400">Discover how quiz shows have evolved over the decades</p>
             </Link>
           </div>
         </div>

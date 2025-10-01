@@ -163,3 +163,92 @@ export interface GameState {
   // Chat messages
   chatMessages: Map<string, ChatMessage>;
 }
+
+export interface AdminRoomPlayerSummary {
+  id: string;
+  name: string;
+  score: number;
+  ready: boolean;
+  isHost: boolean;
+  joinedAt: number;
+  avatarHue: number;
+  connected: boolean;
+}
+
+export interface AdminRoundGuessSummary {
+  playerId: string;
+  guess: string;
+  isCorrect: boolean;
+  timestamp: number;
+}
+
+export interface AdminQuestionBufferMetrics {
+  pendingQuestions: number;
+  bufferCapacity: number;
+  topicsTracked: number;
+  totalQuestions: number;
+  totalQueries: number;
+  totalRawResponses: number;
+}
+
+export interface AdminRoomRegistrySummary {
+  roomName: string;
+  topics: string[];
+  difficulty: number;
+  playerCount: number;
+  maxPlayers: number;
+  isPrivate: boolean;
+  gameStarted: boolean;
+  canStart: boolean;
+  createdAt: number;
+}
+
+export interface AdminRoomDetails {
+  roomId: string;
+  roomName: string;
+  gamePin: string;
+  createdAt: number | null;
+  isPrivate: boolean;
+  targetScore: number;
+  roundTime: number;
+  state: {
+    gameStatus: GameStatus;
+    gamePaused: boolean;
+    canStart: boolean;
+    currentRound: number;
+    currentTopic: string;
+    currentDifficulty: number;
+    hostId: string;
+    winnerId: string;
+    restartCountdown: number;
+    roundStartTime: number;
+    roundEnded: boolean;
+    correctAnswer: string;
+  };
+  players: AdminRoomPlayerSummary[];
+  roundGuesses: AdminRoundGuessSummary[];
+  currentPrompt: {
+    id: string;
+    text: string;
+    topic: string;
+    difficultyLevel: number;
+    acceptableAnswers: number;
+    hasImage: boolean;
+  } | null;
+  registry: AdminRoomRegistrySummary | null;
+  questionBuffer: AdminQuestionBufferMetrics;
+  connectedClients: number;
+  maxClients: number;
+  autoDispose: boolean;
+  serverTime: number;
+}
+
+export interface AdminRoomSnapshot {
+  roomId: string;
+  processId: string | null;
+  locked: boolean;
+  clients: number;
+  maxClients: number;
+  metadata: Record<string, unknown> | null;
+  details: AdminRoomDetails | null;
+}

@@ -1,27 +1,31 @@
 import React from 'react';
 import Link from 'next/link';
+import { BlogAd } from '../components/BlogAd';
 
 export default function ArtOfHostingTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           The Art of Hosting a Great Trivia Night: From Setup to Showtime
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 12 min read</p>
         </div>
 
-        <div className="bg-indigo-50 border-l-4 border-indigo-400 p-6 mb-8">
-          <p className="text-indigo-800 m-0">
+        <div className="bg-indigo-500/20 border-l-4 border-indigo-400 p-6 mb-8">
+          <p className="text-indigo-300 m-0">
             <strong>Key Insight:</strong> Hosting a successful trivia night is an art that combines preparation, personality, and performance—creating an experience that's as entertaining for the host as it is for the players.
           </p>
         </div>
+
+        {/* Ad Slot 1 - Top of Article */}
+        <BlogAd slot="4599564177" />
 
         <p>
           Every great trivia night has one thing in common: a great host. Whether you're running a weekly pub quiz, hosting a corporate team-building event, or organizing a family game night, the quality of your hosting can make the difference between a forgettable evening and an unforgettable experience. Hosting trivia is more than just reading questions—it's about creating atmosphere, managing energy, and ensuring everyone has a fantastic time. Let's explore the art of hosting and discover how to transform any trivia event into a memorable occasion.
@@ -195,6 +199,9 @@ export default function ArtOfHostingTrivia() {
           <strong>Unexpected Elements:</strong> Surprise players with bonus questions, special challenges, or unexpected twists that keep the experience fresh and exciting.
         </p>
 
+        {/* Ad Slot 2 - Mid Article */}
+        <BlogAd slot="3919427349" />
+
         <h2>Handling Difficult Situations</h2>
 
         <p>
@@ -354,7 +361,7 @@ export default function ArtOfHostingTrivia() {
           Remember that every great host started somewhere, and the key to success is not perfection but continuous improvement. Focus on creating a fun, engaging experience, and the rest will follow naturally. With practice, patience, and passion, you can become the kind of trivia host that players talk about long after the game is over.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Host Your Own Trivia Night?</h3>
           <p className="mb-4">
             Whether you're planning a casual game night or a professional event, the principles of great hosting can transform any trivia experience. Start with the basics, build your skills gradually, and most importantly, have fun with the process.
@@ -367,16 +374,19 @@ export default function ArtOfHostingTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        {/* Ad Slot 3 - Bottom of Article */}
+        <BlogAd slot="4870187564" />
+
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/blog/famous-trivia-champions" className="block p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors">
-              <h4 className="font-semibold text-indigo-600">Famous Trivia Champions and Their Strategies</h4>
-              <p className="text-sm text-gray-600">Learn from the best players in the world</p>
+            <Link href="/blog/famous-trivia-champions" className="block p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <h4 className="font-semibold text-white">Famous Trivia Champions and Their Strategies</h4>
+              <p className="text-sm text-gray-400">Learn from the best players in the world</p>
             </Link>
-            <Link href="/blog/trivia-improves-social-skills" className="block p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors">
-              <h4 className="font-semibold text-indigo-600">How Trivia Games Improve Social Skills</h4>
-              <p className="text-sm text-gray-600">Learn about the social benefits of trivia games</p>
+            <Link href="/blog/trivia-improves-social-skills" className="block p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <h4 className="font-semibold text-white">How Trivia Games Improve Social Skills</h4>
+              <p className="text-sm text-gray-400">Learn about the social benefits of trivia games</p>
             </Link>
           </div>
         </div>
