@@ -1,19 +1,25 @@
 import type { NextRequest } from 'next/server';
 import { proxyAdminRequest } from '../utils';
 
-type RouteContext = {
-  params: {
-    roomId: string;
-  };
+type RoomParams = {
+  roomId: string;
 };
 
-export async function GET(request: NextRequest, context: RouteContext) {
-  const { roomId } = context.params;
+function extractRoomParams(context: unknown): RoomParams {
+  const params = (context as { params?: RoomParams })?.params;
+  if (!params || typeof params.roomId !== 'string') {
+    throw new Error('Missing roomId parameter');
+  }
+  return params;
+}
+
+export async function GET(request: NextRequest, context: unknown) {
+  const { roomId } = extractRoomParams(context);
   return proxyAdminRequest(request, `/api/admin/rooms/${roomId}`);
 }
 
-export async function DELETE(request: NextRequest, context: RouteContext) {
-  const { roomId } = context.params;
+export async function DELETE(request: NextRequest, context: unknown) {
+  const { roomId } = extractRoomParams(context);
   let reason: string | undefined;
 
   try {
