@@ -20,7 +20,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how trivia games evolved from philosophical debates in ancient Greece to the modern digital platforms we know today.',
     readTime: '6 min read',
     category: 'History',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 3, 2025',
     featured: true
   },
   {
@@ -29,7 +29,7 @@ const blogPosts: BlogPost[] = [
     description: 'Master memory techniques, learning strategies, and practice methods to become a trivia champion.',
     readTime: '8 min read',
     category: 'Skills',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 10, 2025',
     featured: true
   },
   {
@@ -38,7 +38,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore the neuroscience of learning and discover how trivia games improve brain health and cognitive function.',
     readTime: '7 min read',
     category: 'Science',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 17, 2025',
     featured: true
   },
   {
@@ -47,7 +47,7 @@ const blogPosts: BlogPost[] = [
     description: 'Understand why we love to compete and how competition enhances learning, memory, and engagement in trivia games.',
     readTime: '8 min read',
     category: 'Psychology',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 24, 2025',
     featured: false
   },
   {
@@ -56,7 +56,7 @@ const blogPosts: BlogPost[] = [
     description: 'Learn from the world\'s best trivia players and discover the winning strategies that separate champions from casual players.',
     readTime: '10 min read',
     category: 'Strategy',
-    publishDate: 'January 15, 2025',
+    publishDate: 'July 1, 2025',
     featured: false
   },
   {
@@ -65,7 +65,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore how trivia games build communication, teamwork, and interpersonal skills in a fun, low-pressure environment.',
     readTime: '9 min read',
     category: 'Social',
-    publishDate: 'January 15, 2025',
+    publishDate: 'July 8, 2025',
     featured: false
   },
   {
@@ -74,7 +74,7 @@ const blogPosts: BlogPost[] = [
     description: 'Trace the fascinating journey of quiz shows through a century of technological innovation and cultural change.',
     readTime: '11 min read',
     category: 'Media',
-    publishDate: 'January 15, 2025',
+    publishDate: 'July 15, 2025',
     featured: false
   },
   {
@@ -83,7 +83,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how trivia games are transforming education by making learning engaging, interactive, and memorable.',
     readTime: '10 min read',
     category: 'Education',
-    publishDate: 'January 15, 2025',
+    publishDate: 'July 22, 2025',
     featured: false
   },
   {
@@ -92,7 +92,7 @@ const blogPosts: BlogPost[] = [
     description: 'Master the skills needed to host engaging trivia events that players will want to return to week after week.',
     readTime: '12 min read',
     category: 'Hosting',
-    publishDate: 'January 15, 2025',
+    publishDate: 'July 29, 2025',
     featured: false
   },
   {
@@ -101,7 +101,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how sports trivia goes beyond statistics to reveal human stories, cultural impact, and historical significance.',
     readTime: '9 min read',
     category: 'Sports',
-    publishDate: 'January 15, 2025',
+    publishDate: 'August 5, 2025',
     featured: false
   },
   {
@@ -110,7 +110,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore how pop culture has evolved from the 1920s to today, reflecting and shaping society through entertainment.',
     readTime: '10 min read',
     category: 'Entertainment',
-    publishDate: 'January 15, 2025',
+    publishDate: 'August 12, 2025',
     featured: false
   },
   {
@@ -119,7 +119,7 @@ const blogPosts: BlogPost[] = [
     description: 'Understand how geography connects people, places, and the natural world, revealing the complex relationships that shape our planet.',
     readTime: '11 min read',
     category: 'Geography',
-    publishDate: 'January 15, 2025',
+    publishDate: 'August 19, 2025',
     featured: false
   },
   {
@@ -128,7 +128,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore the incredible journey of human discovery from quantum physics to cosmic exploration, showing how curiosity transforms our understanding.',
     readTime: '12 min read',
     category: 'Science',
-    publishDate: 'January 15, 2025',
+    publishDate: 'August 26, 2025',
     featured: false
   },
   {
@@ -137,7 +137,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how literature has influenced revolutions, social movements, and the way we think about ourselves and our world.',
     readTime: '11 min read',
     category: 'Literature',
-    publishDate: 'January 15, 2025',
+    publishDate: 'September 2, 2025',
     featured: false
   },
   {
@@ -146,7 +146,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore how human ingenuity created the digital world, from early computers to modern AI, transforming every aspect of our lives.',
     readTime: '11 min read',
     category: 'Technology',
-    publishDate: 'January 15, 2025',
+    publishDate: 'September 9, 2025',
     featured: false
   },
   {
@@ -155,7 +155,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how music has transcended cultural boundaries to become humanity\'s universal language, influencing everything from social movements to scientific discoveries.',
     readTime: '10 min read',
     category: 'Music',
-    publishDate: 'January 15, 2025',
+    publishDate: 'September 16, 2025',
     featured: false
   },
   {
@@ -164,7 +164,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore how visual expression has been humanity\'s most powerful tool for communication, cultural preservation, and social change throughout history.',
     readTime: '11 min read',
     category: 'Art',
-    publishDate: 'January 15, 2025',
+    publishDate: 'September 23, 2025',
     featured: false
   },
   {
@@ -173,7 +173,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover how cuisine has been one of humanity\'s most powerful tools for cultural exchange, social bonding, and historical preservation.',
     readTime: '10 min read',
     category: 'Food',
-    publishDate: 'January 15, 2025',
+    publishDate: 'September 25, 2025',
     featured: false
   },
   {
@@ -182,7 +182,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore the incredible complexity and diversity of life on Earth, from the smallest microorganisms to the largest ecosystems.',
     readTime: '11 min read',
     category: 'Nature',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 7, 2025',
     featured: false
   },
   {
@@ -191,7 +191,7 @@ const blogPosts: BlogPost[] = [
     description: 'Discover humanity\'s incredible journey of cosmic discovery, from ancient stargazers to modern space exploration and our quest to understand the universe.',
     readTime: '12 min read',
     category: 'Space',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 14, 2025',
     featured: false
   },
   {
@@ -200,7 +200,7 @@ const blogPosts: BlogPost[] = [
     description: 'Explore how the greatest minds in history have grappled with life\'s most fundamental questions, from the nature of reality to the meaning of existence.',
     readTime: '11 min read',
     category: 'Philosophy',
-    publishDate: 'January 15, 2025',
+    publishDate: 'June 21, 2025',
     featured: false
   }
 ];
