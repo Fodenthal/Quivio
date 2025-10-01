@@ -5,21 +5,21 @@ import { BlogAd } from '../components/BlogAd';
 export default function PsychologyCompetitionTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           The Psychology of Competition in Trivia Games: Why We Love to Compete
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 8 min read</p>
         </div>
 
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8">
-          <p className="text-blue-800 m-0">
+        <div className="bg-blue-500/20 border-l-4 border-blue-400 p-6 mb-8">
+          <p className="text-blue-300 m-0">
             <strong>Key Insight:</strong> Competition isn't just about winning—it's a fundamental human drive that makes trivia games more engaging, memorable, and rewarding.
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function PsychologyCompetitionTrivia() {
           The psychology of competition in trivia games reveals something fundamental about human nature. We're not just information-seeking creatures—we're competitive, social beings who thrive on challenge and recognition. By understanding this psychology, we can create better trivia experiences that satisfy our competitive drive while maximizing learning and enjoyment.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Test Your Competitive Spirit?</h3>
           <p className="mb-4">
             Put these psychological insights to the test in your next trivia game. Notice how competition affects your performance, memory, and enjoyment. You might be surprised by how much more engaged you become when there's something at stake.
@@ -140,16 +140,16 @@ export default function PsychologyCompetitionTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/blog/how-to-improve-your-trivia-skills" className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-              <h4 className="font-semibold text-blue-600">How to Improve Your Trivia Skills</h4>
-              <p className="text-sm text-gray-600">Master the techniques that give you a competitive edge</p>
+            <Link href="/blog/improve-trivia-skills" className="block p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <h4 className="font-semibold text-white">How to Improve Your Trivia Skills</h4>
+              <p className="text-sm text-gray-400">Master the techniques that give you a competitive edge</p>
             </Link>
-            <Link href="/blog/science-behind-learning" className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-              <h4 className="font-semibold text-blue-600">The Science Behind Learning and Memory</h4>
-              <p className="text-sm text-gray-600">Understand how your brain processes and retains information</p>
+            <Link href="/blog/science-behind-learning" className="block p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <h4 className="font-semibold text-white">The Science Behind Learning and Memory</h4>
+              <p className="text-sm text-gray-400">Understand how your brain processes and retains information</p>
             </Link>
           </div>
         </div>

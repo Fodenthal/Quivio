@@ -4,21 +4,21 @@ import Link from 'next/link';
 export default function PhilosophyTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Philosophy Trivia: The Great Questions of Life - Exploring the Big Ideas
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 11 min read</p>
         </div>
 
-        <div className="bg-purple-50 border-l-4 border-purple-400 p-6 mb-8">
-          <p className="text-purple-800 m-0">
+        <div className="bg-purple-500/20 border-l-4 border-purple-400 p-6 mb-8">
+          <p className="text-purple-300 m-0">
             <strong>Key Insight:</strong> Philosophy trivia reveals how the greatest minds in history have grappled with life's most fundamental questions, from the nature of reality to the meaning of existence, creating the foundation for all human knowledge and understanding.
           </p>
         </div>
@@ -285,7 +285,7 @@ export default function PhilosophyTrivia() {
           When we explore philosophy trivia, we're not just memorizing facts about philosophers and their ideas—we're understanding how human thought has evolved over time, how different philosophical traditions have influenced each other, and how philosophical inquiry continues to help us understand ourselves and our world. Philosophy trivia is about celebrating the human quest for wisdom and understanding, and recognizing that the search for truth is one of humanity's most noble and enduring pursuits.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Philosophy?</h3>
           <p className="mb-4">
             Test your knowledge of the great philosophical traditions and discover how the greatest minds in history have grappled with life's most fundamental questions. From ancient wisdom to modern insights, philosophy trivia reveals the human quest for understanding.
@@ -298,16 +298,16 @@ export default function PhilosophyTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/literature-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
               <h4 className="font-semibold text-purple-600">Literature Trivia: Books That Shaped History</h4>
-              <p className="text-sm text-gray-600">Discover how the written word has influenced civilization</p>
+              <p className="text-sm text-gray-400">Discover how the written word has influenced civilization</p>
             </Link>
             <Link href="/blog/science-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
               <h4 className="font-semibold text-purple-600">Science Trivia: From Atoms to Galaxies</h4>
-              <p className="text-sm text-gray-600">Explore the wonders of scientific discovery</p>
+              <p className="text-sm text-gray-400">Explore the wonders of scientific discovery</p>
             </Link>
           </div>
         </div>

@@ -4,21 +4,21 @@ import Link from 'next/link';
 export default function NatureTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Nature Trivia: The Wonders of the Natural World - Exploring Earth's Incredible Diversity
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 11 min read</p>
         </div>
 
-        <div className="bg-green-50 border-l-4 border-green-400 p-6 mb-8">
-          <p className="text-green-800 m-0">
+        <div className="bg-green-500/20 border-l-4 border-green-400 p-6 mb-8">
+          <p className="text-green-300 m-0">
             <strong>Key Insight:</strong> Nature trivia reveals the incredible complexity and diversity of life on Earth, showing how every species, ecosystem, and natural phenomenon is part of an interconnected web that sustains our planet.
           </p>
         </div>
@@ -281,7 +281,7 @@ export default function NatureTrivia() {
           When we explore nature trivia, we're not just memorizing facts about animals and plants—we're understanding how life has evolved and adapted to create the incredible diversity we see today, how different species and systems work together to sustain life on Earth, and how we as humans are part of this complex web of life. Nature trivia is about celebrating the wonder and beauty of the natural world and understanding our responsibility to protect it for future generations.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Nature?</h3>
           <p className="mb-4">
             Test your knowledge of the natural world and discover the incredible diversity of life on Earth. From the smallest organisms to the largest ecosystems, nature trivia reveals the wonders of our planet.
@@ -294,16 +294,16 @@ export default function NatureTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/science-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <h4 className="font-semibold text-green-600">Science Trivia: From Atoms to Galaxies</h4>
-              <p className="text-sm text-gray-600">Discover the wonders of scientific discovery</p>
+              <p className="text-sm text-gray-400">Discover the wonders of scientific discovery</p>
             </Link>
             <Link href="/blog/geography-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <h4 className="font-semibold text-green-600">Geography Trivia: Exploring the World</h4>
-              <p className="text-sm text-gray-600">Understand how geography connects people, places, and the natural world</p>
+              <p className="text-sm text-gray-400">Understand how geography connects people, places, and the natural world</p>
             </Link>
           </div>
         </div>

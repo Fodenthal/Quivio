@@ -4,16 +4,16 @@ import Link from 'next/link';
 export default function MusicTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Music Trivia: The Universal Language - How Melodies Shape Our World
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 10 min read</p>
         </div>
 
@@ -257,7 +257,7 @@ export default function MusicTrivia() {
           When we explore music trivia, we're not just memorizing facts about songs and artists—we're understanding how music has connected people across cultures and time periods, how it has influenced social movements and scientific discoveries, and how it continues to be one of humanity's most powerful tools for expression and connection. Music trivia is about celebrating the universal language that speaks to the heart of what it means to be human.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Music?</h3>
           <p className="mb-4">
             Test your knowledge of music history and discover how melodies have shaped our world. From ancient instruments to modern genres, music trivia reveals the universal language that connects us all.
@@ -270,16 +270,16 @@ export default function MusicTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/pop-culture-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-rose-300 transition-colors">
               <h4 className="font-semibold text-rose-600">Pop Culture Trivia Through the Decades</h4>
-              <p className="text-sm text-gray-600">Discover how entertainment has evolved and influenced society</p>
+              <p className="text-sm text-gray-400">Discover how entertainment has evolved and influenced society</p>
             </Link>
             <Link href="/blog/history-of-trivia-games" className="block p-4 border border-gray-200 rounded-lg hover:border-rose-300 transition-colors">
               <h4 className="font-semibold text-rose-600">History of Trivia Games</h4>
-              <p className="text-sm text-gray-600">Explore the ancient origins of trivia and knowledge testing</p>
+              <p className="text-sm text-gray-400">Explore the ancient origins of trivia and knowledge testing</p>
             </Link>
           </div>
         </div>

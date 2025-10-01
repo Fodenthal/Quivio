@@ -4,16 +4,16 @@ import Link from 'next/link';
 export default function ScienceTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Science Trivia: From Atoms to Galaxies - The Wonders of Scientific Discovery
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 12 min read</p>
         </div>
 
@@ -271,7 +271,7 @@ export default function ScienceTrivia() {
           When we explore science trivia, we're not just memorizing facts—we're understanding how the world works, appreciating the ingenuity of human discovery, and preparing ourselves to understand the scientific advances that will continue to transform our world. Science trivia is about celebrating the human spirit of inquiry and the incredible universe we're still discovering.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Science?</h3>
           <p className="mb-4">
             Test your knowledge of scientific discoveries and innovations. From the quantum realm to the cosmic scale, science trivia reveals the incredible journey of human understanding and the wonders of the natural world.
@@ -284,16 +284,16 @@ export default function ScienceTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/science-behind-learning" className="block p-4 border border-gray-200 rounded-lg hover:border-cyan-300 transition-colors">
               <h4 className="font-semibold text-cyan-600">The Science Behind Learning and Memory</h4>
-              <p className="text-sm text-gray-600">Understand how your brain processes and retains information</p>
+              <p className="text-sm text-gray-400">Understand how your brain processes and retains information</p>
             </Link>
             <Link href="/blog/trivia-in-education" className="block p-4 border border-gray-200 rounded-lg hover:border-cyan-300 transition-colors">
               <h4 className="font-semibold text-cyan-600">Trivia in Education</h4>
-              <p className="text-sm text-gray-600">Learn how trivia games can enhance learning</p>
+              <p className="text-sm text-gray-400">Learn how trivia games can enhance learning</p>
             </Link>
           </div>
         </div>

@@ -4,16 +4,16 @@ import Link from 'next/link';
 export default function LiteratureTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Literature Trivia: Books That Shaped History - The Power of the Written Word
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 11 min read</p>
         </div>
 
@@ -271,7 +271,7 @@ export default function LiteratureTrivia() {
           When we explore literature trivia, we're not just memorizing facts about books—we're understanding how stories have shaped history, how ideas have influenced society, and how the written word continues to be one of our most powerful tools for creating change. Literature trivia is about celebrating the power of human creativity and the enduring impact of great writing on our world.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Explore Literature?</h3>
           <p className="mb-4">
             Test your knowledge of books that shaped history and discover the power of the written word. From ancient epics to modern novels, literature trivia reveals how stories have influenced civilization and continue to shape our world.
@@ -284,16 +284,16 @@ export default function LiteratureTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/history-of-trivia-games" className="block p-4 border border-gray-200 rounded-lg hover:border-amber-300 transition-colors">
               <h4 className="font-semibold text-amber-600">History of Trivia Games</h4>
-              <p className="text-sm text-gray-600">Explore the ancient origins of trivia and knowledge testing</p>
+              <p className="text-sm text-gray-400">Explore the ancient origins of trivia and knowledge testing</p>
             </Link>
             <Link href="/blog/pop-culture-trivia" className="block p-4 border border-gray-200 rounded-lg hover:border-amber-300 transition-colors">
               <h4 className="font-semibold text-amber-600">Pop Culture Trivia Through the Decades</h4>
-              <p className="text-sm text-gray-600">Discover how entertainment has evolved and influenced society</p>
+              <p className="text-sm text-gray-400">Discover how entertainment has evolved and influenced society</p>
             </Link>
           </div>
         </div>

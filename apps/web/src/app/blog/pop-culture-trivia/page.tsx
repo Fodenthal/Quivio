@@ -5,21 +5,21 @@ import { BlogAd } from '../components/BlogAd';
 export default function PopCultureTrivia() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-600 mb-8">
-        <Link href="/blog" className="hover:underline">← Back to Blog</Link>
+      <nav className="mb-6">
+        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors">← Back to Blog</Link>
       </nav>
       
-      <article className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+      <article className="prose prose-invert prose-lg max-w-none">
+        <h1 className="text-4xl font-bold text-white mb-6">
           Pop Culture Trivia Through the Decades: How Entertainment Shapes Our World
         </h1>
         
-        <div className="text-gray-600 mb-8">
+        <div className="text-gray-400 mb-8">
           <p>Published on January 15, 2025 • 10 min read</p>
         </div>
 
-        <div className="bg-pink-50 border-l-4 border-pink-400 p-6 mb-8">
-          <p className="text-pink-800 m-0">
+        <div className="bg-pink-500/20 border-l-4 border-pink-400 p-6 mb-8">
+          <p className="text-pink-300 m-0">
             <strong>Key Insight:</strong> Pop culture trivia isn't just about entertainment—it's a fascinating window into how society, technology, and human values have evolved over time, reflecting the hopes, fears, and dreams of each generation.
           </p>
         </div>
@@ -306,7 +306,7 @@ export default function PopCultureTrivia() {
           Understanding pop culture trivia isn't just about knowing who starred in what movie or what song was popular when—it's about understanding how entertainment reflects and shapes society, how technology changes our experiences, and how human creativity continues to find new ways to express our hopes, dreams, and fears.
         </p>
 
-        <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <div className="bg-white/5 p-6 rounded-lg mt-8">
           <h3 className="text-xl font-semibold mb-4">Ready to Test Your Pop Culture Knowledge?</h3>
           <p className="mb-4">
             Challenge yourself with trivia that spans decades of entertainment, music, and cultural change. Discover how pop culture has shaped our world and continues to influence society today.
@@ -319,16 +319,16 @@ export default function PopCultureTrivia() {
           </Link>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/blog/evolution-quiz-shows" className="block p-4 border border-gray-200 rounded-lg hover:border-pink-300 transition-colors">
               <h4 className="font-semibold text-pink-600">The Evolution of Quiz Shows</h4>
-              <p className="text-sm text-gray-600">Discover how quiz shows have evolved over the decades</p>
+              <p className="text-sm text-gray-400">Discover how quiz shows have evolved over the decades</p>
             </Link>
             <Link href="/blog/trivia-in-education" className="block p-4 border border-gray-200 rounded-lg hover:border-pink-300 transition-colors">
               <h4 className="font-semibold text-pink-600">Trivia in Education</h4>
-              <p className="text-sm text-gray-600">Learn how trivia games can enhance learning</p>
+              <p className="text-sm text-gray-400">Learn how trivia games can enhance learning</p>
             </Link>
           </div>
         </div>
