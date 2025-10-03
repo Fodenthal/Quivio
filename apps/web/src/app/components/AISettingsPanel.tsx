@@ -126,7 +126,7 @@ export function AISettingsPanel({
 
 
   return (
-    <div className="bg-white/10 rounded-2xl shadow-lg p-4 border border-white/20 max-w-3xl w-full mx-auto space-y-4">
+    <div className="bg-black/10 rounded-2xl p-4 border border-white/10 max-w-3xl w-full mx-auto space-y-4">
       {/* Game Topics Section */}
       <section>
         <h3 className="text-lg font-semibold text-text-main mb-2">Game Topics</h3>
