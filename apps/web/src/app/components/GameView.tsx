@@ -418,7 +418,7 @@ export const GameView = memo(function GameView({
   }), [localTimer.formattedTime, localTimer.isUrgent]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 md:gap-6 xl:gap-4 h-full min-h-[60dvh] overflow-x-hidden">
+    <div className="flex flex-col md:flex-row gap-3 md:gap-4 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
       <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
