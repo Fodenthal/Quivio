@@ -73,7 +73,7 @@ export function GameLayout({
   return (
     <div className="min-h-lvh safe-bottom">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
+      <header className="bg-white/5 backdrop-blur-xl safe-top relative z-50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             <div className="flex items-center gap-1 sm:gap-2">
