@@ -710,7 +710,7 @@ export const GameView = memo(function GameView({
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
       <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
         <div className="self-stretch">
-          <div className="flex w-full bg-white/6 border-white/20 p-1 gap-1">
+          <div className="flex w-full bg-white/5 border-white/20 p-1 gap-1">
             <button
               type="button"
               onClick={() => setActivePanel('players')}
@@ -731,7 +731,7 @@ export const GameView = memo(function GameView({
         </div>
         <div className="flex-1 min-h-0">
           {activePanel === 'players' ? (
-            <div className="bg-white/6 backdrop-blur-xl p-6 h-full flex flex-col">
+            <div className="bg-white/5 backdrop-blur-xl p-6 h-full flex flex-col">
               <PlayerList 
                 gameState={gameState}
                 participatingPlayers={gameState.participatingPlayers}
@@ -739,7 +739,7 @@ export const GameView = memo(function GameView({
               />
             </div>
           ) : (
-            <div ref={chatContainerRef} className="bg-white/6 backdrop-blur-xl p-6 h-full flex flex-col">
+            <div ref={chatContainerRef} className="bg-white/5 backdrop-blur-xl p-6 h-full flex flex-col">
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
@@ -764,7 +764,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/6 backdrop-blur-xl p-6 xl:p-5 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl p-6 xl:p-5 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
