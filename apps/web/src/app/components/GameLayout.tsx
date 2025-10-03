@@ -75,13 +75,13 @@ export function GameLayout({
       {/* Header with connection status */}
       <header className="bg-white/5 backdrop-blur-xl safe-top relative z-50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-0.8">
               <QuivioLogo 
-                size={60} 
-                className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
+                size={48} 
+                className="text-indigo-400 flex-shrink-0" 
               />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400">
+              <h1 className="text-lg sm:text-xl font-bold text-indigo-400 leading-none -translate-y-0.5">
                 Quivio
               </h1>
             </div>
