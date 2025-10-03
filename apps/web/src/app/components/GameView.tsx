@@ -709,8 +709,8 @@ export const GameView = memo(function GameView({
 
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
       <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
-        <div className="mt-1 mb-2 self-stretch">
-          <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
+        <div className="self-stretch">
+          <div className="flex w-full bg-white/10 border-white/20 rounded-tr-lg p-1 gap-1">
             <button
               type="button"
               onClick={() => setActivePanel('players')}
@@ -731,7 +731,7 @@ export const GameView = memo(function GameView({
         </div>
         <div className="flex-1 min-h-0">
           {activePanel === 'players' ? (
-            <div className="bg-white/8 backdrop-blur-xl rounded-r-lg shadow-glass p-6 h-full flex flex-col">
+            <div className="bg-white/8 backdrop-blur-xl rounded-br-lg shadow-glass p-6 h-full flex flex-col">
               <PlayerList 
                 gameState={gameState}
                 participatingPlayers={gameState.participatingPlayers}
@@ -739,7 +739,7 @@ export const GameView = memo(function GameView({
               />
             </div>
           ) : (
-            <div ref={chatContainerRef} className="bg-white/8 backdrop-blur-xl rounded-r-lg shadow-glass p-6 h-full flex flex-col">
+            <div ref={chatContainerRef} className="bg-white/8 backdrop-blur-xl rounded-br-lg shadow-glass p-6 h-full flex flex-col">
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
