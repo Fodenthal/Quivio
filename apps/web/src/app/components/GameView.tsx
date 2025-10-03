@@ -418,9 +418,9 @@ export const GameView = memo(function GameView({
   }), [localTimer.formattedTime, localTimer.isUrgent]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-3 md:gap-4 h-full min-h-[60dvh] overflow-x-hidden">
+    <div className="flex flex-col md:flex-row gap-0 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/10 space-y-6 h-full min-h-[60dvh] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 space-y-6 h-full min-h-[60dvh] flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -731,7 +731,7 @@ export const GameView = memo(function GameView({
         </div>
         <div className="flex-1 min-h-0">
           {activePanel === 'players' ? (
-            <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/10 h-full flex flex-col">
+            <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 h-full flex flex-col">
               <PlayerList 
                 gameState={gameState}
                 participatingPlayers={gameState.participatingPlayers}
@@ -739,7 +739,7 @@ export const GameView = memo(function GameView({
               />
             </div>
           ) : (
-            <div ref={chatContainerRef} className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/10 h-full flex flex-col">
+            <div ref={chatContainerRef} className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 h-full flex flex-col">
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
@@ -764,7 +764,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 xl:p-5 border border-white/10 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 xl:p-5 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
