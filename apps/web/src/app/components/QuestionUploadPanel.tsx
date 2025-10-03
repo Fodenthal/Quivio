@@ -708,8 +708,7 @@ export const QuestionUploadPanel: React.FC = () => {
             <h3 className="text-base font-semibold text-white">Bulk upload basics</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-white/70">
               <li>Use CSV or JSON with the headers/keys shown in our template.</li>
-              <li>Difficulty is optional—we’ll infer it when you leave the field blank.</li>
-              <li>We validate everything in staging and send you a report for fixes.</li>
+              <li>We validate everything in staging.</li>
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
@@ -808,15 +807,6 @@ export const QuestionUploadPanel: React.FC = () => {
               )}
             </div>
           )}
-
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
-            <p className="font-semibold text-white">Coming soon:</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Auto-detect duplicates and suggest edits before you upload.</li>
-              <li>Email notifications the moment a moderator approves your batch.</li>
-              <li>Founders leaderboard to unlock new trivia modes with 100 approvals.</li>
-            </ul>
-          </div>
         </div>
       ) : (
         <div className="px-6 pb-8 pt-6 space-y-6">

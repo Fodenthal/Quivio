@@ -264,25 +264,9 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
     );
   }
 
-  if (rooms.length === 0) {
-    return (
-      <div className={`card p-8 h-full flex items-center justify-center ${className}`}>
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-text-main mb-2">No Active Rooms</h3>
-          <p className="text-text-secondary mb-4">Be the first to create a room and start playing!</p>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white
-           px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40
-           disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const publicRoomsCount = rooms.reduce((count, room) => (room.isPrivate ? count : count + 1), 0);
+  const publicRoomsLabel = publicRoomsCount === 1 ? "public room" : "public rooms";
+  const privateRoomsLabel = privateRoomsCount === 1 ? "private room" : "private rooms";
 
   return (
     <div className={`card h-full flex flex-col ${className}`}>
@@ -291,7 +275,7 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
         <div>
           <h3 className="text-xl font-semibold text-text-main">Active Rooms</h3>
           <p className="text-sm text-text-secondary mt-1">
-            {rooms.filter((r) => !r.isPrivate).length} public room, {privateRoomsCount} private rooms
+            {publicRoomsCount} {publicRoomsLabel}, {privateRoomsCount} {privateRoomsLabel}
           </p>
         </div>
         <button
@@ -308,13 +292,18 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
 
       </div>
 
-      {/* Rooms Grid */}
       <div className="p-4 md:p-6 flex-1 overflow-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
-          {rooms.map((room) => {
-            const status = getRoomStatus(room);
-            const difficultyLabel = getDifficultyLabel(room.difficulty);
-            const difficultyColor = getDifficultyColor(room.difficulty);
+        {rooms.length === 0 ? (
+          <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center">
+            <h3 className="text-xl font-semibold text-text-main mb-2">No Active Public Rooms</h3>
+            <p className="text-text-secondary">Create a public room and start playing!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+            {rooms.map((room) => {
+              const status = getRoomStatus(room);
+              const difficultyLabel = getDifficultyLabel(room.difficulty);
+              const difficultyColor = getDifficultyColor(room.difficulty);
 
             return (
               <div key={room.gamePin} className="card card-hover p-3 md:p-4">
@@ -377,8 +366,9 @@ export function ActiveRoomsList({ onJoinRoom, className = "" }: ActiveRoomsListP
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}

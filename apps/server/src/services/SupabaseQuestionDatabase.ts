@@ -398,24 +398,51 @@ export class SupabaseQuestionDatabase {
     if (!this.client) return [];
 
     try {
-      const { data, error } = await this.client
-        .from('questions')
-        .select('topic, used_count')
-        .not('topic', 'is', null);
+      const maxRows = Number(process.env.POPULAR_TOPICS_SCAN_LIMIT ?? '10000');
+      const pageSize = Math.min(maxRows, Number(process.env.POPULAR_TOPICS_PAGE_SIZE ?? '1000'));
+      const topicMap = new Map<string, { questionCount: number; totalUsedCount: number }>();
 
-      if (error) {
-        throw error;
+      let offset = 0;
+      let totalFetched = 0;
+
+      while (offset < maxRows) {
+        const upperBound = Math.min(offset + pageSize - 1, maxRows - 1);
+        const { data, error } = await this.client
+          .from('questions')
+          .select('topic, used_count')
+          .not('topic', 'is', null)
+          .not('topic', 'eq', '')
+          .range(offset, upperBound);
+
+        if (error) {
+          throw error;
+        }
+
+        const rows = data || [];
+        totalFetched += rows.length;
+
+        rows.forEach((row: any) => {
+          const topic: string = row.topic;
+          const usedCount: number = row.used_count || 0;
+          const entry = topicMap.get(topic) || { questionCount: 0, totalUsedCount: 0 };
+          entry.questionCount += 1;
+          entry.totalUsedCount += usedCount;
+          topicMap.set(topic, entry);
+        });
+
+        if (rows.length < pageSize) {
+          break;
+        }
+
+        offset += pageSize;
       }
 
-      const topicMap = new Map<string, { questionCount: number; totalUsedCount: number }>();
-      (data || []).forEach((row: any) => {
-        const topic: string = row.topic;
-        const usedCount: number = row.used_count || 0;
-        const entry = topicMap.get(topic) || { questionCount: 0, totalUsedCount: 0 };
-        entry.questionCount += 1;
-        entry.totalUsedCount += usedCount;
-        topicMap.set(topic, entry);
-      });
+      if (totalFetched >= maxRows) {
+        console.warn(
+          `⚠️ popular topics scan fetched ${totalFetched} rows (limit ${maxRows}). ` +
+          'Increase POPULAR_TOPICS_SCAN_LIMIT to capture additional data if needed.'
+        );
+      }
 
       const results = Array.from(topicMap.entries()).map(([topic, agg]) => ({
         topic,
