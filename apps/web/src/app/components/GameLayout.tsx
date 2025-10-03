@@ -99,7 +99,7 @@ export function GameLayout({
       </header>
 
       {/* Main Game Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Unified game container */}
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/15 p-4 sm:p-5 lg:p-6">
           {renderMainContent()}
