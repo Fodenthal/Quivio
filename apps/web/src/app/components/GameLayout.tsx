@@ -74,7 +74,7 @@ export function GameLayout({
     <div className="min-h-lvh safe-bottom">
       {/* Header with connection status */}
       <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             <div className="flex items-center gap-1 sm:gap-2">
               <QuivioLogo 
@@ -99,9 +99,9 @@ export function GameLayout({
       </header>
 
       {/* Main Game Area */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="w-full">
         {/* Unified game container */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/15 p-2">
+        <div className="bg-white/5 backdrop-blur-sm">
           {renderMainContent()}
         </div>
       </main>
