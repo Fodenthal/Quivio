@@ -76,7 +76,7 @@ const PlayerListComponent = memo(function PlayerListInner({
   }, [gameState.playerIncorrectGuesses]);
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6">
+    <div className="bg-white/8 backdrop-blur-xl rounded-none shadow-glass p-6">
       <h3 className="text-2xl font-bold text-text-main mb-4">Players</h3>
       <div className="space-y-4">
         {playersArray.map((player, index) => {
