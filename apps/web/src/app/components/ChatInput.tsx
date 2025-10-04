@@ -105,7 +105,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
         disabled={disabled || isSubmitting}
         maxLength={maxLength}
         rows={2}
-        className="w-full px-3 py-2 bg-black/30 text-sm text-text-main placeholder-text-secondary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 resize-none overflow-y-auto block"
+        className="w-full px-3 py-2 bg-black/30 text-[13px] text-text-main placeholder-text-secondary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 resize-none overflow-y-auto block"
       />
       
       {message.length > maxLength * 0.8 && (
