@@ -20,7 +20,7 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
   const getPlayerAvatar = (playerName: string) => {
     if (!playerName || typeof playerName !== 'string') {
       return (
-        <div className="w-8 h-8 rounded-lg bg-gray-500 flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-gray-500 flex items-center justify-center text-white font-bold text-xs shadow-lg flex-shrink-0">
           ?
         </div>
       );
@@ -38,7 +38,7 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
     const bgColor = colors[colorIndex];
 
     return (
-      <div className={`w-8 h-8 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
+      <div className={`w-7 h-7 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-xs shadow-lg flex-shrink-0`}>
         {firstLetter}
       </div>
     );
@@ -60,7 +60,7 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
   }
 
   return (
-    <div className={`flex items-start space-x-2 md:space-x-3 py-2 pr-3 pl-1 md:pl-2 rounded-lg transition-colors ${
+    <div className={`flex items-start space-x-2 py-1.5 pr-3 pl-0.5 rounded-lg transition-colors ${
       isCurrentPlayer ? "" : "hover:bg-white/5"
     }`}>
       {getPlayerAvatar(message.playerName)}
