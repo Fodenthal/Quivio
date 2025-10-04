@@ -743,6 +743,7 @@ export const GameView = memo(function GameView({
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
+                players={gameState.players}
                 onSendMessage={handleSendMessage}
                 disabled={false}
                 shouldAutoFocus={chatHasFocus}
@@ -769,6 +770,7 @@ export const GameView = memo(function GameView({
         <Chat
           messages={chatMessages}
           currentPlayerId={currentPlayerId}
+          players={gameState.players}
           onSendMessage={handleSendMessage}
           disabled={false}
           shouldAutoFocus={chatHasFocus}
@@ -847,6 +849,7 @@ export const GameView = memo(function GameView({
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
+                players={gameState.players}
                 onSendMessage={handleSendMessage}
                 disabled={false}
                 shouldAutoFocus={chatHasFocus}

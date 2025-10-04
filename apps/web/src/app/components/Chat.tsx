@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatMessage as ChatMessageType } from "@shared/index";
+import { ChatMessage as ChatMessageType, PlayerData } from "@shared/index";
 import { ChatWindow } from "./ChatWindow";
 import { ChatInput } from "./ChatInput";
 import { useAuth } from "../../hooks/useAuth";
@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 interface ChatProps {
   messages: ChatMessageType[];
   currentPlayerId: string;
+  players: Map<string, PlayerData>;
   onSendMessage: (content: string) => void;
   disabled?: boolean;
   shouldAutoFocus?: boolean;
@@ -20,7 +21,8 @@ interface ChatProps {
  */
 export function Chat({ 
   messages, 
-  currentPlayerId, 
+  currentPlayerId,
+  players,
   onSendMessage, 
   disabled = false,
   shouldAutoFocus = false
@@ -37,6 +39,7 @@ export function Chat({
         <ChatWindow 
           messages={messages}
           currentPlayerId={currentPlayerId}
+          players={players}
           height="h-full"
         />
       </div>

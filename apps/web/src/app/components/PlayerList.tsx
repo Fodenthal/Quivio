@@ -76,7 +76,7 @@ const PlayerListComponent = memo(function PlayerListInner({
   }, [gameState.playerIncorrectGuesses]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col px-3">
       <div className="space-y-2">
         {playersArray.map((player, index) => {
           const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
@@ -85,10 +85,10 @@ const PlayerListComponent = memo(function PlayerListInner({
           return (
             <div
               key={`${player.id}-${index}`}
-              className={`flex items-center space-x-4 p-2 rounded-lg transition-colors duration-75 ${
+              className={`flex items-center space-x-3 p-2 rounded-lg border transition-colors duration-75 ${
                 hasCorrectAnswer 
-                  ? "bg-pink-500/20 shadow-lg" 
-                  : "bg-black/20"
+                  ? "bg-pink-500/10 border-pink-500/20 shadow-md" 
+                  : "bg-black/10 border-white/10"
               }`}
             >
               {getPlayerAvatar(player)}
