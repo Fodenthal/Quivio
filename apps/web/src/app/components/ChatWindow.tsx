@@ -75,9 +75,9 @@ export function ChatWindow({
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${height} overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
+      className={`${height} overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent`}
     >
-      <div className="p-2 space-y-1 md:p-4 md:space-y-2">
+      <div className="space-y-1 md:space-y-2">
         {messages
           .filter((message) => message && message.id && message.playerName)
           .map((message) => (

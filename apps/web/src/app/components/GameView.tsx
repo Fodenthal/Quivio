@@ -739,7 +739,7 @@ export const GameView = memo(function GameView({
               />
             </div>
           ) : (
-            <div ref={chatContainerRef} className="bg-white/5 backdrop-blur-xl p-6 h-full flex flex-col">
+            <div ref={chatContainerRef} className="bg-white/5 backdrop-blur-xl h-full flex flex-col">
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
@@ -764,7 +764,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl p-6 xl:p-5 h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
@@ -834,13 +834,15 @@ export const GameView = memo(function GameView({
               </button>
             </div>
           </div>
-          <div ref={phoneSheetContentRef} className="flex-1 p-4 overflow-hidden">
+          <div ref={phoneSheetContentRef} className="flex-1 overflow-hidden">
             {activePanel === 'players' ? (
-              <PlayerList 
-                gameState={gameState}
-                participatingPlayers={gameState.participatingPlayers}
-                showParticipationStatus={phase === 'ended'}
-              />
+              <div className="p-4 h-full">
+                <PlayerList 
+                  gameState={gameState}
+                  participatingPlayers={gameState.participatingPlayers}
+                  showParticipationStatus={phase === 'ended'}
+                />
+              </div>
             ) : (
               <Chat
                 messages={chatMessages}
