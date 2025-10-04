@@ -32,7 +32,7 @@ const PlayerListComponent = memo(function PlayerListInner({
     return (
       <div className="relative">
         <div 
-          className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg"
           style={{ 
             backgroundColor,
             boxShadow: `0 4px 12px ${shadowColor}`
