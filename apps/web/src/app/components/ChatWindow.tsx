@@ -75,7 +75,7 @@ export function ChatWindow({
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${height} bg-black/20 rounded-lg md:rounded-xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
+      className={`${height} overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
     >
       <div className="p-2 space-y-1 md:p-4 md:space-y-2">
         {messages

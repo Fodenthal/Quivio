@@ -31,7 +31,7 @@ export function Chat({
   const isChatDisabled = disabled || !canChat;
   
   return (
-    <div className="min-h-[50dvh] md:h-[600px] flex flex-col safe-bottom">
+    <div className="h-full flex flex-col safe-bottom">
       {/* Chat Messages - flex-1 takes remaining space with fixed height */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <ChatWindow 
@@ -42,7 +42,7 @@ export function Chat({
       </div>
 
       {/* Chat Input - fixed at bottom */}
-      <div className="flex-shrink-0 mt-2">
+      <div className="flex-shrink-0">
         {loading ? (
           // Loading state
           <div className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg">
