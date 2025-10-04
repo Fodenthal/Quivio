@@ -443,6 +443,7 @@ export const GameView = memo(function GameView({
             (topic: string) => typeof topic === "string" && topic.trim().length > 0
           );
           const canStartGame = hasRequiredTopics && isHost;
+          const isStartButtonDisabled = !canStartGame;
 
           return (
             <div className="flex flex-col h-full">
@@ -465,22 +466,20 @@ export const GameView = memo(function GameView({
                   />
                 </div>
                 
-                {/* Start Game Button and Status Messages - Host Only */}
-                {isHost && (
-                  <div className="mt-auto pt-6 border-t border-white/20">
-                    <button
-                      onClick={onStartGame}
-                      disabled={!canStartGame}
-                      className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
-                        canStartGame
-                          ? "bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500"
-                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      Start Game
-                    </button>
-                  </div>
-                )}
+                {/* Start Game Button - visible to all players, interactive for host only */}
+                <div className="mt-auto pt-6 border-t border-white/20">
+                  <button
+                    onClick={isHost ? onStartGame : undefined}
+                    disabled={isStartButtonDisabled}
+                    className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
+                      isStartButtonDisabled
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500"
+                    }`}
+                  >
+                    Start Game
+                  </button>
+                </div>
               </div>
             </div>
           );

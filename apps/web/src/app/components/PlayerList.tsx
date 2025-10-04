@@ -76,8 +76,8 @@ const PlayerListComponent = memo(function PlayerListInner({
   }, [gameState.playerIncorrectGuesses]);
 
   return (
-    <div className="h-full flex flex-col px-3">
-      <div className="space-y-2">
+    <div className="h-full flex flex-col px-3 border-t border-white/10">
+      <div className="space-y-2 pt-3">
         {playersArray.map((player, index) => {
           const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
           const incorrectGuess = getTruncatedIncorrectGuess(player.id);
