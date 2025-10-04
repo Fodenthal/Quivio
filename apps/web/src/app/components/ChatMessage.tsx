@@ -71,7 +71,7 @@ export function ChatMessage({ message, isCurrentPlayer = false, players }: ChatM
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline space-x-2">
           <span className={`font-semibold text-sm ${
-            isCurrentPlayer ? "text-primary" : "text-text-main"
+            isCurrentPlayer ? "text-primary" : "text-indigo-300"
           }`}>
             {message.playerName}
           </span>
