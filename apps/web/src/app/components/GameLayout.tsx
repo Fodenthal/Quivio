@@ -71,9 +71,9 @@ export function GameLayout({
   };
 
   return (
-    <div className="min-h-lvh safe-bottom">
+    <div className="h-lvh flex flex-col safe-bottom overflow-hidden">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl safe-top relative z-50">
+      <header className="bg-white/5 backdrop-blur-xl safe-top relative z-50 flex-shrink-0">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-0.8">
@@ -99,9 +99,9 @@ export function GameLayout({
       </header>
 
       {/* Main Game Area */}
-      <main className="w-full">
+      <main className="flex-1 w-full min-h-0">
         {/* Unified game container */}
-        <div className="bg-white/5 backdrop-blur-sm">
+        <div className="bg-white/5 backdrop-blur-sm h-full">
           {renderMainContent()}
         </div>
       </main>

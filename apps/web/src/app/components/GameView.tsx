@@ -418,9 +418,9 @@ export const GameView = memo(function GameView({
   }), [localTimer.formattedTime, localTimer.isUrgent]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-0 h-full min-h-[60dvh] overflow-x-hidden">
+    <div className="flex flex-col md:flex-row gap-0 h-full overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full min-h-[60dvh] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -708,7 +708,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
-      <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
+      <div className="hidden md:flex xl:hidden flex-col md:w-80 h-full max-w-full overflow-x-hidden">
         <div className="self-stretch">
           <div className="flex w-full bg-white/5 border-white/20 p-1 gap-1">
             <button
@@ -753,7 +753,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* PlayerList - xl+ only */}
-      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
+      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -764,7 +764,7 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl p-6 xl:p-5 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl p-6 xl:p-5 h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
