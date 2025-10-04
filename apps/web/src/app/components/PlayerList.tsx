@@ -77,7 +77,7 @@ const PlayerListComponent = memo(function PlayerListInner({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="space-y-4">
+      <div className="space-y-2">
         {playersArray.map((player, index) => {
           const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
           const incorrectGuess = getTruncatedIncorrectGuess(player.id);
