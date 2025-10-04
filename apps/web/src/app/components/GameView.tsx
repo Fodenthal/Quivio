@@ -420,7 +420,7 @@ export const GameView = memo(function GameView({
   return (
     <div className="flex flex-col md:flex-row gap-0 h-full min-h-[60dvh] overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-8 space-y-6 h-full min-h-[60dvh] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full min-h-[60dvh] flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -509,7 +509,7 @@ export const GameView = memo(function GameView({
             {/* Question Display Panel or Ad Placeholder */}
             {phase === "loading" ? (
               // Ad placeholder during question generation
-              <div className="bg-black/10 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
+              <div className="bg-black/10 rounded-lg p-6 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 <div className="flex-grow flex flex-col justify-center">
                   <h2 className="text-8xl font-bold text-text-main tracking-wider">
                     AD
@@ -520,7 +520,7 @@ export const GameView = memo(function GameView({
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/10 rounded-lg p-4 md:p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center max-w-full overflow-x-hidden">
+              <div className="bg-black/10 rounded-lg p-3 md:p-6 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center max-w-full overflow-x-hidden">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
@@ -635,7 +635,7 @@ export const GameView = memo(function GameView({
             )}
 
             {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-              <div className="bg-black/10 rounded-lg p-6 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
+              <div className="bg-black/10 rounded-lg p-4 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
                 {phase === "round-ended" ? (
                   <div className="text-center">
                     {(() => {
