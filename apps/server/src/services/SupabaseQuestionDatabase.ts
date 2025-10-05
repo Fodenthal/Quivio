@@ -100,6 +100,75 @@ export class SupabaseQuestionDatabase {
   }
 
   /**
+   * Attach multiple tags to a question by id using RPC.
+   * Accepts free-form labels or slugs; server resolves/creates tags.
+   */
+  public async attachTagsToQuestion(questionId: number, tags: string[]): Promise<{ tag_id: number; slug: string; display_name: string; }[] | null> {
+    if (!this.client) return null;
+    try {
+      const inputs = (tags || []).filter(Boolean);
+      const { data, error } = await this.client.rpc('attach_tags_to_question', {
+        question_id: questionId,
+        tag_slugs: inputs,
+      });
+      if (error) throw error;
+      return (data || []) as { tag_id: number; slug: string; display_name: string; }[];
+    } catch (error) {
+      console.error('Failed to attach tags via Supabase RPC:', error);
+      return null;
+    }
+  }
+
+  /** Search questions by multiple tags (OR/AND) using RPC */
+  public async searchQuestionsByTags(
+    tags: string[],
+    opts?: { requireAll?: boolean; includeDescendants?: boolean; limit?: number }
+  ): Promise<GeneratedQuestion[]> {
+    if (!this.client) return [];
+    const requireAll = !!opts?.requireAll;
+    const includeDescendants = !!opts?.includeDescendants;
+    const limit = Math.max(1, opts?.limit ?? 10);
+    try {
+      const inputs = (tags || []).map(t => t ?? '').filter(t => t.trim().length > 0);
+      const { data, error } = await this.client.rpc('search_questions_by_tags', {
+        tag_slugs: inputs,
+        require_all: requireAll,
+        include_descendants: includeDescendants,
+        limit_count: limit,
+      });
+      if (error) throw error;
+      const rows = (data || []) as any[];
+      return rows.map(row => {
+        const acceptableField = row.acceptable_answers;
+        let acceptableAnswers: string[] = [];
+        if (Array.isArray(acceptableField)) {
+          acceptableAnswers = acceptableField.filter((a: unknown): a is string => typeof a === 'string');
+        } else if (typeof acceptableField === 'string') {
+          try {
+            const parsed = JSON.parse(acceptableField);
+            if (Array.isArray(parsed)) acceptableAnswers = parsed.filter((a: unknown): a is string => typeof a === 'string');
+          } catch {}
+        } else if (acceptableField && typeof acceptableField === 'object') {
+          acceptableAnswers = Object.values(acceptableField).filter((a): a is string => typeof a === 'string');
+        }
+        return {
+          questionId: row.id,
+          question: row.question,
+          correctAnswer: row.correct_answer,
+          acceptableAnswers,
+          category: row.category,
+          difficulty: row.difficulty,
+          image: this.normalizeImageMetadata(row.image),
+          sourceTopic: row.topic ?? undefined,
+        };
+      });
+    } catch (error) {
+      console.error('searchQuestionsByTags RPC failed:', error);
+      return [];
+    }
+  }
+
+  /**
    * Retrieve questions by topic using tag-based RPC.
    * Note: difficulty is deprecated and ignored in Supabase.
    */

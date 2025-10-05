@@ -466,11 +466,61 @@ export default config({
                 }
             });
 
+            // Search by multiple tags (OR/AND) via RPC
+            app.get('/debug/questions/by-tags', async (req, res) => {
+                try {
+                    const { tags = '', require_all = 'false', include_descendants = 'false', limit = '20' } = req.query as Record<string, string>;
+                    const tagList = String(tags)
+                        .split(',')
+                        .map(t => t.trim())
+                        .filter(Boolean);
+                    const requireAll = String(require_all).toLowerCase() === 'true';
+                    const includeDescendants = String(include_descendants).toLowerCase() === 'true';
+                    const limitNum = Math.max(1, parseInt(String(limit)) || 20);
+
+                    // Use Supabase directly for the RPC
+                    const supa = require('./services/SupabaseQuestionDatabase');
+                    const db = supa.SupabaseQuestionDatabase.getInstance();
+                    const results = await db.searchQuestionsByTags(tagList, {
+                        requireAll,
+                        includeDescendants,
+                        limit: limitNum,
+                    });
+
+                    res.json({
+                        success: true,
+                        params: { tags: tagList, requireAll, includeDescendants, limit: limitNum },
+                        count: results.length,
+                        questions: results,
+                    });
+                } catch (error) {
+                    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+                }
+            });
+
+            // Attach tags to a question by id (server-side RPC)
+            app.post('/debug/questions/attach-tags', async (req, res) => {
+                try {
+                    const { questionId, tags } = req.body || {};
+                    if (!questionId || !Array.isArray(tags)) {
+                        return res.status(400).json({ success: false, error: 'questionId and tags[] are required' });
+                    }
+                    const supa = require('./services/SupabaseQuestionDatabase');
+                    const db = supa.SupabaseQuestionDatabase.getInstance();
+                    const result = await db.attachTagsToQuestion(Number(questionId), tags);
+                    res.json({ success: true, attached: result || [] });
+                } catch (error) {
+                    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+                }
+            });
+
             console.log("📊 Question database debug endpoints enabled:");
             console.log("   • GET /debug/questions/stats - Database statistics");
             console.log("   • GET /debug/questions/all?limit=100 - All questions");
             console.log("   • GET /debug/questions/search?q=term&limit=50 - Search questions");
             console.log("   • GET /debug/questions/topic/:topic/difficulty/:difficulty - Questions by topic/difficulty");
+            console.log("   • GET /debug/questions/by-tags?tags=one,two&require_all=false&limit=20 - Questions by tags");
+            console.log("   • POST /debug/questions/attach-tags { questionId, tags: [] } - Attach tags to question");
         }
 
         /**
