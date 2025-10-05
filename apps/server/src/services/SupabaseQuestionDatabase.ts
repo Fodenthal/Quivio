@@ -49,6 +49,15 @@ export class SupabaseQuestionDatabase {
     return SupabaseQuestionDatabase.instance;
   }
 
+  private static slugify(input: string): string {
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
   /**
    * Store a newly generated question in the database
    */
@@ -91,25 +100,31 @@ export class SupabaseQuestionDatabase {
   }
 
   /**
-   * Retrieve questions from database for a specific topic and difficulty
+   * Retrieve questions by topic using tag-based RPC.
+   * Note: difficulty is deprecated and ignored in Supabase.
    */
   public async getQuestions(topic: string, difficulty: number, limit: number = 10): Promise<GeneratedQuestion[]> {
     if (!this.client) return [];
-    
+
     try {
-      const { data, error } = await this.client
-        .from('questions')
-        .select('*')
-        .eq('topic', topic)
-        .eq('difficulty', difficulty)
-        .order('used_count', { ascending: true })
-        .limit(limit);
+      // Use tag RPC so a question can belong to multiple topics
+      const slug = SupabaseQuestionDatabase.slugify(topic || '');
+      const rpcParams: Record<string, any> = {
+        // Provide both canonical slug and raw label to maximize match success
+        tag_slugs: slug ? [slug, topic] : [topic],
+        require_all: true,
+        include_descendants: false,
+        limit_count: limit,
+      };
+
+      const { data, error } = await this.client.rpc('search_questions_by_tags', rpcParams);
 
       if (error) {
         throw error;
       }
 
-      const questions: GeneratedQuestion[] = (data || []).map(row => {
+      const rows = (data || []) as any[];
+      let questions: GeneratedQuestion[] = rows.map(row => {
         const acceptableField = row.acceptable_answers;
         let acceptableAnswers: string[] = [];
 
@@ -143,14 +158,115 @@ export class SupabaseQuestionDatabase {
       });
 
       if (questions.length > 0) {
-        console.log(`📤 Retrieved ${questions.length} questions from Supabase for "${topic}" (difficulty: ${difficulty})`);
+        console.log(`📤 Retrieved ${questions.length} questions from Supabase via tags for "${topic}" (difficulty ignored: ${difficulty})`);
+        return questions;
+      }
+
+      // If RPC returned zero rows, fall back to legacy topic+difficulty query
+      console.log(`ℹ️ No tag matches for "${topic}" via RPC; falling back to legacy query.`);
+      const { data: fallback, error: fbErr } = await this.client
+        .from('questions')
+        .select('*')
+        .eq('topic', topic)
+        .eq('difficulty', difficulty)
+        .order('used_count', { ascending: true })
+        .limit(limit);
+
+      if (fbErr) throw fbErr;
+
+      questions = (fallback || []).map((row: any) => {
+        const acceptableField = row.acceptable_answers;
+        let acceptableAnswers: string[] = [];
+
+        if (Array.isArray(acceptableField)) {
+          acceptableAnswers = acceptableField.filter((answer: unknown): answer is string => typeof answer === 'string');
+        } else if (typeof acceptableField === 'string') {
+          try {
+            const parsed = JSON.parse(acceptableField);
+            if (Array.isArray(parsed)) {
+              acceptableAnswers = parsed.filter((answer: unknown): answer is string => typeof answer === 'string');
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Failed to parse acceptable_answers JSON from Supabase row (fallback):', parseError);
+          }
+        }
+
+        if (acceptableAnswers.length === 0 && typeof acceptableField === 'object' && acceptableField !== null) {
+          acceptableAnswers = Object.values(acceptableField).filter((answer): answer is string => typeof answer === 'string');
+        }
+
+        return {
+          questionId: row.id,
+          question: row.question,
+          correctAnswer: row.correct_answer,
+          acceptableAnswers,
+          category: row.category,
+          difficulty: row.difficulty,
+          image: this.normalizeImageMetadata(row.image),
+          sourceTopic: row.topic ?? undefined,
+        };
+      });
+
+      if (questions.length > 0) {
+        console.log(`📤 Retrieved ${questions.length} questions from Supabase (fallback) for "${topic}" (difficulty: ${difficulty})`);
       }
 
       return questions;
 
     } catch (error) {
-      console.error('Failed to retrieve questions from Supabase:', error);
-      return [];
+      // Fallback to legacy topic+difficulty query if RPC is unavailable
+      try {
+        const { data: fallback, error: fbErr } = await this.client
+          .from('questions')
+          .select('*')
+          .eq('topic', topic)
+          .eq('difficulty', difficulty)
+          .order('used_count', { ascending: true })
+          .limit(limit);
+
+        if (fbErr) throw fbErr;
+
+        const questions: GeneratedQuestion[] = (fallback || []).map((row: any) => {
+          const acceptableField = row.acceptable_answers;
+          let acceptableAnswers: string[] = [];
+
+          if (Array.isArray(acceptableField)) {
+            acceptableAnswers = acceptableField.filter((answer: unknown): answer is string => typeof answer === 'string');
+          } else if (typeof acceptableField === 'string') {
+            try {
+              const parsed = JSON.parse(acceptableField);
+              if (Array.isArray(parsed)) {
+                acceptableAnswers = parsed.filter((answer: unknown): answer is string => typeof answer === 'string');
+              }
+            } catch (parseError) {
+              console.warn('⚠️ Failed to parse acceptable_answers JSON from Supabase row (fallback):', parseError);
+            }
+          }
+
+          if (acceptableAnswers.length === 0 && typeof acceptableField === 'object' && acceptableField !== null) {
+            acceptableAnswers = Object.values(acceptableField).filter((answer): answer is string => typeof answer === 'string');
+          }
+
+          return {
+            questionId: row.id,
+            question: row.question,
+            correctAnswer: row.correct_answer,
+            acceptableAnswers,
+            category: row.category,
+            difficulty: row.difficulty,
+            image: this.normalizeImageMetadata(row.image),
+            sourceTopic: row.topic ?? undefined,
+          };
+        });
+
+        if (questions.length > 0) {
+          console.log(`📤 Retrieved ${questions.length} questions from Supabase (fallback) for "${topic}" (difficulty: ${difficulty})`);
+        }
+        return questions;
+      } catch (fbError) {
+        console.error('Failed to retrieve questions from Supabase (RPC and fallback):', fbError);
+        return [];
+      }
     }
   }
 
@@ -269,23 +385,44 @@ export class SupabaseQuestionDatabase {
    */
   public async hasEnoughQuestions(topic: string, difficulty: number, minRequired: number = 5): Promise<boolean> {
     if (!this.client) return false;
-    
+
     try {
-      const { count, error } = await this.client
+      const slug = SupabaseQuestionDatabase.slugify(topic || '');
+      const rpcParams: Record<string, any> = {
+        tag_slugs: slug ? [slug, topic] : [topic],
+        require_all: true,
+        include_descendants: false,
+        limit_count: Math.max(1, minRequired),
+      };
+
+      const { data, error } = await this.client.rpc('search_questions_by_tags', rpcParams);
+      if (error) throw error;
+
+      const rows = (data || []) as any[];
+      if (rows.length >= minRequired) return true;
+
+      // Fallback to legacy count when RPC yields insufficient results
+      const { count, error: fbErr } = await this.client
         .from('questions')
         .select('*', { count: 'exact', head: true })
         .eq('topic', topic)
         .eq('difficulty', difficulty);
-
-      if (error) {
-        throw error;
-      }
-
+      if (fbErr) throw fbErr;
       return (count || 0) >= minRequired;
-
     } catch (error) {
-      console.error('Failed to check question count in Supabase:', error);
-      return false;
+      // Fallback to legacy count
+      try {
+        const { count, error: fbErr } = await this.client
+          .from('questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('topic', topic)
+          .eq('difficulty', difficulty);
+        if (fbErr) throw fbErr;
+        return (count || 0) >= minRequired;
+      } catch (fbError) {
+        console.error('Failed to check question availability in Supabase (RPC and fallback):', fbError);
+        return false;
+      }
     }
   }
 
