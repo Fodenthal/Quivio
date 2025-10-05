@@ -64,7 +64,7 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
           </div>
         </div>
         <p className="mt-2 text-sm text-slate-300/80">
-          The question database is built by the community.
+          The question database is built out by our community.
         </p>
       </div>
       <button
