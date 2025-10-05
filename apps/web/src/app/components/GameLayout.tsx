@@ -71,17 +71,17 @@ export function GameLayout({
   };
 
   return (
-    <div className="min-h-lvh safe-bottom">
+    <div className="h-lvh flex flex-col safe-bottom overflow-hidden">
       {/* Header with connection status */}
-      <header className="bg-white/5 backdrop-blur-xl shadow-glass border-b border-white/10 safe-top relative z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-1 sm:gap-2">
+      <header className="bg-white/5 backdrop-blur-xl safe-top relative z-50 flex-shrink-0">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-0.8">
               <QuivioLogo 
-                size={60} 
-                className="text-indigo-400 translate-y-[1px] sm:translate-y-[2px] sm:w-20 sm:h-20" 
+                size={48} 
+                className="text-indigo-400 flex-shrink-0" 
               />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-400">
+              <h1 className="text-lg sm:text-xl font-bold text-indigo-400 leading-none -translate-y-0.5">
                 Quivio
               </h1>
             </div>
@@ -99,8 +99,11 @@ export function GameLayout({
       </header>
 
       {/* Main Game Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {renderMainContent()}
+      <main className="flex-1 w-full min-h-0">
+        {/* Unified game container */}
+        <div className="bg-white/5 backdrop-blur-sm h-full">
+          {renderMainContent()}
+        </div>
       </main>
     </div>
   );

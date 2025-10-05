@@ -1,44 +1,48 @@
 "use client";
 
-import { ChatMessage as ChatMessageType } from "@shared/index";
+import { ChatMessage as ChatMessageType, PlayerData } from "@shared/index";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isCurrentPlayer?: boolean;
+  players: Map<string, PlayerData>;
 }
 
 /**
  * Individual chat message component with player avatar and styling
  * Supports both player messages and system messages
  */
-export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessageProps) {
+export function ChatMessage({ message, isCurrentPlayer = false, players }: ChatMessageProps) {
   // Early return if message is invalid
   if (!message || !message.playerName || !message.content) {
     return null;
   }
 
-  const getPlayerAvatar = (playerName: string) => {
+  const getPlayerAvatar = (playerName: string, playerId: string) => {
     if (!playerName || typeof playerName !== 'string') {
       return (
-        <div className="w-8 h-8 rounded-lg bg-gray-500 flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-gray-500 flex items-center justify-center text-white font-bold text-xs shadow-lg flex-shrink-0">
           ?
         </div>
       );
     }
 
     const firstLetter = playerName.charAt(0).toUpperCase();
-    // Expanded color palette to match PlayerList
-    const colors = [
-      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500",
-      "bg-orange-500", "bg-cyan-500", "bg-lime-500", "bg-emerald-500",
-      "bg-violet-500", "bg-rose-500", "bg-amber-500", "bg-sky-500"
-    ];
-    const colorIndex = playerName.length % colors.length;
-    const bgColor = colors[colorIndex];
+    
+    // Get player's avatar hue from players map (same system as PlayerList)
+    const player = players.get(playerId);
+    const hue = player?.avatarHue ?? 220; // Default to blue if not set
+    const backgroundColor = `hsl(${hue}, 65%, 55%)`; // Vibrant but not too bright
+    const shadowColor = `hsl(${hue} 65% 35% / 0.25)`; // Darker shade for shadow
 
     return (
-      <div className={`w-8 h-8 rounded-lg ${bgColor} flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
+      <div 
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg flex-shrink-0"
+        style={{ 
+          backgroundColor,
+          boxShadow: `0 4px 12px ${shadowColor}`
+        }}
+      >
         {firstLetter}
       </div>
     );
@@ -60,14 +64,14 @@ export function ChatMessage({ message, isCurrentPlayer = false }: ChatMessagePro
   }
 
   return (
-    <div className={`flex items-start space-x-2 md:space-x-3 py-2 pr-3 pl-1 md:pl-2 rounded-lg transition-colors ${
+    <div className={`flex items-start space-x-2 py-1.5 pr-3 pl-0.5 rounded-lg transition-colors ${
       isCurrentPlayer ? "" : "hover:bg-white/5"
     }`}>
-      {getPlayerAvatar(message.playerName)}
+      {getPlayerAvatar(message.playerName, message.playerId)}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline space-x-2">
           <span className={`font-semibold text-sm ${
-            isCurrentPlayer ? "text-primary" : "text-text-main"
+            isCurrentPlayer ? "text-primary" : "text-indigo-300"
           }`}>
             {message.playerName}
           </span>

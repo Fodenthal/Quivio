@@ -418,9 +418,9 @@ export const GameView = memo(function GameView({
   }), [localTimer.formattedTime, localTimer.isUrgent]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 md:gap-6 xl:gap-4 h-full min-h-[60dvh] overflow-x-hidden">
+    <div className="flex flex-col md:flex-row gap-0 h-full overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-8 border border-white/20 space-y-6 h-full min-h-[60dvh] flex flex-col">
+      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
@@ -443,6 +443,7 @@ export const GameView = memo(function GameView({
             (topic: string) => typeof topic === "string" && topic.trim().length > 0
           );
           const canStartGame = hasRequiredTopics && isHost;
+          const isStartButtonDisabled = !canStartGame;
 
           return (
             <div className="flex flex-col h-full">
@@ -465,22 +466,20 @@ export const GameView = memo(function GameView({
                   />
                 </div>
                 
-                {/* Start Game Button and Status Messages - Host Only */}
-                {isHost && (
-                  <div className="mt-auto pt-6 border-t border-white/20">
-                    <button
-                      onClick={onStartGame}
-                      disabled={!canStartGame}
-                      className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
-                        canStartGame
-                          ? "bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500"
-                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      Start Game
-                    </button>
-                  </div>
-                )}
+                {/* Start Game Button - visible to all players, interactive for host only */}
+                <div className="mt-auto pt-6 border-t border-white/20">
+                  <button
+                    onClick={isHost ? onStartGame : undefined}
+                    disabled={isStartButtonDisabled}
+                    className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${
+                      isStartButtonDisabled
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500"
+                    }`}
+                  >
+                    Start Game
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -509,7 +508,7 @@ export const GameView = memo(function GameView({
             {/* Question Display Panel or Ad Placeholder */}
             {phase === "loading" ? (
               // Ad placeholder during question generation
-              <div className="bg-black/20 rounded-lg p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
+              <div className="bg-black/10 rounded-lg p-6 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center">
                 <div className="flex-grow flex flex-col justify-center">
                   <h2 className="text-8xl font-bold text-text-main tracking-wider">
                     AD
@@ -520,7 +519,7 @@ export const GameView = memo(function GameView({
                 </div>
               </div>
             ) : gameState.currentPrompt && gameState.currentPrompt.text && (
-              <div className="bg-black/20 rounded-lg p-4 md:p-8 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center max-w-full overflow-x-hidden">
+              <div className="bg-black/10 rounded-lg p-3 md:p-6 text-center min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex flex-col justify-center max-w-full overflow-x-hidden">
                 {gameState.roundEnded && gameState.correctAnswer ? (
                   // Answer reveal after round ends
                   <div>
@@ -635,7 +634,7 @@ export const GameView = memo(function GameView({
             )}
 
             {(phase === "playing" || phase === "paused" || phase === "round-ended") && (
-              <div className="bg-black/20 rounded-lg p-6 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
+              <div className="bg-black/10 rounded-lg p-4 min-h-[76px] md:min-h-[92px] flex flex-col justify-center">
                 {phase === "round-ended" ? (
                   <div className="text-center">
                     {(() => {
@@ -695,7 +694,7 @@ export const GameView = memo(function GameView({
                       }}
                       placeholder="Enter your answer and press Enter..."
                       disabled={isSubmitting || phase === "paused"}
-                      className="w-full px-4 py-3 text-lg bg-white/10 border border-white/20 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                      className="w-full px-4 py-3 text-lg bg-white/5 border border-white/10 rounded-lg text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
                       autoComplete="off"
                       maxLength={100}
                     />
@@ -708,9 +707,9 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
-      <div className="hidden md:flex xl:hidden flex-col md:w-80 min-h-[60dvh] max-w-full overflow-x-hidden">
-        <div className="mt-1 mb-2 self-stretch">
-          <div className="flex w-full bg-white/10 border border-white/20 rounded-md p-1 gap-1">
+      <div className="hidden md:flex xl:hidden flex-col md:w-80 h-full max-w-full overflow-x-hidden">
+        <div className="self-stretch">
+          <div className="flex w-full bg-white/5 border-white/20 p-1 gap-1">
             <button
               type="button"
               onClick={() => setActivePanel('players')}
@@ -731,7 +730,7 @@ export const GameView = memo(function GameView({
         </div>
         <div className="flex-1 min-h-0">
           {activePanel === 'players' ? (
-            <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+            <div className="bg-white/5 backdrop-blur-xl p-6 h-full flex flex-col">
               <PlayerList 
                 gameState={gameState}
                 participatingPlayers={gameState.participatingPlayers}
@@ -739,10 +738,11 @@ export const GameView = memo(function GameView({
               />
             </div>
           ) : (
-            <div ref={chatContainerRef} className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20 h-full flex flex-col">
+            <div ref={chatContainerRef} className="bg-white/5 backdrop-blur-xl h-full flex flex-col">
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
+                players={gameState.players}
                 onSendMessage={handleSendMessage}
                 disabled={false}
                 shouldAutoFocus={chatHasFocus}
@@ -753,7 +753,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* PlayerList - xl+ only */}
-      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
+      <div className={`hidden xl:flex w-full xl:w-[clamp(14rem,18vw,20rem)] h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}>
         <PlayerList 
           gameState={gameState}
           participatingPlayers={gameState.participatingPlayers}
@@ -764,11 +764,12 @@ export const GameView = memo(function GameView({
       {/* Chat Panel - xl+ only */}
       <div 
         ref={chatContainerRef}
-        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 xl:p-5 border border-white/20 h-full min-h-[60dvh] flex-col max-w-full overflow-x-hidden flex-shrink-0`}
+        className={`hidden xl:flex w-full xl:w-[clamp(16rem,20vw,20rem)] bg-white/5 backdrop-blur-xl h-full flex-col max-w-full overflow-x-hidden flex-shrink-0`}
       >
         <Chat
           messages={chatMessages}
           currentPlayerId={currentPlayerId}
+          players={gameState.players}
           onSendMessage={handleSendMessage}
           disabled={false}
           shouldAutoFocus={chatHasFocus}
@@ -834,17 +835,20 @@ export const GameView = memo(function GameView({
               </button>
             </div>
           </div>
-          <div ref={phoneSheetContentRef} className="flex-1 p-4 overflow-hidden">
+          <div ref={phoneSheetContentRef} className="flex-1 overflow-hidden">
             {activePanel === 'players' ? (
-              <PlayerList 
-                gameState={gameState}
-                participatingPlayers={gameState.participatingPlayers}
-                showParticipationStatus={phase === 'ended'}
-              />
+              <div className="p-4 h-full">
+                <PlayerList 
+                  gameState={gameState}
+                  participatingPlayers={gameState.participatingPlayers}
+                  showParticipationStatus={phase === 'ended'}
+                />
+              </div>
             ) : (
               <Chat
                 messages={chatMessages}
                 currentPlayerId={currentPlayerId}
+                players={gameState.players}
                 onSendMessage={handleSendMessage}
                 disabled={false}
                 shouldAutoFocus={chatHasFocus}

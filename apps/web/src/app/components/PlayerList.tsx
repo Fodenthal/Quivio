@@ -32,7 +32,7 @@ const PlayerListComponent = memo(function PlayerListInner({
     return (
       <div className="relative">
         <div 
-          className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg"
           style={{ 
             backgroundColor,
             boxShadow: `0 4px 12px ${shadowColor}`
@@ -76,9 +76,8 @@ const PlayerListComponent = memo(function PlayerListInner({
   }, [gameState.playerIncorrectGuesses]);
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-glass p-6 border border-white/20">
-      <h3 className="text-2xl font-bold text-text-main mb-4">Players</h3>
-      <div className="space-y-4">
+    <div className="h-full flex flex-col px-3 border-t border-white/10">
+      <div className="space-y-2 pt-3">
         {playersArray.map((player, index) => {
           const hasCorrectAnswer = hasPlayerAnsweredCorrectly(player.id);
           const incorrectGuess = getTruncatedIncorrectGuess(player.id);
@@ -86,10 +85,10 @@ const PlayerListComponent = memo(function PlayerListInner({
           return (
             <div
               key={`${player.id}-${index}`}
-              className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-75 ${
+              className={`flex items-center space-x-3 p-2 rounded-lg border transition-colors duration-75 ${
                 hasCorrectAnswer 
-                  ? "bg-pink-500/20 shadow-lg" 
-                  : "bg-black/20"
+                  ? "bg-pink-500/10 border-pink-500/20 shadow-md" 
+                  : "bg-black/10 border-white/10"
               }`}
             >
               {getPlayerAvatar(player)}

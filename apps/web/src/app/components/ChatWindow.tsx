@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChatMessage as ChatMessageType } from "@shared/index";
+import { ChatMessage as ChatMessageType, PlayerData } from "@shared/index";
 import { ChatMessage } from "./ChatMessage";
 
 interface ChatWindowProps {
   messages: ChatMessageType[];
   currentPlayerId: string;
+  players: Map<string, PlayerData>;
   height?: string;
 }
 
@@ -16,7 +17,8 @@ interface ChatWindowProps {
  */
 export function ChatWindow({ 
   messages, 
-  currentPlayerId, 
+  currentPlayerId,
+  players,
   height = "h-96" 
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -75,9 +77,9 @@ export function ChatWindow({
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${height} bg-black/20 rounded-lg md:rounded-xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent safe-bottom`}
+      className={`${height} overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent`}
     >
-      <div className="p-2 space-y-1 md:p-4 md:space-y-2">
+      <div className="space-y-1 md:space-y-2">
         {messages
           .filter((message) => message && message.id && message.playerName)
           .map((message) => (
@@ -85,6 +87,7 @@ export function ChatWindow({
               key={message.id}
               message={message}
               isCurrentPlayer={message.playerId === currentPlayerId}
+              players={players}
             />
           ))}
         {/* Invisible element to scroll to */}
