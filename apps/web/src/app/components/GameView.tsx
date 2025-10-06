@@ -448,24 +448,28 @@ export const GameView = memo(function GameView({
           return (
             <div className="flex flex-col h-full">
               {/* Unified View for All Players */}
-              <div className="flex flex-col flex-grow space-y-6">
-                <div className="relative flex-grow">
+              <div className="flex flex-col flex-grow min-h-0 space-y-6">
+                <div className="relative flex-grow min-h-0">
                   {/* Game Pin Display in top-right corner of this container */}
                   {gameState.gamePin && (
                     <div className="absolute top-0 right-0">
                       <GamePins gamePin={gameState.gamePin} />
                     </div>
                   )}
-                  <AISettingsPanel 
-                    gameState={gameState}
-                    isReadOnly={!isHost}
-                    onSetTopics={isHost ? onSetTopics : undefined}
-                    onSetTargetScore={isHost ? onSetTargetScore : undefined}
-                    onSetRoundTime={isHost ? onSetRoundTime : undefined}
-                    onSetMaxPlayers={isHost ? onSetMaxPlayers : undefined}
-                  />
+                  <div className="h-full overflow-hidden">
+                    <div className="h-full overflow-y-auto pr-1 pb-2">
+                      <AISettingsPanel 
+                        gameState={gameState}
+                        isReadOnly={!isHost}
+                        onSetTopics={isHost ? onSetTopics : undefined}
+                        onSetTargetScore={isHost ? onSetTargetScore : undefined}
+                        onSetRoundTime={isHost ? onSetRoundTime : undefined}
+                        onSetMaxPlayers={isHost ? onSetMaxPlayers : undefined}
+                      />
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Start Game Button - visible to all players, interactive for host only */}
                 <div className="mt-auto pt-6 border-t border-white/20">
                   <button
