@@ -86,9 +86,9 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       </header>
       {/* Main Content */}
       <main className="w-full pt-4 pb-12 sm:pt-6 lg:py-12">
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-0">
           {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
-          <div className="lg:order-2 lg:flex lg:flex-col lg:gap-3">
+          <div className="lg:order-2 lg:flex lg:flex-col lg:gap-3 px-3 lg:px-4">
             <InfoPanel />
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
               <CreateRoomPanel
@@ -115,12 +115,12 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           </div>
           
           {/* Active Rooms - Shows after info panel on mobile/tablet, left side on desktop */}
-          <div className="lg:order-1 lg:col-span-2">
+          <div className="lg:order-1 lg:col-span-2 px-3 lg:px-4">
             <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
           </div>
           
           {/* Mobile/Tablet panels - Shows after active rooms on mobile/tablet, hidden on desktop */}
-          <div className="flex flex-col gap-3 lg:hidden">
+          <div className="flex flex-col gap-3 lg:hidden px-3">
             <CreateRoomPanel
               roomName={roomName}
               onRoomNameChange={handleRoomNameChange}
