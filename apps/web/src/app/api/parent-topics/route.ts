@@ -35,6 +35,8 @@ interface SupabaseParentTopicRow {
   question_count: number | null;
 }
 
+const PRIORITY_SLUGS = ["geography", "entertainment"] as const;
+
 const fetchParentTopics = async (): Promise<ParentTopicOverview[]> => {
   const client = getSupabaseClient();
   if (!client) {
@@ -68,10 +70,60 @@ export async function GET() {
     }
 
     const topics = await fetchParentTopics();
-    cachedTopics = topics;
+
+    // Ensure priority slugs are always present
+    const seen = new Map(topics.map(topic => [topic.slug.toLowerCase(), topic]));
+
+    const missingPriorities = PRIORITY_SLUGS.filter(slug => !seen.has(slug));
+
+    if (missingPriorities.length > 0) {
+      const client = getSupabaseClient();
+      if (client) {
+        const { data, error } = await client
+          .from("tags")
+          .select("id, slug, display_name")
+          .in("slug", missingPriorities);
+
+        if (error) {
+          console.warn("Failed to fetch priority parent topics", error);
+        } else if (Array.isArray(data)) {
+          data.forEach(row => {
+            const slug = String(row.slug || "").toLowerCase();
+            if (slug && !seen.has(slug)) {
+              const fallback: ParentTopicOverview = {
+                tagId: row.id ?? -Math.random(),
+                slug,
+                displayName: row.display_name ?? slug,
+                childCount: 0,
+                questionCount: 0,
+              };
+              seen.set(slug, fallback);
+            }
+          });
+        }
+      }
+    }
+
+    const prioritySet = new Set<string>(PRIORITY_SLUGS);
+    const orderedTopics: ParentTopicOverview[] = [];
+
+    PRIORITY_SLUGS.forEach(slug => {
+      const topic = seen.get(slug);
+      if (topic) orderedTopics.push(topic);
+    });
+
+    Array.from(seen.values()).forEach(topic => {
+      const slug = topic.slug.toLowerCase();
+      if (!prioritySet.has(slug)) {
+        orderedTopics.push(topic);
+      }
+    });
+
+    const mergedTopics = orderedTopics;
+    cachedTopics = mergedTopics;
     lastFetchTime = now;
 
-    return NextResponse.json(topics, {
+    return NextResponse.json(mergedTopics, {
       headers: {
         "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
       },
