@@ -197,7 +197,14 @@ export function AISettingsPanel({
             </p>
           )}
 
-          <div className="mt-3">
+          <ParentTopicRail
+            topics={parentTopics}
+            loading={isParentLoading}
+            disabled={isReadOnly}
+            onSelectTopic={handleParentTopicSelect}
+          />
+
+          <div className="mt-4">
             <div className="text-sm font-medium text-text-main mb-2">Popular Topics</div>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1" aria-busy={isPopularLoading}>
               {popularTopics.length > 0 ? (
@@ -243,12 +250,6 @@ export function AISettingsPanel({
           </div>
         </div>
         {/* Read-only hint removed per request */}
-        <ParentTopicRail
-          topics={parentTopics}
-          loading={isParentLoading}
-          disabled={isReadOnly}
-          onSelectTopic={handleParentTopicSelect}
-        />
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section - Collapsible */}
