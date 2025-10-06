@@ -32,6 +32,8 @@ export function AISettingsPanel({
   const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   const { topics: parentTopics, loading: isParentLoading } = useParentTopics();
   
+  // Collapsible Game Settings state
+  const [isGameSettingsExpanded, setIsGameSettingsExpanded] = useState(false);
 
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
   const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
@@ -249,65 +251,86 @@ export function AISettingsPanel({
         />
       </section>
       <div className="my-4 border-t border-white/10" />
-      {/* Game Settings Section */}
+      {/* Game Settings Section - Collapsible */}
       <section>
-        <h3 className="text-lg font-semibold text-text-main mb-2">Game Settings</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 mt-2">
-          <div className="flex flex-col">
-            <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={targetScore}
-              onChange={handleTargetScoreChange}
-              disabled={isReadOnly}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
-              }`}
-            />
+        <button
+          type="button"
+          onClick={() => setIsGameSettingsExpanded(!isGameSettingsExpanded)}
+          className="flex items-center justify-between w-full text-left focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+          aria-expanded={isGameSettingsExpanded}
+        >
+          <h3 className="text-lg font-semibold text-text-main">Game Settings</h3>
+          <svg
+            className={`w-5 h-5 text-text-main transition-transform duration-200 ${
+              isGameSettingsExpanded ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {isGameSettingsExpanded && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 mt-3">
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-text-main mb-1">Target Score</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={targetScore}
+                onChange={handleTargetScoreChange}
+                disabled={isReadOnly}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                  isReadOnly 
+                    ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                    : "bg-white/10 border-white/20 text-text-main"
+                }`}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-text-main mb-1">Round Time</label>
+              <input
+                type="number"
+                min={10}
+                max={600}
+                value={roundTime}
+                onChange={handleRoundTimeChange}
+                disabled={isReadOnly}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                  isReadOnly 
+                    ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                    : "bg-white/10 border-white/20 text-text-main"
+                }`}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-text-main mb-1">Max Players</label>
+              <input
+                type="number"
+                min={2}
+                max={20}
+                value={maxPlayers}
+                onChange={handleMaxPlayersChange}
+                disabled={isReadOnly}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                  isReadOnly 
+                    ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
+                    : "bg-white/10 border-white/20 text-text-main"
+                }`}
+              />
+            </div>
           </div>
-          <div className="flex flex-col">
-            <label className="block text-sm font-medium text-text-main mb-1">Round Time</label>
-            <input
-              type="number"
-              min={10}
-              max={600}
-              value={roundTime}
-              onChange={handleRoundTimeChange}
-              disabled={isReadOnly}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
-              }`}
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="block text-sm font-medium text-text-main mb-1">Max Players</label>
-            <input
-              type="number"
-              min={2}
-              max={20}
-              value={maxPlayers}
-              onChange={handleMaxPlayersChange}
-              disabled={isReadOnly}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className={`w-full sm:w-28 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                isReadOnly 
-                  ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed" 
-                  : "bg-white/10 border-white/20 text-text-main"
-              }`}
-            />
-          </div>
-        </div>
+        )}
       </section>
     </div>
   );
