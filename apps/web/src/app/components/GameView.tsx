@@ -420,7 +420,7 @@ export const GameView = memo(function GameView({
   return (
     <div className="flex flex-col md:flex-row gap-0 h-full overflow-x-hidden">
       {/* Main game content - flex-1 */}
-      <div className="relative flex-1 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full flex flex-col">
+      <div className="relative flex-1 min-w-0 lg:min-w-[580px] bg-white/10 backdrop-blur-xl p-6 space-y-4 h-full flex flex-col">
         
         {/* Winner Screen - Show when game has ended */}
         {phase === "ended" && gameState.winnerId && (() => {
