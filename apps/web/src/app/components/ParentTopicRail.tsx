@@ -22,7 +22,7 @@ export function ParentTopicRail({ topics, loading = false, disabled = false, onS
   return (
     <div className="mt-6">
       <div className="text-sm font-medium text-text-main mb-2">Explore Gamemodes</div>
-      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory">
+      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory no-scrollbar">
         {loading && topics.length === 0
           ? Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} index={index} />)
           : topics.map((topic) => {
