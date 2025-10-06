@@ -21,13 +21,14 @@ BEGIN
     LIMIT GREATEST(1, limit_count)
   ),
   child_counts AS (
-    SELECT parent_tag_id AS parent_id, COUNT(*) AS child_count
+    SELECT parent_tag_id AS parent_id, COUNT(*)::integer AS child_count
     FROM public.tags
     WHERE parent_tag_id IS NOT NULL
     GROUP BY parent_tag_id
   ),
   question_counts AS (
-    SELECT p.id AS parent_id, COUNT(DISTINCT qt.question_id) AS question_count
+    SELECT p.id AS parent_id,
+           COALESCE(linked.question_count, 0)::bigint AS question_count
     FROM parents p
     LEFT JOIN LATERAL (
       WITH RECURSIVE descendants AS (
@@ -39,21 +40,19 @@ BEGIN
         FROM public.tags t2
         JOIN descendants d ON t2.parent_tag_id = d.id
       )
-      SELECT qt.question_id
+      SELECT COUNT(DISTINCT qt.question_id) AS question_count
       FROM public.question_tags qt
       JOIN descendants d ON d.id = qt.tag_id
     ) AS linked ON TRUE
-    GROUP BY p.id
   )
   SELECT p.id,
          p.slug,
          p.display_name,
-         COALESCE(cc.child_count, 0) AS child_count,
-         COALESCE(qc.question_count, 0) AS question_count
+         COALESCE(cc.child_count, 0)::integer AS child_count,
+         COALESCE(qc.question_count, 0)::bigint AS question_count
   FROM parents p
   LEFT JOIN child_counts cc ON cc.parent_id = p.id
   LEFT JOIN question_counts qc ON qc.parent_id = p.id
   ORDER BY question_count DESC, child_count DESC, p.display_name ASC;
 END;
 $$;
-
