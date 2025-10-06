@@ -5,6 +5,9 @@ import { GameState } from "@shared/index";
 
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
 import { usePopularTopics } from "../../hooks/usePopularTopics";
+import { useParentTopics } from "../../hooks/useParentTopics";
+import { ParentTopicRail } from "./ParentTopicRail";
+import type { ParentTopicOverview } from "@/types/topics";
 
 interface AISettingsPanelProps {
   gameState: GameState;
@@ -27,6 +30,7 @@ export function AISettingsPanel({
   const [topics, setTopics] = useState<string[]>(gameState.topics || [gameState.currentTopic || ""]);
   const [newTopic, setNewTopic] = useState("");
   const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
+  const { topics: parentTopics, loading: isParentLoading } = useParentTopics();
   
 
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
@@ -103,6 +107,17 @@ export function AISettingsPanel({
     const newTopics = topics.filter((_, i) => i !== index);
     setTopics(newTopics);
   };
+
+  const handleParentTopicSelect = useCallback(
+    (parentTopic: ParentTopicOverview) => {
+      if (isReadOnly) return;
+      const name = parentTopic.displayName.trim();
+      if (!name) return;
+      if (topics.includes(name)) return;
+      setTopics([...topics, name]);
+    },
+    [isReadOnly, topics]
+  );
 
 
 
@@ -226,6 +241,12 @@ export function AISettingsPanel({
           </div>
         </div>
         {/* Read-only hint removed per request */}
+        <ParentTopicRail
+          topics={parentTopics}
+          loading={isParentLoading}
+          disabled={isReadOnly}
+          onSelectTopic={handleParentTopicSelect}
+        />
       </section>
       <div className="my-4 border-t border-white/10" />
       {/* Game Settings Section */}
