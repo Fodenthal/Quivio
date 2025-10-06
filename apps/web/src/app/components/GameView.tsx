@@ -711,7 +711,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* md/lg right column wrapper with toggle above the panel; both sidebars only at xl+ */}
-      <div className="hidden md:flex xl:hidden flex-col md:w-80 h-full max-w-full overflow-x-hidden">
+      <div className="hidden lg:flex xl:hidden flex-col lg:w-80 h-full max-w-full overflow-x-hidden">
         <div className="self-stretch">
           <div className="flex w-full bg-white/5 border-white/20 p-1 gap-1">
             <button
@@ -781,7 +781,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Phone controls: floating toggle for Players/Chat */}
-      <div className="fixed bottom-4 left-0 right-0 px-3 z-10 md:hidden">
+      <div className="fixed bottom-4 left-0 right-0 px-3 z-10 lg:hidden">
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-2 py-1 flex items-center gap-1 w-full">
           <button
             type="button"
@@ -803,7 +803,7 @@ export const GameView = memo(function GameView({
       </div>
 
       {/* Phone full-height sheet */}
-      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} md:hidden inset-0 z-40` } role="dialog" aria-modal="true" aria-label={activePanel === 'chat' ? 'Chat' : 'Players'} ref={phoneSheetRef}>
+      <div className={`${isPhonePanelOpen ? 'fixed' : 'hidden'} lg:hidden inset-0 z-40` } role="dialog" aria-modal="true" aria-label={activePanel === 'chat' ? 'Chat' : 'Players'} ref={phoneSheetRef}>
         <div className="absolute inset-0 bg-black/40" onClick={() => {
           if (activePanel === 'chat') {
             const node = phoneSheetContentRef.current;
