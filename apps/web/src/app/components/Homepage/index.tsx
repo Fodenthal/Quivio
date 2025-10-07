@@ -86,9 +86,10 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       </header>
       {/* Main Content */}
       <main className="w-full pt-4 pb-12 sm:pt-6 lg:py-12">
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-0">
-          {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
-          <div className="lg:order-2 lg:flex lg:flex-col lg:gap-3 px-3 lg:px-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 lg:gap-6">
+            {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
+            <div className="lg:order-2 lg:flex lg:flex-col lg:gap-3">
             <InfoPanel />
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
               <CreateRoomPanel
@@ -114,13 +115,13 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
             </div>
           </div>
           
-          {/* Active Rooms - Shows after info panel on mobile/tablet, left side on desktop */}
-          <div className="lg:order-1 lg:col-span-2 px-3 lg:px-4">
-            <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
-          </div>
-          
-          {/* Mobile/Tablet panels - Shows after active rooms on mobile/tablet, hidden on desktop */}
-          <div className="flex flex-col gap-3 lg:hidden px-3">
+            {/* Active Rooms - Shows after info panel on mobile/tablet, left side on desktop */}
+            <div className="lg:order-1 lg:col-span-2">
+              <ActiveRoomsList onJoinRoom={onJoinRoom} className="min-h-[60dvh] md:min-h-[70dvh]" />
+            </div>
+            
+            {/* Mobile/Tablet panels - Shows after active rooms on mobile/tablet, hidden on desktop */}
+            <div className="flex flex-col gap-3 lg:hidden">
             <CreateRoomPanel
               roomName={roomName}
               onRoomNameChange={handleRoomNameChange}
@@ -141,6 +142,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
             />
             <CreateQuestionsCallout onCreateClick={handleNavigateToQuestions} />
             <AnnouncementsPanel />
+            </div>
           </div>
         </div>
       </main>
