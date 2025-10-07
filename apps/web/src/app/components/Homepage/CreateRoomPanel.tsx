@@ -32,7 +32,7 @@ export const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
+    <div className="bg-white/5 border border-white/10 rounded-lg p-3 h-full flex flex-col">
       <div className="text-center mb-4">
         <h2 className="text-xl font-bold text-slate-100">
           Start a new room

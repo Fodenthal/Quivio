@@ -53,7 +53,7 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
   const displayTotal = formatCount(totalQuestions);
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-4 flex flex-col gap-4">
+    <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex flex-col gap-3">
       <div className="relative">
         <div className="flex items-center justify-between gap-3 mb-1">
           <h3 className="text-lg font-semibold text-slate-100">Create Questions</h3>
@@ -64,13 +64,13 @@ export const CreateQuestionsCallout: React.FC<CreateQuestionsCalloutProps> = ({ 
           </div>
         </div>
         <p className="mt-2 text-sm text-slate-300/80">
-          The question database is built by the community.
+          The question database is built out by our community.
         </p>
       </div>
       <button
         type="button"
         onClick={onCreateClick}
-        className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 transition-all duration-200 shadow-lg shadow-indigo-600/30"
+        className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 transition-all duration-200"
       >
         Upload Questions
       </button>

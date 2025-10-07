@@ -36,7 +36,7 @@ export function AnnouncementsPanel(): React.ReactElement {
 
   if (!announcements) {
     return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-5">
+      <div className="bg-white/5 border border-white/10 rounded-lg p-3">
         <div className="skeleton-text w-28 mb-3"></div>
         <div className="space-y-3">
           <div className="skeleton-text w-full"></div>
@@ -47,7 +47,7 @@ export function AnnouncementsPanel(): React.ReactElement {
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)] p-5">
+    <div className="bg-white/5 border border-white/10 rounded-lg p-3">
       <h3 className="text-lg font-semibold text-slate-100 mb-3">Announcements</h3>
       {announcements.length === 0 ? (
         <div className="text-sm text-slate-300">No announcements yet.</div>
