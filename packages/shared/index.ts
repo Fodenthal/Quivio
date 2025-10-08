@@ -141,6 +141,7 @@ export interface GameState {
   // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   roundEnded: boolean;
   correctAnswer: string;
+  nextPromptImageUrl: string;
 
   // AI Question Generation Settings
   topics: string[];

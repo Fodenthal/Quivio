@@ -114,6 +114,7 @@ export interface GameState {
     roundStartTime: number;
     roundEnded: boolean;
     correctAnswer: string;
+    nextPromptImageUrl: string;
     topics: string[];
     currentTopic: string;
     currentTopicIndex: number;

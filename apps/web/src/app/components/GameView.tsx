@@ -9,6 +9,7 @@ import { Chat } from "./Chat";
 import { GamePins } from "./GamePins";
 import { AISettingsPanel } from "./AISettingsPanel";
 import { useLocalTimer } from "@/hooks/useLocalTimer";
+import { useImagePrefetch } from "@/hooks/useImagePrefetch";
 import { useGameConnectionContext } from "@/contexts/GameConnectionContext";
 
 interface GameViewProps {
@@ -133,6 +134,16 @@ export const GameView = memo(function GameView({
       storageKey,
     };
   }, [gameState.currentPrompt?.image, gameState.currentPrompt?.text]);
+
+  const nextPromptImageUrl = useMemo(() => {
+    const raw = gameState.nextPromptImageUrl;
+    if (typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    return trimmed ? trimmed : null;
+  }, [gameState.nextPromptImageUrl]);
+
+  useImagePrefetch(promptImage?.url);
+  useImagePrefetch(nextPromptImageUrl);
 
   useEffect(() => {
     if (promptImage) {
@@ -565,7 +576,8 @@ export const GameView = memo(function GameView({
                               className="object-contain"
                               sizes="(max-width: 768px) 95vw, 640px"
                               decoding="async"
-                              loading="lazy"
+                              loading="eager"
+                              unoptimized
                               onLoadingComplete={() => setIsPromptImageLoading(false)}
                               onError={() => {
                                 setPromptImageError(true);

@@ -82,6 +82,7 @@ export class TriviaRoomState extends Schema {
   // roundTimeRemaining removed - clients now calculate locally using event-driven timer system
   @type("boolean") roundEnded: boolean = false;
   @type("string") correctAnswer: string = "";
+  @type("string") nextPromptImageUrl: string = "";
 
   // AI Question Generation Settings
   @type(["string"]) topics: string[] = [];

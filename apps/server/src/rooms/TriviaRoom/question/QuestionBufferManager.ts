@@ -430,21 +430,6 @@ export class QuestionBufferManager {
     const servedTopic = q.sourceTopic || null;
     this.log(`📤 Serving: "${q.question}" (buffer ${this.questionBuffer.length}/${this.questionBufferSize})`);
 
-    const topics = this.state.topics || [];
-    if (topics.length > 0) {
-      const matchedIndex = servedTopic ? topics.indexOf(servedTopic) : -1;
-
-      if (matchedIndex >= 0) {
-        this.state.currentTopicIndex = matchedIndex;
-        this.state.currentTopic = topics[matchedIndex];
-      } else {
-        this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
-        this.state.currentTopic = topics[this.state.currentTopicIndex];
-      }
-    } else if (servedTopic) {
-      this.state.currentTopic = servedTopic;
-    }
-  
     // Non-blocking write; player shouldn't wait on DB I/O
     void this.questionDatabase
       .markQuestionAsUsed({ id: q.questionId, question: q.question })

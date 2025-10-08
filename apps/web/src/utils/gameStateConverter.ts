@@ -30,6 +30,7 @@ export interface RawRoomState {
   // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   roundEnded?: boolean;
   correctAnswer?: string;
+  nextPromptImageUrl?: string;
   topics?: string[];
   currentTopic?: string;
   currentTopicIndex?: number;
@@ -218,6 +219,9 @@ export function convertColyseusState(state: unknown): GameState | null {
     // roundTimeRemaining removed - clients calculate locally using event-driven timer system
     roundEnded: roomState.roundEnded || false,
     correctAnswer: roomState.correctAnswer || "",
+    nextPromptImageUrl: typeof roomState.nextPromptImageUrl === "string"
+      ? roomState.nextPromptImageUrl.trim()
+      : "",
     
     // AI Question Generation Settings
     topics: roomState.topics || [],
