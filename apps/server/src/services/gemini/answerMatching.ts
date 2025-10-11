@@ -1,5 +1,6 @@
 import { WordTokenizer } from 'natural';
 import { removeStopwords, eng } from 'stopword';
+import { compareNumericAnswers, parseNumericAnswer, ParsedNumericAnswer } from './numericAnswer';
 
 /**
  * Utilities for answer normalization and acceptance matching.
@@ -44,27 +45,50 @@ export function tokenize(answer: string): string[] {
  * @param acceptableAnswers - Array of acceptable answer variations
  * @returns boolean - Whether the answer is acceptable
  */
-export function isAnswerAcceptable(userAnswer: string, acceptableAnswers: string[]): boolean {
-  if (!userAnswer?.trim() || !acceptableAnswers?.length) {
+export function isAnswerAcceptable(userAnswer: string, acceptableAnswers: string[], canonicalAnswer?: string): boolean {
+  if (!userAnswer?.trim()) {
     return false;
   }
 
-  const userTokens = new Set(tokenize(userAnswer));
+  const uniqueAnswers = new Set<string>();
+  if (typeof canonicalAnswer === 'string' && canonicalAnswer.trim().length > 0) {
+    uniqueAnswers.add(canonicalAnswer);
+  }
+  for (const answer of acceptableAnswers || []) {
+    if (typeof answer === 'string' && answer.trim().length > 0) {
+      uniqueAnswers.add(answer);
+    }
+  }
 
-  // Early return for empty user tokens after stop-word removal
+  if (uniqueAnswers.size === 0) {
+    return false;
+  }
+
+  const candidates = Array.from(uniqueAnswers);
+
+  const userNumeric = parseNumericAnswer(userAnswer);
+  if (userNumeric) {
+    const numericTargets = candidates
+      .map(candidate => parseNumericAnswer(candidate))
+      .filter((parsed): parsed is ParsedNumericAnswer => parsed !== null);
+
+    if (numericTargets.length > 0) {
+      if (numericTargets.some(target => compareNumericAnswers(userNumeric, target))) {
+        return true;
+      }
+    }
+  }
+
+  const userTokens = new Set(tokenize(userAnswer));
   if (userTokens.size === 0) {
     return false;
   }
 
-  return acceptableAnswers.some(acceptableAnswer => {
+  return candidates.some(acceptableAnswer => {
     const acceptableTokens = tokenize(acceptableAnswer);
-
-    // Empty acceptable answer tokens should not match
     if (acceptableTokens.length === 0) {
       return false;
     }
-
-    // Every token from the accepted answer must appear in the user's tokens
     return acceptableTokens.every(token => userTokens.has(token));
   });
 }
@@ -75,5 +99,3 @@ export function isAnswerAcceptable(userAnswer: string, acceptableAnswers: string
 export function normalizeAnswer(answer: string): string {
   return normalizeText(answer);
 }
-
-

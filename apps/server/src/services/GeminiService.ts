@@ -128,8 +128,8 @@ export class GeminiService {
    * @param acceptableAnswers - Array of acceptable answer variations
    * @returns boolean - Whether the answer is acceptable
    */
-  static isAnswerAcceptable(userAnswer: string, acceptableAnswers: string[]): boolean {
-    return acceptAnswer(userAnswer, acceptableAnswers);
+  static isAnswerAcceptable(userAnswer: string, acceptableAnswers: string[], canonicalAnswer?: string): boolean {
+    return acceptAnswer(userAnswer, acceptableAnswers, canonicalAnswer);
   }
 
   /**

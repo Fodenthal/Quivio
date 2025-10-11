@@ -7,12 +7,29 @@ import { computeScore } from "../scoring/ScoringRules";
  * Handles guess processing and scoring, updating the room state accordingly.
  */
 export class GuessManager {
+  private answerPayload: { correctAnswer: string; acceptableAnswers: string[] } | null = null;
+
   constructor(private readonly state: TriviaRoomState) {}
 
   /**
    * Set the current round's answer payload.
    */
-  setAnswerPayload(_correctAnswer: string, _acceptableAnswers: string[]): void {}
+  setAnswerPayload(correctAnswer: string, acceptableAnswers: string[]): void {
+    const uniqueAnswers = new Set<string>();
+    if (typeof correctAnswer === "string" && correctAnswer.trim().length > 0) {
+      uniqueAnswers.add(correctAnswer);
+    }
+    for (const answer of acceptableAnswers || []) {
+      if (typeof answer === "string" && answer.trim().length > 0) {
+        uniqueAnswers.add(answer);
+      }
+    }
+
+    this.answerPayload = {
+      correctAnswer: typeof correctAnswer === "string" ? correctAnswer : "",
+      acceptableAnswers: Array.from(uniqueAnswers),
+    };
+  }
 
   /**
    * Process an incoming guess. Returns true if handled, false if ignored.
@@ -25,8 +42,10 @@ export class GuessManager {
     if (this.state.roundGuesses.has(playerId)) return false;
 
     const guess = (rawGuess ?? "").toString();
-    const acceptable = this.state.currentPrompt?.acceptableAnswers || [];
-    const isCorrect = GeminiService.isAnswerAcceptable(guess, acceptable);
+    const payload = this.answerPayload;
+    const acceptable = payload?.acceptableAnswers || this.state.currentPrompt?.acceptableAnswers || [];
+    const canonicalAnswer = payload?.correctAnswer || this.state.correctAnswer || "";
+    const isCorrect = GeminiService.isAnswerAcceptable(guess, acceptable, canonicalAnswer);
     if (isCorrect) {
       this.state.removeIncorrectGuess(playerId);
       this.state.addGuess(playerId, guess, true);
@@ -65,5 +84,4 @@ export class GuessManager {
     return null;
   }
 }
-
 
