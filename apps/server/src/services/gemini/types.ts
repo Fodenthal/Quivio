@@ -46,6 +46,8 @@ export interface GeneratedQuestion {
   image?: QuestionImageMetadata | null;
   /** Topic that produced this question (used for logging/rotation). */
   sourceTopic?: string;
+  /** Optional per-question round duration in milliseconds. */
+  roundTimeMs?: number;
   /** Web search queries used during fact gathering (if any). */
   webSearchQueries?: string[];
   /** Raw fact-gathering response for similarity detection. */

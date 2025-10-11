@@ -1,3 +1,4 @@
+import { GameStatus } from "@shared/index";
 import { TriviaRoomState } from "../../schema/TriviaRoomState";
 
 export interface RoomSettingsUpdate {
@@ -14,7 +15,12 @@ export class SettingsManager {
 
   updateRoomSettings(settings: RoomSettingsUpdate): void {
     if (settings.targetScore) this.state.targetScore = settings.targetScore;
-    if (settings.roundTime) this.state.roundTime = settings.roundTime;
+    if (settings.roundTime) {
+      this.state.defaultRoundTime = settings.roundTime;
+      if (this.state.gameStatus !== GameStatus.IN_PROGRESS) {
+        this.state.roundTime = settings.roundTime;
+      }
+    }
     if (settings.maxPlayers) this.state.maxPlayers = settings.maxPlayers;
   }
 
@@ -47,4 +53,3 @@ export class SettingsManager {
     this.onRegistryUpdate();
   }
 }
-

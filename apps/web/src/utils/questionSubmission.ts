@@ -8,6 +8,7 @@ export interface QuestionSubmissionInput {
   externalSource?: string | null;
   externalId?: string | null;
   imageUrl?: string | null;
+  roundTimeSeconds?: number | null;
 }
 
 export interface NormalizedQuestionImage {
@@ -34,6 +35,7 @@ export interface NormalizedQuestionSubmission {
   externalSource: string | null;
   externalId: string | null;
   image: NormalizedQuestionImage | null;
+  roundTimeMs: number;
 }
 
 export type SubmissionValidationErrors = Partial<
@@ -58,6 +60,8 @@ const isUrl = (value: string) => {
 export const validateSubmission = (payload: QuestionSubmissionInput): ValidationResult => {
   const errors: SubmissionValidationErrors = {};
   const trim = (value: string) => value.trim();
+
+  const DEFAULT_ROUND_TIME_MS = 20000;
 
   const topic = trim(payload.topic ?? "");
   const category = trim(payload.category ?? "");
@@ -94,6 +98,16 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
     errors.imageUrl = "Image URL must be a valid http(s) link";
   }
 
+  let roundTimeMs = DEFAULT_ROUND_TIME_MS;
+  if (payload.roundTimeSeconds !== undefined && payload.roundTimeSeconds !== null) {
+    const seconds = Number(payload.roundTimeSeconds);
+    if (!Number.isFinite(seconds) || seconds < 5 || seconds > 900) {
+      errors.roundTimeSeconds = "Round time must be between 5 and 900 seconds";
+    } else {
+      roundTimeMs = Math.round(seconds * 1000);
+    }
+  }
+
   if (Object.keys(errors).length > 0) {
     return { success: false, errors };
   }
@@ -123,6 +137,7 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
             source: "url",
           }
         : null,
+      roundTimeMs,
     },
   };
 };
@@ -192,6 +207,9 @@ export const mapBulkRecordToSubmission = (record: Record<string, unknown>): Ques
   externalSource: record.external_source ? String(record.external_source) : null,
   externalId: record.external_id ? String(record.external_id) : record.externalId ? String(record.externalId) : null,
   imageUrl: record.image_url ? String(record.image_url) : record.imageUrl ? String(record.imageUrl) : null,
+  roundTimeSeconds: record.round_time_ms !== undefined && record.round_time_ms !== null
+    ? Number(record.round_time_ms) / 1000
+    : null,
 });
 
 export interface StoredSubmissionRecord extends NormalizedQuestionSubmission {

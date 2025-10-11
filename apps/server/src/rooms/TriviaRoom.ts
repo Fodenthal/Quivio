@@ -106,8 +106,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Initialize room state
     this.state = new TriviaRoomState();
+    const defaultRoundTime = options.roundTime ?? this.DEFAULT_ROUND_TIME;
     this.state.targetScore = options.targetScore || this.DEFAULT_TARGET_SCORE;
-    this.state.roundTime = options.roundTime || this.DEFAULT_ROUND_TIME;
+    this.state.defaultRoundTime = defaultRoundTime;
+    this.state.roundTime = defaultRoundTime;
     this.state.isPrivate = options.isPrivate || false;
     this.state.maxPlayers = options.maxPlayers || this.maxClients;
     this.state.roomName = options.roomName || "Trivia Room";
@@ -243,6 +245,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       isPrivate: this.state.isPrivate,
       targetScore: this.state.targetScore,
       roundTime: this.state.roundTime,
+      defaultRoundTime: this.state.defaultRoundTime,
       state: this.state,
       registry,
       bufferMetrics,
@@ -570,11 +573,14 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   }
 
   private async loadNewPrompt(): Promise<void> {
+    const fallbackRoundTime = this.state.defaultRoundTime || this.DEFAULT_ROUND_TIME;
+
     if (this.state.currentTopic === "__DEV__") {
       this.log.debug("Development mode active - loading static prompt");
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
+      this.state.roundTime = fallbackRoundTime;
       this.clearPendingQuestion();
       return;
     }
@@ -603,6 +609,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
         this.state.currentTopic = topics[this.state.currentTopicIndex];
       }
+      const activeRoundTime = currentQuestion.roundTimeMs ?? fallbackRoundTime;
+      this.state.roundTime = activeRoundTime;
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(currentQuestion);
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
@@ -617,6 +625,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
+      this.state.roundTime = fallbackRoundTime;
     }
 
     void this.prepareNextPendingQuestion();

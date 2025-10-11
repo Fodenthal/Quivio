@@ -27,6 +27,7 @@ export interface RawRoomState {
   restartCountdown?: number;
   participatingPlayers?: MapSchemaLike;
   roundStartTime?: number;
+  defaultRoundTime?: number;
   // roundTimeRemaining removed - clients calculate locally using event-driven timer system
   roundEnded?: boolean;
   correctAnswer?: string;
@@ -200,9 +201,17 @@ export function convertColyseusState(state: unknown): GameState | null {
     };
   })();
 
+  const activeRoundTime = typeof roomState.roundTime === 'number' ? roomState.roundTime : undefined;
+  const computedDefaultRoundTime = typeof roomState.defaultRoundTime === 'number'
+    ? roomState.defaultRoundTime
+    : undefined;
+  const defaultRoundTime = computedDefaultRoundTime ?? activeRoundTime ?? 30000;
+  const resolvedRoundTime = activeRoundTime ?? defaultRoundTime;
+
   return {
     targetScore: roomState.targetScore || 10,
-    roundTime: roomState.roundTime || 30000,
+    roundTime: resolvedRoundTime,
+    defaultRoundTime,
     maxPlayers: roomState.maxPlayers || 8,
     isPrivate: roomState.isPrivate || false,
     gamePin: roomState.gamePin || "",

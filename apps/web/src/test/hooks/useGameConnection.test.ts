@@ -25,6 +25,7 @@ const mockGameClient = {
 const mockConvertedState: GameState = {
   targetScore: 10,
   roundTime: 30000,
+  defaultRoundTime: 30000,
   maxPlayers: 8,
   isPrivate: false,
   gamePin: "TEST1",
@@ -112,11 +113,13 @@ describe("useGameConnection", () => {
     it("sets up event handlers on mount", () => {
       renderHook(() => useGameConnection());
 
-      expect(mockGameClient.setEventHandlers).toHaveBeenCalledWith({
+      expect(mockGameClient.setEventHandlers).toHaveBeenCalledWith(expect.objectContaining({
         onConnectionStatusChange: expect.any(Function),
         onStateChange: expect.any(Function),
         onError: expect.any(Function),
-      });
+        onRoundStart: expect.any(Function),
+        onRoundEnd: expect.any(Function),
+      }));
     });
 
     it("disposes GameClient on unmount", () => {

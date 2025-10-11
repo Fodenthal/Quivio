@@ -93,12 +93,14 @@ export interface ClockSyncMessage {
 export interface RoomSettings {
     targetScore: number;
     roundTime: number;
+    defaultRoundTime?: number;
     maxPlayers: number;
     isPrivate: boolean;
 }
 export interface GameState {
     targetScore: number;
     roundTime: number;
+    defaultRoundTime: number;
     maxPlayers: number;
     isPrivate: boolean;
     gamePin: string;
@@ -181,6 +183,8 @@ export interface AdminRoomDetails {
         roundStartTime: number;
         roundEnded: boolean;
         correctAnswer: string;
+        roundTime: number;
+        defaultRoundTime: number;
     };
     players: AdminRoomPlayerSummary[];
     roundGuesses: AdminRoundGuessSummary[];
@@ -198,6 +202,7 @@ export interface AdminRoomDetails {
     maxClients: number;
     autoDispose: boolean;
     serverTime: number;
+    defaultRoundTime: number;
 }
 export interface AdminRoomSnapshot {
     roomId: string;

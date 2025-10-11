@@ -21,6 +21,7 @@ interface BuildAdminRoomDetailsParams {
   isPrivate: boolean;
   targetScore: number;
   roundTime: number;
+  defaultRoundTime: number;
   state: TriviaRoomState;
   registry: RoomMetadata | null;
   bufferMetrics: BufferMetrics;
@@ -40,6 +41,7 @@ export function buildAdminRoomDetails(params: BuildAdminRoomDetailsParams): Admi
     isPrivate,
     targetScore,
     roundTime,
+    defaultRoundTime,
     state,
     registry,
     bufferMetrics,
@@ -114,6 +116,7 @@ export function buildAdminRoomDetails(params: BuildAdminRoomDetailsParams): Admi
     isPrivate,
     targetScore,
     roundTime,
+    defaultRoundTime,
     state: {
       gameStatus: state.gameStatus as GameStatus,
       gamePaused: state.gamePaused,
@@ -127,6 +130,8 @@ export function buildAdminRoomDetails(params: BuildAdminRoomDetailsParams): Admi
       roundStartTime: state.roundStartTime,
       roundEnded: state.roundEnded,
       correctAnswer: state.correctAnswer,
+      roundTime: state.roundTime,
+      defaultRoundTime: state.defaultRoundTime,
     },
     players,
     roundGuesses,

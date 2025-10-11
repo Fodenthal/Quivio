@@ -653,11 +653,17 @@ export class QuestionBufferManager {
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
 
-      await this.questionDatabase.storeQuestion(targetTopic, difficulty, generatedQuestion);
+      const roundTimeMs = this.state.defaultRoundTime || this.state.roundTime || 30000;
+      const questionWithTiming: GeneratedQuestion = {
+        ...generatedQuestion,
+        roundTimeMs,
+      };
+
+      await this.questionDatabase.storeQuestion(targetTopic, difficulty, questionWithTiming);
 
       const annotatedQuestion: GeneratedQuestion = {
-        ...generatedQuestion,
-        sourceTopic: generatedQuestion.sourceTopic || targetTopic,
+        ...questionWithTiming,
+        sourceTopic: questionWithTiming.sourceTopic || targetTopic,
       };
 
       this.addTopicRecentQuestion(targetTopic, annotatedQuestion.question);

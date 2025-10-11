@@ -36,6 +36,7 @@ describe("testing TriviaRoom", () => {
     // Verify player was added
     assert.strictEqual(client1.sessionId, room.clients[0].sessionId);
     assert.strictEqual(room.state.players.size, 1);
+    assert.strictEqual(room.state.defaultRoundTime, 30000);
     
     // Verify player data
     const player = room.state.players.get(client1.sessionId);
@@ -565,6 +566,7 @@ describe("testing TriviaRoom", () => {
     // Settings should be updated
     assert.strictEqual(room.state.targetScore, 15);
     assert.strictEqual(room.state.roundTime, 45000);
+    assert.strictEqual(room.state.defaultRoundTime, 45000);
     assert.strictEqual(room.state.maxPlayers, 6);
   });
 
