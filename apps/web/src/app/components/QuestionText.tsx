@@ -6,7 +6,6 @@ import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
 
 type WrapperComponent = ElementType<{ className?: string; children?: ReactNode }>;
 
@@ -45,10 +44,10 @@ const QuestionText = memo(function QuestionText({
       <Wrapper className={className}>
         <ReactMarkdown
           remarkPlugins={[remarkMath]}
-          rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+          rehypePlugins={[rehypeKatex]}
           components={{
-            p: ({ children }) => <>{children}</>,
-            span: ({ children }) => <>{children}</>,
+            // Unwrap paragraph to prevent extra spacing, but let other elements render normally
+            p: (props) => <span {...props} />,
           }}
         >
           {text}
