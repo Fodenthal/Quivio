@@ -17,6 +17,7 @@ export declare enum GameStatus {
     IN_PROGRESS = "in_progress",
     GAME_ENDED = "game_ended"
 }
+export type QuestionContentFormat = "plain" | "latex";
 export interface PlayerData {
     id: string;
     name: string;
@@ -36,6 +37,7 @@ export interface Prompt {
     difficultyLevel?: number;
     acceptableAnswers?: string[];
     image?: PromptImage;
+    format?: QuestionContentFormat;
 }
 export interface PromptImage {
     url: string;
@@ -195,6 +197,7 @@ export interface AdminRoomDetails {
         difficultyLevel: number;
         acceptableAnswers: number;
         hasImage: boolean;
+        format: QuestionContentFormat;
     } | null;
     registry: AdminRoomRegistrySummary | null;
     questionBuffer: AdminQuestionBufferMetrics;

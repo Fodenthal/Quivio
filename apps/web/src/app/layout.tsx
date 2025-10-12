@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 import { GameConnectionProvider } from "../contexts/GameConnectionContext";
@@ -60,4 +61,3 @@ export default function RootLayout({
     </html>
   );
 }
-

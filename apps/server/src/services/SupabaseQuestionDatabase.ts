@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
 import { QuestionIdentifier } from './questionTypes';
 import { getDatabaseConfig } from '../config';
+import type { QuestionContentFormat } from '@shared/index';
 
 export interface StoredQuestion {
   id: number;
@@ -58,6 +59,39 @@ export class SupabaseQuestionDatabase {
       .replace(/^-|-$/g, '');
   }
 
+  private detectQuestionFormat(source: unknown): QuestionContentFormat {
+    if (typeof source !== 'string') {
+      return 'plain';
+    }
+    const text = source.trim();
+    if (!text) {
+      return 'plain';
+    }
+
+    const patterns = [
+      /\$\$[\s\S]+?\$\$/m,
+      /(?<!\\)\$[^$]+\$/m,
+      /\\\([\s\S]+?\\\)/m,
+      /\\\[[\s\S]+?\\\]/m,
+      /\\begin\{[^}]+\}/m,
+    ];
+
+    return patterns.some(pattern => pattern.test(text)) ? 'latex' : 'plain';
+  }
+
+  private normalizeQuestionFormat(value: unknown, fallbackSource?: unknown): QuestionContentFormat {
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'latex') {
+        return 'latex';
+      }
+      if (normalized === 'plain') {
+        return 'plain';
+      }
+    }
+    return this.detectQuestionFormat(fallbackSource);
+  }
+
   private shuffleByUsedCount<T extends { used_count?: number | null }>(rows: T[] | null | undefined): T[] {
     if (!rows || rows.length <= 1) {
       return rows ? rows.slice() : [];
@@ -104,6 +138,7 @@ export class SupabaseQuestionDatabase {
     
     try {
       const normalizedImage = this.normalizeImageMetadata(question.image);
+      const format = question.format ?? this.detectQuestionFormat(question.question);
 
       const { data, error } = await this.client
         .from('questions')
@@ -116,7 +151,8 @@ export class SupabaseQuestionDatabase {
           category: question.category,
           used_count: 0,
           image: normalizedImage,
-          round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null
+          round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null,
+          question_format: format,
         })
         .select()
         .single();
@@ -200,6 +236,7 @@ export class SupabaseQuestionDatabase {
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
         };
       });
     } catch (error) {
@@ -263,7 +300,8 @@ export class SupabaseQuestionDatabase {
           difficulty: row.difficulty,
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
-          sourceTopic: row.topic ?? undefined
+          sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
         };
       });
 
@@ -316,6 +354,7 @@ export class SupabaseQuestionDatabase {
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
         };
       });
 
@@ -370,6 +409,7 @@ export class SupabaseQuestionDatabase {
             image: this.normalizeImageMetadata(row.image),
             roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
             sourceTopic: row.topic ?? undefined,
+            format: this.normalizeQuestionFormat(row.question_format, row.question),
           };
         });
 

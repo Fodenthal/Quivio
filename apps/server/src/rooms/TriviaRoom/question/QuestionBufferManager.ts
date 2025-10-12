@@ -1,5 +1,6 @@
 import { GeneratedQuestion, GeminiService } from "../../../services/GeminiService";
 import { TriviaRoomState } from "../../schema/TriviaRoomState";
+import type { QuestionContentFormat } from "@shared/index";
 
 /**
  * Manages in-memory question buffering and background refills.
@@ -130,6 +131,30 @@ export class QuestionBufferManager {
     
     this.topicRawResponses.set(topic, rawResponses);
     this.log(`🔍 Added raw response to topic "${topic}" (${rawResponses.length} total, ${rawResponse.length} chars)`);
+  }
+
+  /**
+   * Detect the appropriate rendering format for a question string.
+   */
+  private detectQuestionFormat(text: string | null | undefined): QuestionContentFormat {
+    if (!text) {
+      return 'plain';
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return 'plain';
+    }
+
+    const patterns = [
+      /\$\$[\s\S]+?\$\$/m,
+      /(?<!\\)\$[^$]+\$/m,
+      /\\\([\s\S]+?\\\)/m,
+      /\\\[[\s\S]+?\\\]/m,
+      /\\begin\{[^}]+\}/m,
+    ];
+
+    return patterns.some(pattern => pattern.test(trimmed)) ? 'latex' : 'plain';
   }
 
   /**
@@ -652,11 +677,12 @@ export class QuestionBufferManager {
       };
 
       const generatedQuestion = await this.geminiService.generateQuestion(questionRequest);
-
+      const format = generatedQuestion.format ?? this.detectQuestionFormat(generatedQuestion.question);
       const roundTimeMs = this.state.defaultRoundTime || this.state.roundTime || 30000;
       const questionWithTiming: GeneratedQuestion = {
         ...generatedQuestion,
         roundTimeMs,
+        format,
       };
 
       await this.questionDatabase.storeQuestion(targetTopic, difficulty, questionWithTiming);

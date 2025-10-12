@@ -2,6 +2,8 @@
  * Shared types for Gemini-based trivia question generation.
  */
 
+import type { QuestionContentFormat } from "@shared/index";
+
 /**
  * Metadata describing an associated media asset for a question.
  */
@@ -52,6 +54,8 @@ export interface GeneratedQuestion {
   webSearchQueries?: string[];
   /** Raw fact-gathering response for similarity detection. */
   rawFactResponse?: string;
+  /** Formatting hint for client rendering (plain vs LaTeX). */
+  format?: QuestionContentFormat;
 }
 
 /**

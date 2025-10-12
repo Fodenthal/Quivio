@@ -1,4 +1,4 @@
-import { GameStatus, type AdminRoomDetails } from "@shared/index";
+import { GameStatus, type AdminRoomDetails, type QuestionContentFormat } from "@shared/index";
 import type { RoomMetadata } from "../../../services/GamePinRegistry";
 import type { TriviaRoomState } from "../../schema/TriviaRoomState";
 
@@ -103,6 +103,12 @@ export function buildAdminRoomDetails(params: BuildAdminRoomDetailsParams): Admi
         difficultyLevel: prompt.difficultyLevel,
         acceptableAnswers: Array.isArray(prompt.acceptableAnswers) ? prompt.acceptableAnswers.length : 0,
         hasImage: !!prompt.image?.url,
+        format: ((value: unknown): QuestionContentFormat => {
+          if (typeof value === "string" && value.trim().toLowerCase() === "latex") {
+            return "latex";
+          }
+          return "plain";
+        })(prompt.format),
       }
     : null;
 

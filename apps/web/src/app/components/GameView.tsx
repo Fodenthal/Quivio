@@ -11,6 +11,7 @@ import { AISettingsPanel } from "./AISettingsPanel";
 import { useLocalTimer } from "@/hooks/useLocalTimer";
 import { useImagePrefetch } from "@/hooks/useImagePrefetch";
 import { useGameConnectionContext } from "@/contexts/GameConnectionContext";
+import QuestionText from "./QuestionText";
 
 interface GameViewProps {
   gameState: GameState;
@@ -640,9 +641,12 @@ export const GameView = memo(function GameView({
                       </div>
                     )}
                     <div className="flex-grow flex flex-col justify-center">
-                      <h3 className={`${promptMobileClass} ${promptMdClass} font-semibold text-text-main break-words leading-normal md:leading-relaxed`}>
-                        {gameState.currentPrompt.text}
-                      </h3>
+                      <QuestionText
+                        as="h3"
+                        className={`${promptMobileClass} ${promptMdClass} font-semibold text-text-main break-words leading-normal md:leading-relaxed`}
+                        text={gameState.currentPrompt.text}
+                        format={gameState.currentPrompt.format}
+                      />
                     </div>
                   </>
                 )}
@@ -887,6 +891,7 @@ export const GameView = memo(function GameView({
     prevProps.gameState.roundStartTime === nextProps.gameState.roundStartTime &&
     // roundTimeRemaining comparison removed - now using local timer rendering
     prevProps.gameState.currentPrompt?.text === nextProps.gameState.currentPrompt?.text &&
+    prevProps.gameState.currentPrompt?.format === nextProps.gameState.currentPrompt?.format &&
     prevProps.gameState.currentPrompt?.image === nextProps.gameState.currentPrompt?.image &&
     prevProps.gameState.correctAnswer === nextProps.gameState.correctAnswer &&
     prevProps.gameState.winnerId === nextProps.gameState.winnerId &&
