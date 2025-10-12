@@ -17,7 +17,6 @@ export declare enum GameStatus {
     IN_PROGRESS = "in_progress",
     GAME_ENDED = "game_ended"
 }
-export type QuestionContentFormat = "plain" | "latex";
 export interface PlayerData {
     id: string;
     name: string;
@@ -27,6 +26,7 @@ export interface PlayerData {
     joinedAt: number;
     avatarHue: number;
 }
+export type QuestionContentFormat = "plain" | "latex";
 export interface Prompt {
     id: string;
     text: string;
