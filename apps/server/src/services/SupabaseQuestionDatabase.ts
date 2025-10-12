@@ -58,6 +58,44 @@ export class SupabaseQuestionDatabase {
       .replace(/^-|-$/g, '');
   }
 
+  private shuffleByUsedCount<T extends { used_count?: number | null }>(rows: T[] | null | undefined): T[] {
+    if (!rows || rows.length <= 1) {
+      return rows ? rows.slice() : [];
+    }
+
+    const fallbackKey = Number.MAX_SAFE_INTEGER;
+    const buckets = new Map<number, T[]>();
+
+    for (const row of rows) {
+      const key = typeof row.used_count === 'number' ? row.used_count : fallbackKey;
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.push(row);
+      } else {
+        buckets.set(key, [row]);
+      }
+    }
+
+    const sortedKeys = Array.from(buckets.keys()).sort((a, b) => a - b);
+    const result: T[] = [];
+
+    for (const key of sortedKeys) {
+      const bucketRows = buckets.get(key)!;
+      result.push(...this.shuffleArray(bucketRows));
+    }
+
+    return result;
+  }
+
+  private shuffleArray<T>(items: T[]): T[] {
+    const result = items.slice();
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
   /**
    * Store a newly generated question in the database
    */
@@ -246,7 +284,8 @@ export class SupabaseQuestionDatabase {
 
       if (fbErr) throw fbErr;
 
-      questions = (fallback || []).map((row: any) => {
+      const shuffledFallback = this.shuffleByUsedCount(fallback);
+      questions = shuffledFallback.map((row: any) => {
         const acceptableField = row.acceptable_answers;
         let acceptableAnswers: string[] = [];
 
@@ -292,14 +331,15 @@ export class SupabaseQuestionDatabase {
         const { data: fallback, error: fbErr } = await this.client
           .from('questions')
           .select('*')
-          .eq('topic', topic)
-          .eq('difficulty', difficulty)
-          .order('used_count', { ascending: true })
-          .limit(limit);
+        .eq('topic', topic)
+        .eq('difficulty', difficulty)
+        .order('used_count', { ascending: true })
+        .limit(limit);
 
         if (fbErr) throw fbErr;
 
-        const questions: GeneratedQuestion[] = (fallback || []).map((row: any) => {
+        const shuffledFallback = this.shuffleByUsedCount(fallback);
+        const questions: GeneratedQuestion[] = shuffledFallback.map((row: any) => {
           const acceptableField = row.acceptable_answers;
           let acceptableAnswers: string[] = [];
 
