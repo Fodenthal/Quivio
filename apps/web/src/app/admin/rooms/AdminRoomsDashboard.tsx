@@ -387,7 +387,16 @@ export default function AdminRoomsDashboard() {
                           </div>
                           <div className="flex justify-between">
                             <dt>Round Time</dt>
-                            <dd>{details?.roundTime ? `${Math.round(details.roundTime / 1000)}s` : "—"}</dd>
+                            <dd>
+                              {(() => {
+                                const active = details?.roundTime ?? details?.defaultRoundTime;
+                                return active ? `${Math.round(active / 1000)}s` : "—";
+                              })()}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between text-sm text-gray-300">
+                            <dt>Default Round Time</dt>
+                            <dd>{details?.defaultRoundTime ? `${Math.round(details.defaultRoundTime / 1000)}s` : "—"}</dd>
                           </div>
                           <div className="flex justify-between">
                             <dt>Last Round Start</dt>

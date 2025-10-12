@@ -428,7 +428,8 @@ describe('GameClient', () => {
 
       // Extract the handlers that were registered
       stateChangeHandler = mockRoom.onStateChange.mock.calls[0][0];
-      messageHandler = mockRoom.onMessage.mock.calls[0][1]; // Second arg for "*" handler
+      const wildcardRegistration = mockRoom.onMessage.mock.calls.find(([type]) => type === '*');
+      messageHandler = wildcardRegistration ? wildcardRegistration[1] : () => {};
       leaveHandler = mockRoom.onLeave.mock.calls[0][0];
       errorHandler = mockRoom.onError.mock.calls[0][0];
     });

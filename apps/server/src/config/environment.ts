@@ -178,7 +178,7 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
   // Load game configuration
   const gameConfig: GameConfig = {
     defaultTargetScore: parseInt(process.env.DEFAULT_TARGET_SCORE || '100'),
-    defaultRoundTime: parseInt(process.env.DEFAULT_ROUND_TIME || '30'),
+    defaultRoundTime: parseInt(process.env.DEFAULT_ROUND_TIME || '60'),
     defaultMaxPlayers: parseInt(process.env.DEFAULT_MAX_PLAYERS || '10'),
     maxRooms: parseInt(process.env.MAX_ROOMS || '100'),
     roomCleanupInterval: parseInt(process.env.ROOM_CLEANUP_INTERVAL || '300000'),

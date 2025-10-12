@@ -20,6 +20,7 @@ describe("gameStateConverter", () => {
       expect(result).toEqual({
         targetScore: 10,
         roundTime: 30000,
+        defaultRoundTime: 30000,
         maxPlayers: 8,
         isPrivate: false,
         gamePin: "",
@@ -36,6 +37,7 @@ describe("gameStateConverter", () => {
         // roundTimeRemaining: removed - clients calculate locally using event-driven timer system
         roundEnded: false,
         correctAnswer: "",
+        nextPromptImageUrl: "",
         topics: [],
         currentTopic: "",
         currentTopicIndex: 0,
@@ -95,6 +97,7 @@ describe("gameStateConverter", () => {
       expect(result).toMatchObject({
         targetScore: 15,
         roundTime: 45000,
+        defaultRoundTime: 45000,
         maxPlayers: 6,
         isPrivate: true,
         gamePin: "ABC12",

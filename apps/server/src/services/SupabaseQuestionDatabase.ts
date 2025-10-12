@@ -77,7 +77,8 @@ export class SupabaseQuestionDatabase {
           acceptable_answers: question.acceptableAnswers,
           category: question.category,
           used_count: 0,
-          image: normalizedImage
+          image: normalizedImage,
+          round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null
         })
         .select()
         .single();
@@ -159,6 +160,7 @@ export class SupabaseQuestionDatabase {
           category: row.category,
           difficulty: row.difficulty,
           image: this.normalizeImageMetadata(row.image),
+          roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
         };
       });
@@ -222,6 +224,7 @@ export class SupabaseQuestionDatabase {
           category: row.category,
           difficulty: row.difficulty,
           image: this.normalizeImageMetadata(row.image),
+          roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined
         };
       });
@@ -272,6 +275,7 @@ export class SupabaseQuestionDatabase {
           category: row.category,
           difficulty: row.difficulty,
           image: this.normalizeImageMetadata(row.image),
+          roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
         };
       });
@@ -324,6 +328,7 @@ export class SupabaseQuestionDatabase {
             category: row.category,
             difficulty: row.difficulty,
             image: this.normalizeImageMetadata(row.image),
+            roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
             sourceTopic: row.topic ?? undefined,
           };
         });

@@ -75,6 +75,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
   private promptLoader!: PromptLoader;
   private guessManager!: GuessManager;
   private roundManager!: RoundManager;
+  private pendingQuestion: GeneratedQuestion | null = null;
   private readonly createdAt = Date.now();
 
   onCreate(options: RoomOptions = {}) {
@@ -105,8 +106,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     
     // Initialize room state
     this.state = new TriviaRoomState();
+    const defaultRoundTime = options.roundTime ?? this.DEFAULT_ROUND_TIME;
     this.state.targetScore = options.targetScore || this.DEFAULT_TARGET_SCORE;
-    this.state.roundTime = options.roundTime || this.DEFAULT_ROUND_TIME;
+    this.state.defaultRoundTime = defaultRoundTime;
+    this.state.roundTime = defaultRoundTime;
     this.state.isPrivate = options.isPrivate || false;
     this.state.maxPlayers = options.maxPlayers || this.maxClients;
     this.state.roomName = options.roomName || "Trivia Room";
@@ -157,7 +160,8 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         // FIXED: Smart cleanup instead of nuclear resetRecents()
         // Only removes topics that are no longer active, preserves existing topic data
         this.questionBufferManager.cleanupStaleTopics(this.state.topics || []);
-        this.questionBufferManager.clear(); 
+        this.questionBufferManager.clear();
+        this.clearPendingQuestion();
       },
       () => this.updateRoomMetadata()
     );
@@ -241,6 +245,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       isPrivate: this.state.isPrivate,
       targetScore: this.state.targetScore,
       roundTime: this.state.roundTime,
+      defaultRoundTime: this.state.defaultRoundTime,
       state: this.state,
       registry,
       bufferMetrics,
@@ -522,19 +527,77 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     return this.questionBufferManager.getNextQuestion();
   }
 
+  private updateNextPromptImageState(question: GeneratedQuestion | null): void {
+    const url = question?.image && typeof question.image.url === "string"
+      ? question.image.url.trim()
+      : "";
+    if (this.state.nextPromptImageUrl !== url) {
+      this.state.nextPromptImageUrl = url;
+    }
+  }
+
+  private clearPendingQuestion(): void {
+    this.pendingQuestion = null;
+    this.updateNextPromptImageState(null);
+  }
+
+  private async prepareNextPendingQuestion(): Promise<void> {
+    if (this.state.currentTopic === "__DEV__") {
+      this.clearPendingQuestion();
+      return;
+    }
+
+    if (this.pendingQuestion) {
+      this.updateNextPromptImageState(this.pendingQuestion);
+      return;
+    }
+
+    try {
+      const nextQuestion = await this.getNextQuestion();
+      if (nextQuestion) {
+        this.pendingQuestion = nextQuestion;
+        this.updateNextPromptImageState(nextQuestion);
+        this.log.debug("Prepared next question image for prefetch", {
+          topic: nextQuestion.sourceTopic || this.state.currentTopic,
+          hasImage: !!nextQuestion.image?.url
+        });
+      } else {
+        this.clearPendingQuestion();
+      }
+    } catch (error) {
+      this.clearPendingQuestion();
+      this.log.warn("Failed to prepare next question", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
   private async loadNewPrompt(): Promise<void> {
+    const fallbackRoundTime = this.state.defaultRoundTime || this.DEFAULT_ROUND_TIME;
+
     if (this.state.currentTopic === "__DEV__") {
       this.log.debug("Development mode active - loading static prompt");
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
+      this.state.roundTime = fallbackRoundTime;
+      this.clearPendingQuestion();
       return;
     }
 
-    const currentQuestion = await this.getNextQuestion();
+    let currentQuestion: GeneratedQuestion | null = null;
+
+    if (this.pendingQuestion) {
+      currentQuestion = this.pendingQuestion;
+      this.pendingQuestion = null;
+      this.updateNextPromptImageState(null);
+    } else {
+      currentQuestion = await this.getNextQuestion();
+    }
+
     if (currentQuestion) {
+      const topics = this.state.topics || [];
       if (currentQuestion.sourceTopic) {
-        const topics = this.state.topics || [];
         const matchedIndex = topics.indexOf(currentQuestion.sourceTopic);
         if (matchedIndex >= 0) {
           this.state.currentTopicIndex = matchedIndex;
@@ -542,7 +605,12 @@ export class TriviaRoom extends Room<TriviaRoomState> {
         } else {
           this.state.currentTopic = currentQuestion.sourceTopic;
         }
+      } else if (topics.length > 0) {
+        this.state.currentTopicIndex = (this.state.currentTopicIndex + 1) % topics.length;
+        this.state.currentTopic = topics[this.state.currentTopicIndex];
       }
+      const activeRoundTime = currentQuestion.roundTimeMs ?? fallbackRoundTime;
+      this.state.roundTime = activeRoundTime;
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadGeneratedQuestion(currentQuestion);
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
@@ -557,7 +625,10 @@ export class TriviaRoom extends Room<TriviaRoomState> {
       const { correctAnswer, acceptableAnswers } = this.promptLoader.loadStaticPrompt();
       this.currentRoundAnswer = correctAnswer;
       this.guessManager.setAnswerPayload(correctAnswer, acceptableAnswers);
+      this.state.roundTime = fallbackRoundTime;
     }
+
+    void this.prepareNextPendingQuestion();
   }
 
   // checkAllPlayersAnswered() removed - GuessManager.handleGuess() is now the single source of truth
@@ -657,6 +728,7 @@ export class TriviaRoom extends Room<TriviaRoomState> {
     // Reset used prompts for next game
     this.usedPrompts.clear();
     this.currentRoundAnswer = "";
+    this.clearPendingQuestion();
     
     // Clear any timers
     if (this.roundTimer) {

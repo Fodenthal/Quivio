@@ -11,6 +11,7 @@ const TABLE_NAME = process.env.QUESTION_STAGING_TABLE ?? "questions_staging";
 const FALLBACK_TOPIC = "General";
 const FALLBACK_CATEGORY = "Community";
 const FALLBACK_DIFFICULTY = 3;
+const FALLBACK_ROUND_TIME_MS = 20000;
 
 interface MemoryStore {
   submissions: StoredSubmissionRecord[];
@@ -66,6 +67,7 @@ const toStoredRecord = (
   externalSource: submission.externalSource,
   externalId: submission.externalId,
   image: submission.image,
+  roundTimeMs: submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
   status: overrides.status ?? "pending",
   submittedAt: overrides.submittedAt ?? new Date().toISOString(),
   origin,
@@ -114,6 +116,7 @@ const storeInSupabase = async (
       image: submission.image,
       origin,
       batch_id: batchId,
+      round_time_ms: submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
     }));
 
     const { data, error } = await client
@@ -132,6 +135,7 @@ const storeInSupabase = async (
         id: row.id ? String(row.id) : randomUUID(),
         status: row.status ?? "pending",
         submittedAt: row.submitted_at ?? row.created_at ?? new Date().toISOString(),
+        roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
       });
     });
 
@@ -173,7 +177,7 @@ export const fetchRecentSubmissions = async (
     try {
       const { data, error } = await client
         .from(TABLE_NAME)
-        .select("id, topic, category, difficulty, question, correct_answer, acceptable_answers, external_source, external_id, image, status, batch_id, origin, submitted_at, created_at, moderation_notes")
+        .select("id, topic, category, difficulty, question, correct_answer, acceptable_answers, external_source, external_id, image, status, batch_id, origin, submitted_at, created_at, moderation_notes, round_time_ms")
         .order("submitted_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false, nullsFirst: false })
         .limit(limit);
@@ -195,6 +199,7 @@ export const fetchRecentSubmissions = async (
           origin: row.origin ?? "bulk",
           batchId: row.batch_id ?? null,
           notes: row.moderation_notes ?? null,
+          roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : FALLBACK_ROUND_TIME_MS,
         }));
       }
     } catch (error) {

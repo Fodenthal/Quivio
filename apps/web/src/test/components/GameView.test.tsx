@@ -88,6 +88,7 @@ describe("GameView", () => {
     return {
       targetScore: 10,
       roundTime: 30000,
+      defaultRoundTime: 30000,
       maxPlayers: 8,
       isPrivate: false,
       gamePin: "TEST1",

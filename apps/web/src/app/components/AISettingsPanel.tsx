@@ -36,7 +36,9 @@ export function AISettingsPanel({
   const [isGameSettingsExpanded, setIsGameSettingsExpanded] = useState(false);
 
   const [targetScore, setTargetScore] = useState(gameState.targetScore || 10);
-  const [roundTime, setRoundTime] = useState(Math.round((gameState.roundTime || 60000) / 1000));
+  const [roundTime, setRoundTime] = useState(
+    Math.round(((gameState.defaultRoundTime ?? gameState.roundTime ?? 60000) || 60000) / 1000)
+  );
   const [maxPlayers, setMaxPlayers] = useState(gameState.maxPlayers || 8);
 
   // Sync internal state with gameState changes for real-time updates
@@ -51,8 +53,8 @@ export function AISettingsPanel({
   }, [gameState.targetScore]);
 
   useEffect(() => {
-    setRoundTime(Math.round((gameState.roundTime || 60000) / 1000));
-  }, [gameState.roundTime]);
+    setRoundTime(Math.round(((gameState.defaultRoundTime ?? gameState.roundTime ?? 60000) || 60000) / 1000));
+  }, [gameState.defaultRoundTime, gameState.roundTime]);
 
   useEffect(() => {
     setMaxPlayers(gameState.maxPlayers || 8);
