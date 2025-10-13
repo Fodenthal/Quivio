@@ -15,6 +15,13 @@ export interface StoredQuestion {
   createdAt: string;
   usedCount: number;
   image?: QuestionImageMetadata | null;
+  familyId?: string | null;
+  templateId?: string | null;
+  paramValues?: Record<string, unknown> | null;
+  paramsHash?: string | null;
+  contentHash?: string | null;
+  difficultyBand?: string | null;
+  generationSource?: string | null;
 }
 
 export class SupabaseQuestionDatabase {
@@ -153,6 +160,13 @@ export class SupabaseQuestionDatabase {
           image: normalizedImage,
           round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null,
           question_format: format,
+          family_id: question.familyId ?? null,
+          template_id: question.templateId ?? null,
+          param_values: question.paramValues ?? null,
+          params_hash: question.paramsHash ?? null,
+          content_hash: question.contentHash ?? null,
+          difficulty_band: question.difficultyBand ?? null,
+          generation_source: question.generationSource ?? 'ai.gemini',
         })
         .select()
         .single();
@@ -237,6 +251,13 @@ export class SupabaseQuestionDatabase {
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
           format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
     } catch (error) {
@@ -302,6 +323,13 @@ export class SupabaseQuestionDatabase {
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
           format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
 
@@ -355,6 +383,13 @@ export class SupabaseQuestionDatabase {
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
           format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
 
@@ -410,6 +445,13 @@ export class SupabaseQuestionDatabase {
             roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
             sourceTopic: row.topic ?? undefined,
             format: this.normalizeQuestionFormat(row.question_format, row.question),
+            familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+            templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+            paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+            paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+            contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+            difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+            generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
           };
         });
 

@@ -56,6 +56,20 @@ export interface GeneratedQuestion {
   rawFactResponse?: string;
   /** Formatting hint for client rendering (plain vs LaTeX). */
   format?: QuestionContentFormat;
+  /** Taxonomy family identifier that produced this question, when known. */
+  familyId?: string;
+  /** Specific phrasing template identifier within the family. */
+  templateId?: string;
+  /** Normalized parameter payload used to instantiate the template. */
+  paramValues?: Record<string, unknown>;
+  /** Deterministic hash of paramValues for uniqueness checks. */
+  paramsHash?: string;
+  /** Deterministic hash of normalized question/answer content. */
+  contentHash?: string;
+  /** Canonical difficulty band label (D1–D5). */
+  difficultyBand?: string;
+  /** Source label describing how the question was generated or ingested. */
+  generationSource?: string;
 }
 
 /**
