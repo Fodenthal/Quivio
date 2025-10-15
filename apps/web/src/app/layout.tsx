@@ -8,6 +8,8 @@ import { GameConnectionProvider } from "../contexts/GameConnectionContext";
 import { MobileScaleFix } from "./components/MobileScaleFix";
 import { DebugTools } from "./components/DebugTools";
 import Script from "next/script";
+import { FooterVisibilityProvider } from "@/contexts/FooterVisibilityContext";
+import { Footer } from "./components/Footer";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -49,14 +51,17 @@ export default function RootLayout({
       />
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
-        <MobileScaleFix />
-        <DisplayNameProvider>
-          <GameConnectionProvider>
-            <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
-            <DebugTools />
-            {children}
-          </GameConnectionProvider>
-        </DisplayNameProvider>
+        <FooterVisibilityProvider>
+          <MobileScaleFix />
+          <DisplayNameProvider>
+            <GameConnectionProvider>
+              <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+              <DebugTools />
+              {children}
+            </GameConnectionProvider>
+          </DisplayNameProvider>
+          <Footer />
+        </FooterVisibilityProvider>
       </body>
     </html>
   );

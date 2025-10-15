@@ -3,6 +3,45 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { GameLayout, GameLayoutProps } from "../../app/components/GameLayout";
 import { ConnectionStatus } from "../../lib/gameClient";
 import { GameState, PlayerData, GameStatus } from "@shared/index";
+import { FooterVisibilityProvider } from "../../contexts/FooterVisibilityContext";
+
+vi.mock("../../contexts/DisplayNameContext", () => ({
+  useDisplayName: () => ({
+    displayName: "Test Player",
+    setDisplayName: vi.fn(),
+  }),
+}));
+
+vi.mock("../../hooks/useAuth", () => ({
+  useAuth: () => ({
+    user: null,
+    loading: false,
+  }),
+}));
+
+vi.mock("../../app/components/GameUserDropdown", () => ({
+  GameUserDropdown: ({ onLeaveGame, connectionStatus }: { onLeaveGame: () => void; connectionStatus: "connected" | "connecting" | "disconnected" | "error"; }) => {
+    const statusMap: Record<string, { text: string; className: string }> = {
+      connected: { text: "Connected", className: "bg-green-500" },
+      connecting: { text: "Connecting...", className: "bg-yellow-500" },
+      disconnected: { text: "Disconnected", className: "bg-gray-500" },
+      error: { text: "Connection Error", className: "bg-red-500" },
+    };
+
+    const status = statusMap[connectionStatus] ?? statusMap.disconnected;
+
+    return (
+      <div>
+        <div className={status.className} role="status">
+          {status.text}
+        </div>
+        {connectionStatus === "connected" && (
+          <button onClick={onLeaveGame}>Leave Game</button>
+        )}
+      </div>
+    );
+  },
+}));
 
 // Mock the UserDisplayName component to avoid context requirements
 vi.mock("../../app/components/UserDisplayName", () => ({
@@ -18,7 +57,6 @@ vi.mock("../../app/components/GameView", () => ({
     onSendChatMessage, 
     onStartGame,
     onSetTopics,
-    onSetDifficulty,
     onSetTargetScore,
     onSetRoundTime,
     onSetMaxPlayers
@@ -32,13 +70,15 @@ vi.mock("../../app/components/GameView", () => ({
       {onSendChatMessage && <button onClick={() => onSendChatMessage("test message")}>Send Message</button>}
       {onStartGame && <button onClick={() => onStartGame()}>Start Game</button>}
       {onSetTopics && <button onClick={() => onSetTopics(["Topic1", "Topic2"])}>Set Topics</button>}
-      {onSetDifficulty && <button onClick={() => onSetDifficulty(5)}>Set Difficulty</button>}
       {onSetTargetScore && <button onClick={() => onSetTargetScore(20)}>Set Target Score</button>}
       {onSetRoundTime && <button onClick={() => onSetRoundTime(60)}>Set Round Time</button>}
       {onSetMaxPlayers && <button onClick={() => onSetMaxPlayers(10)}>Set Max Players</button>}
     </div>
   ))
 }));
+
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(<FooterVisibilityProvider>{ui}</FooterVisibilityProvider>);
 
 describe("GameLayout", () => {
   // Mock functions for props
@@ -50,7 +90,6 @@ describe("GameLayout", () => {
     onStartGame: vi.fn(),
     onSubmitGuess: vi.fn(),
     onSetTopics: vi.fn(),
-    onSetDifficulty: vi.fn(),
     onSetTargetScore: vi.fn(),
     onSetRoundTime: vi.fn(),
     onSetMaxPlayers: vi.fn(),
@@ -110,27 +149,27 @@ describe("GameLayout", () => {
 
   describe("Header and Layout", () => {
     it("renders the header with game title", () => {
-      render(<GameLayout {...mockProps} />);
+      renderWithProviders(<GameLayout {...mockProps} />);
       expect(screen.getByRole("heading", { name: "Quivio", level: 1 })).toBeInTheDocument();
     });
 
     it("shows connection status in header", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
       expect(screen.getByText("Connected")).toBeInTheDocument();
     });
 
     it("shows leave game button when connected", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
       expect(screen.getByRole("button", { name: "Leave Game" })).toBeInTheDocument();
     });
 
     it("hides leave game button when disconnected", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.DISCONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.DISCONNECTED} />);
       expect(screen.queryByRole("button", { name: "Leave Game" })).not.toBeInTheDocument();
     });
 
     it("calls onLeaveGame when leave button is clicked", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
       
       const leaveButton = screen.getByRole("button", { name: "Leave Game" });
       fireEvent.click(leaveButton);
@@ -141,7 +180,7 @@ describe("GameLayout", () => {
 
   describe("Connection Status Display", () => {
     it("shows correct status text and color for disconnected", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.DISCONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.DISCONNECTED} />);
       
       expect(screen.getByText("Disconnected")).toBeInTheDocument();
       const statusIndicator = document.querySelector('.bg-gray-500');
@@ -149,7 +188,7 @@ describe("GameLayout", () => {
     });
 
     it("shows correct status text and color for connecting", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTING} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTING} />);
       
       // Check the header status specifically by looking within the header
       const header = screen.getByRole("banner");
@@ -159,7 +198,7 @@ describe("GameLayout", () => {
     });
 
     it("shows correct status text and color for connected", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} />);
       
       expect(screen.getByText("Connected")).toBeInTheDocument();
       const statusIndicator = document.querySelector('.bg-green-500');
@@ -169,7 +208,7 @@ describe("GameLayout", () => {
     // Removed RECONNECTING test - Colyseus handles reconnection internally
 
     it("shows correct status text and color for error", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.ERROR} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.ERROR} />);
       
       expect(screen.getByText("Connection Error")).toBeInTheDocument();
       const statusIndicator = document.querySelector('.bg-red-500');
@@ -179,7 +218,7 @@ describe("GameLayout", () => {
 
   describe("Content Rendering Based on State", () => {
     it("shows connecting message when not connected", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTING} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTING} />);
       
       // Check the main content area specifically by looking for the accompanying text
       expect(screen.getByText("Please wait while we connect you to the game.")).toBeInTheDocument();
@@ -189,7 +228,7 @@ describe("GameLayout", () => {
     });
 
     it("shows connecting message when connected but no game state", () => {
-      render(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} gameState={null} />);
+      renderWithProviders(<GameLayout {...mockProps} connectionStatus={ConnectionStatus.CONNECTED} gameState={null} />);
       
       expect(screen.getByText("Connecting...")).toBeInTheDocument();
       expect(screen.getByText("Please wait while we connect you to the game.")).toBeInTheDocument();
@@ -198,7 +237,7 @@ describe("GameLayout", () => {
     it("shows GameView with lobby state when connected with game state", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -210,7 +249,7 @@ describe("GameLayout", () => {
     it("shows GameView when game is in progress", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.IN_PROGRESS });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -222,7 +261,7 @@ describe("GameLayout", () => {
     it("shows GameView when game has ended", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.GAME_ENDED });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -236,7 +275,7 @@ describe("GameLayout", () => {
     it("passes correct props to GameView", () => {
       const gameState = createTestGameState({ currentRound: 3 });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
         currentPlayerId="player1"
@@ -250,7 +289,7 @@ describe("GameLayout", () => {
     it("calls onSubmitGuess when guess is submitted", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.IN_PROGRESS });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -264,7 +303,7 @@ describe("GameLayout", () => {
     it("calls onSendChatMessage when message is sent", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.IN_PROGRESS });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -280,7 +319,7 @@ describe("GameLayout", () => {
     it("calls onStartGame when start game button clicked", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -296,7 +335,7 @@ describe("GameLayout", () => {
     it("calls onSetTopics when topics are set", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -307,24 +346,10 @@ describe("GameLayout", () => {
       expect(mockProps.onSetTopics).toHaveBeenCalledWith(["Topic1", "Topic2"]);
     });
 
-    it("calls onSetDifficulty when difficulty is set", () => {
-      const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
-      
-      render(<GameLayout {...mockProps} 
-        connectionStatus={ConnectionStatus.CONNECTED} 
-        gameState={gameState} 
-      />);
-      
-      const difficultyButton = screen.getByRole("button", { name: "Set Difficulty" });
-      fireEvent.click(difficultyButton);
-      
-      expect(mockProps.onSetDifficulty).toHaveBeenCalledWith(5);
-    });
-
     it("calls onSetTargetScore when target score is set", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -338,7 +363,7 @@ describe("GameLayout", () => {
     it("calls onSetRoundTime when round time is set", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -352,7 +377,7 @@ describe("GameLayout", () => {
     it("calls onSetMaxPlayers when max players is set", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);
@@ -366,7 +391,7 @@ describe("GameLayout", () => {
 
   describe("Edge Cases", () => {
     it("handles null gameState gracefully", () => {
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={null} 
       />);
@@ -377,7 +402,7 @@ describe("GameLayout", () => {
     it("handles undefined currentPlayerId", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.WAITING });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
         currentPlayerId=""
@@ -390,7 +415,7 @@ describe("GameLayout", () => {
     it("renders GameView for all game states", () => {
       const gameState = createTestGameState({ gameStatus: GameStatus.IN_PROGRESS });
       
-      render(<GameLayout {...mockProps} 
+      renderWithProviders(<GameLayout {...mockProps} 
         connectionStatus={ConnectionStatus.CONNECTED} 
         gameState={gameState} 
       />);

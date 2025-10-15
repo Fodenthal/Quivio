@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export interface GameUserDropdownProps {
   onLeaveGame: () => void;
-  connectionStatus: 'connected' | 'connecting' | 'disconnected';
+  connectionStatus: "connected" | "connecting" | "disconnected" | "error";
 }
 
 /**

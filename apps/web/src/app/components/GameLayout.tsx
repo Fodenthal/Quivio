@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { ConnectionStatus } from "@/lib/gameClient";
 import { GameView } from "./GameView";
 import { GameState } from "@shared/index";
 import { GameUserDropdown } from "./GameUserDropdown";
 import { QuivioLogo } from "./QuivioLogo";
+import { useFooterVisibility } from "@/contexts/FooterVisibilityContext";
 
 export interface GameLayoutProps {
   connectionStatus: ConnectionStatus;
@@ -36,6 +38,16 @@ export function GameLayout({
 }: GameLayoutProps) {
   // This component receives all state and actions as props from a parent component
   // that uses the useGameConnection hook. It focuses purely on game UI rendering.
+
+  const { setIsVisible } = useFooterVisibility();
+
+  useEffect(() => {
+    setIsVisible(false);
+
+    return () => {
+      setIsVisible(true);
+    };
+  }, [setIsVisible]);
 
 
   // Determine which view to show
@@ -90,7 +102,8 @@ export function GameLayout({
               onLeaveGame={onLeaveGame}
               connectionStatus={
                 connectionStatus === ConnectionStatus.CONNECTED ? 'connected' :
-                connectionStatus === ConnectionStatus.CONNECTING ? 'connecting' : 
+                connectionStatus === ConnectionStatus.CONNECTING ? 'connecting' :
+                connectionStatus === ConnectionStatus.ERROR ? 'error' :
                 'disconnected'
               }
             />
