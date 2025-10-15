@@ -26,6 +26,7 @@ export interface PlayerData {
     joinedAt: number;
     avatarHue: number;
 }
+export type QuestionContentFormat = "plain" | "latex";
 export interface Prompt {
     id: string;
     text: string;
@@ -36,6 +37,7 @@ export interface Prompt {
     difficultyLevel?: number;
     acceptableAnswers?: string[];
     image?: PromptImage;
+    format?: QuestionContentFormat;
 }
 export interface PromptImage {
     url: string;
@@ -195,6 +197,7 @@ export interface AdminRoomDetails {
         difficultyLevel: number;
         acceptableAnswers: number;
         hasImage: boolean;
+        format: QuestionContentFormat;
     } | null;
     registry: AdminRoomRegistrySummary | null;
     questionBuffer: AdminQuestionBufferMetrics;

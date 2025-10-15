@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminRoomSnapshot } from "@shared/index";
 import { GameStatus } from "@shared/index";
+import QuestionText from "@/app/components/QuestionText";
 
 interface AdminRoomsResponse {
   success: boolean;
@@ -443,7 +444,12 @@ export default function AdminRoomsDashboard() {
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Current Prompt</h3>
                         {details?.currentPrompt ? (
                           <div className="mt-3 space-y-2 text-sm text-slate-300">
-                            <p className="text-slate-100">{details.currentPrompt.text || "No prompt loaded"}</p>
+                            <QuestionText
+                              as="p"
+                              className="text-slate-100"
+                              text={details.currentPrompt.text || "No prompt loaded"}
+                              format={details.currentPrompt.text ? details.currentPrompt.format : "plain"}
+                            />
                             <div className="flex flex-wrap gap-3 text-xs text-slate-400">
                               <span>ID: {details.currentPrompt.id}</span>
                               <span>Topic: {details.currentPrompt.topic || "—"}</span>

@@ -39,6 +39,7 @@ export class PromptLoader {
     this.state.currentPrompt.topic = this.state.currentTopic || "";
     this.state.currentPrompt.difficultyLevel = generated.difficulty;
     this.state.currentPrompt.acceptableAnswers = generated.acceptableAnswers;
+    this.state.currentPrompt.format = generated.format ?? "plain";
     this.applyPromptImage(generated.image);
 
     return {
@@ -67,6 +68,7 @@ export class PromptLoader {
     this.state.currentPrompt.topic = "Mixed Topics";
     this.state.currentPrompt.difficultyLevel = this.mapStringToNumber(selected.difficulty);
     this.state.currentPrompt.acceptableAnswers = [selected.answer];
+    this.state.currentPrompt.format = "plain";
     this.applyPromptImage(null);
 
     return { correctAnswer: selected.answer, acceptableAnswers: [selected.answer] };

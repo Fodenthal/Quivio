@@ -30,6 +30,8 @@ export interface PlayerData {
   avatarHue: number; // 0-359 for HSL hue value
 }
 
+export type QuestionContentFormat = "plain" | "latex";
+
 export interface Prompt {
   id: string;
   text: string;
@@ -41,6 +43,7 @@ export interface Prompt {
   difficultyLevel?: number; // 1-5 scale
   acceptableAnswers?: string[];
   image?: PromptImage;
+  format?: QuestionContentFormat;
 }
 
 export interface PromptImage {
@@ -239,6 +242,7 @@ export interface AdminRoomDetails {
     difficultyLevel: number;
     acceptableAnswers: number;
     hasImage: boolean;
+    format: QuestionContentFormat;
   } | null;
   registry: AdminRoomRegistrySummary | null;
   questionBuffer: AdminQuestionBufferMetrics;

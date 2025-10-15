@@ -46,6 +46,7 @@ export interface RawRoomState {
     topic?: string;
     difficultyLevel?: number;
     acceptableAnswers?: string[];
+    format?: string;
     image?: {
       url?: string;
       altText?: string;
@@ -249,6 +250,13 @@ export function convertColyseusState(state: unknown): GameState | null {
       topic: roomState.currentPrompt?.topic || "",
       difficultyLevel: roomState.currentPrompt?.difficultyLevel || 5,
       acceptableAnswers: roomState.currentPrompt?.acceptableAnswers || [],
+      format: (() => {
+        if (typeof roomState.currentPrompt?.format === "string") {
+          const normalized = roomState.currentPrompt.format.trim().toLowerCase();
+          return normalized === "latex" ? "latex" : "plain";
+        }
+        return "plain";
+      })(),
       image: promptImage
     },
     roundGuesses,

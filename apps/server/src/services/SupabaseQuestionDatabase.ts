@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GeneratedQuestion, QuestionImageMetadata } from './GeminiService';
 import { QuestionIdentifier } from './questionTypes';
 import { getDatabaseConfig } from '../config';
+import type { QuestionContentFormat } from '@shared/index';
 
 export interface StoredQuestion {
   id: number;
@@ -14,6 +15,13 @@ export interface StoredQuestion {
   createdAt: string;
   usedCount: number;
   image?: QuestionImageMetadata | null;
+  familyId?: string | null;
+  templateId?: string | null;
+  paramValues?: Record<string, unknown> | null;
+  paramsHash?: string | null;
+  contentHash?: string | null;
+  difficultyBand?: string | null;
+  generationSource?: string | null;
 }
 
 export class SupabaseQuestionDatabase {
@@ -58,6 +66,77 @@ export class SupabaseQuestionDatabase {
       .replace(/^-|-$/g, '');
   }
 
+  private detectQuestionFormat(source: unknown): QuestionContentFormat {
+    if (typeof source !== 'string') {
+      return 'plain';
+    }
+    const text = source.trim();
+    if (!text) {
+      return 'plain';
+    }
+
+    const patterns = [
+      /\$\$[\s\S]+?\$\$/m,
+      /(?<!\\)\$[^$]+\$/m,
+      /\\\([\s\S]+?\\\)/m,
+      /\\\[[\s\S]+?\\\]/m,
+      /\\begin\{[^}]+\}/m,
+    ];
+
+    return patterns.some(pattern => pattern.test(text)) ? 'latex' : 'plain';
+  }
+
+  private normalizeQuestionFormat(value: unknown, fallbackSource?: unknown): QuestionContentFormat {
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'latex') {
+        return 'latex';
+      }
+      if (normalized === 'plain') {
+        return 'plain';
+      }
+    }
+    return this.detectQuestionFormat(fallbackSource);
+  }
+
+  private shuffleByUsedCount<T extends { used_count?: number | null }>(rows: T[] | null | undefined): T[] {
+    if (!rows || rows.length <= 1) {
+      return rows ? rows.slice() : [];
+    }
+
+    const fallbackKey = Number.MAX_SAFE_INTEGER;
+    const buckets = new Map<number, T[]>();
+
+    for (const row of rows) {
+      const key = typeof row.used_count === 'number' ? row.used_count : fallbackKey;
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.push(row);
+      } else {
+        buckets.set(key, [row]);
+      }
+    }
+
+    const sortedKeys = Array.from(buckets.keys()).sort((a, b) => a - b);
+    const result: T[] = [];
+
+    for (const key of sortedKeys) {
+      const bucketRows = buckets.get(key)!;
+      result.push(...this.shuffleArray(bucketRows));
+    }
+
+    return result;
+  }
+
+  private shuffleArray<T>(items: T[]): T[] {
+    const result = items.slice();
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
   /**
    * Store a newly generated question in the database
    */
@@ -66,6 +145,7 @@ export class SupabaseQuestionDatabase {
     
     try {
       const normalizedImage = this.normalizeImageMetadata(question.image);
+      const format = question.format ?? this.detectQuestionFormat(question.question);
 
       const { data, error } = await this.client
         .from('questions')
@@ -78,7 +158,15 @@ export class SupabaseQuestionDatabase {
           category: question.category,
           used_count: 0,
           image: normalizedImage,
-          round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null
+          round_time_ms: typeof question.roundTimeMs === 'number' ? Math.max(0, Math.floor(question.roundTimeMs)) : null,
+          question_format: format,
+          family_id: question.familyId ?? null,
+          template_id: question.templateId ?? null,
+          param_values: question.paramValues ?? null,
+          params_hash: question.paramsHash ?? null,
+          content_hash: question.contentHash ?? null,
+          difficulty_band: question.difficultyBand ?? null,
+          generation_source: question.generationSource ?? 'ai.gemini',
         })
         .select()
         .single();
@@ -162,6 +250,14 @@ export class SupabaseQuestionDatabase {
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
     } catch (error) {
@@ -225,7 +321,15 @@ export class SupabaseQuestionDatabase {
           difficulty: row.difficulty,
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
-          sourceTopic: row.topic ?? undefined
+          sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
 
@@ -246,7 +350,8 @@ export class SupabaseQuestionDatabase {
 
       if (fbErr) throw fbErr;
 
-      questions = (fallback || []).map((row: any) => {
+      const shuffledFallback = this.shuffleByUsedCount(fallback);
+      questions = shuffledFallback.map((row: any) => {
         const acceptableField = row.acceptable_answers;
         let acceptableAnswers: string[] = [];
 
@@ -277,6 +382,14 @@ export class SupabaseQuestionDatabase {
           image: this.normalizeImageMetadata(row.image),
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
           sourceTopic: row.topic ?? undefined,
+          format: this.normalizeQuestionFormat(row.question_format, row.question),
+          familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+          templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+          paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+          paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+          contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+          difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+          generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
         };
       });
 
@@ -292,14 +405,15 @@ export class SupabaseQuestionDatabase {
         const { data: fallback, error: fbErr } = await this.client
           .from('questions')
           .select('*')
-          .eq('topic', topic)
-          .eq('difficulty', difficulty)
-          .order('used_count', { ascending: true })
-          .limit(limit);
+        .eq('topic', topic)
+        .eq('difficulty', difficulty)
+        .order('used_count', { ascending: true })
+        .limit(limit);
 
         if (fbErr) throw fbErr;
 
-        const questions: GeneratedQuestion[] = (fallback || []).map((row: any) => {
+        const shuffledFallback = this.shuffleByUsedCount(fallback);
+        const questions: GeneratedQuestion[] = shuffledFallback.map((row: any) => {
           const acceptableField = row.acceptable_answers;
           let acceptableAnswers: string[] = [];
 
@@ -330,6 +444,14 @@ export class SupabaseQuestionDatabase {
             image: this.normalizeImageMetadata(row.image),
             roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : undefined,
             sourceTopic: row.topic ?? undefined,
+            format: this.normalizeQuestionFormat(row.question_format, row.question),
+            familyId: typeof row.family_id === 'string' ? row.family_id : undefined,
+            templateId: typeof row.template_id === 'string' ? row.template_id : undefined,
+            paramValues: row.param_values && typeof row.param_values === 'object' ? row.param_values as Record<string, unknown> : undefined,
+            paramsHash: typeof row.params_hash === 'string' ? row.params_hash : undefined,
+            contentHash: typeof row.content_hash === 'string' ? row.content_hash : undefined,
+            difficultyBand: typeof row.difficulty_band === 'string' ? row.difficulty_band : undefined,
+            generationSource: typeof row.generation_source === 'string' ? row.generation_source : undefined,
           };
         });
 

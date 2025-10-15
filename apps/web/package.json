@@ -18,9 +18,13 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.52.1",
     "colyseus.js": "^0.16.19",
+    "katex": "^0.16.11",
     "next": "15.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-markdown": "^9.0.1",
+    "rehype-katex": "^7.0.0",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

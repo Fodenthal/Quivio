@@ -2,6 +2,7 @@ export interface QuestionSubmissionInput {
   topic?: string | null;
   category?: string | null;
   difficulty?: number | null;
+  difficultyBand?: string | null;
   question: string;
   correctAnswer: string;
   acceptableAnswers?: string[] | null;
@@ -9,6 +10,12 @@ export interface QuestionSubmissionInput {
   externalId?: string | null;
   imageUrl?: string | null;
   roundTimeSeconds?: number | null;
+  familyId?: string | null;
+  templateId?: string | null;
+  paramValues?: Record<string, unknown> | null;
+  paramsHash?: string | null;
+  contentHash?: string | null;
+  generationSource?: string | null;
 }
 
 export interface NormalizedQuestionImage {
@@ -29,6 +36,7 @@ export interface NormalizedQuestionSubmission {
   topic: string | null;
   category: string | null;
   difficulty: number | null;
+  difficultyBand: string | null;
   question: string;
   correctAnswer: string;
   acceptableAnswers: string[];
@@ -36,6 +44,12 @@ export interface NormalizedQuestionSubmission {
   externalId: string | null;
   image: NormalizedQuestionImage | null;
   roundTimeMs: number;
+  familyId: string | null;
+  templateId: string | null;
+  paramValues: Record<string, unknown> | null;
+  paramsHash: string | null;
+  contentHash: string | null;
+  generationSource: string | null;
 }
 
 export type SubmissionValidationErrors = Partial<
@@ -98,6 +112,13 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
     errors.imageUrl = "Image URL must be a valid http(s) link";
   }
 
+  const familyId = payload.familyId ? trim(payload.familyId) : "";
+  const templateId = payload.templateId ? trim(payload.templateId) : "";
+  const difficultyBand = payload.difficultyBand ? trim(payload.difficultyBand) : "";
+  const paramsHash = payload.paramsHash ? trim(payload.paramsHash) : "";
+  const contentHash = payload.contentHash ? trim(payload.contentHash) : "";
+  const generationSource = payload.generationSource ? trim(payload.generationSource) : "";
+
   let roundTimeMs = DEFAULT_ROUND_TIME_MS;
   if (payload.roundTimeSeconds !== undefined && payload.roundTimeSeconds !== null) {
     const seconds = Number(payload.roundTimeSeconds);
@@ -138,6 +159,13 @@ export const validateSubmission = (payload: QuestionSubmissionInput): Validation
           }
         : null,
       roundTimeMs,
+      familyId: familyId || null,
+      templateId: templateId || null,
+      paramValues: payload.paramValues ?? null,
+      paramsHash: paramsHash || null,
+      contentHash: contentHash || null,
+      difficultyBand: difficultyBand || null,
+      generationSource: generationSource || null,
     },
   };
 };
@@ -210,6 +238,15 @@ export const mapBulkRecordToSubmission = (record: Record<string, unknown>): Ques
   roundTimeSeconds: record.round_time_ms !== undefined && record.round_time_ms !== null
     ? Number(record.round_time_ms) / 1000
     : null,
+  familyId: record.family_id ? String(record.family_id) : null,
+  templateId: record.template_id ? String(record.template_id) : null,
+  paramValues: typeof record.param_values === "object" && record.param_values !== null
+    ? (record.param_values as Record<string, unknown>)
+    : null,
+  paramsHash: record.params_hash ? String(record.params_hash) : null,
+  contentHash: record.content_hash ? String(record.content_hash) : null,
+  difficultyBand: record.difficulty_band ? String(record.difficulty_band) : null,
+  generationSource: record.generation_source ? String(record.generation_source) : null,
 });
 
 export interface StoredSubmissionRecord extends NormalizedQuestionSubmission {

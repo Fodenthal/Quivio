@@ -68,6 +68,13 @@ const toStoredRecord = (
   externalId: submission.externalId,
   image: submission.image,
   roundTimeMs: submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
+  difficultyBand: submission.difficultyBand,
+  familyId: submission.familyId,
+  templateId: submission.templateId,
+  paramValues: submission.paramValues,
+  paramsHash: submission.paramsHash,
+  contentHash: submission.contentHash,
+  generationSource: submission.generationSource,
   status: overrides.status ?? "pending",
   submittedAt: overrides.submittedAt ?? new Date().toISOString(),
   origin,
@@ -117,6 +124,13 @@ const storeInSupabase = async (
       origin,
       batch_id: batchId,
       round_time_ms: submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
+      difficulty_band: submission.difficultyBand,
+      family_id: submission.familyId,
+      template_id: submission.templateId,
+      param_values: submission.paramValues,
+      params_hash: submission.paramsHash,
+      content_hash: submission.contentHash,
+      generation_source: submission.generationSource ?? (origin === "single" ? "manual.single" : "manual.bulk"),
     }));
 
     const { data, error } = await client
@@ -136,6 +150,13 @@ const storeInSupabase = async (
         status: row.status ?? "pending",
         submittedAt: row.submitted_at ?? row.created_at ?? new Date().toISOString(),
         roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : submission.roundTimeMs ?? FALLBACK_ROUND_TIME_MS,
+        difficultyBand: typeof row.difficulty_band === "string" ? row.difficulty_band : submission.difficultyBand,
+        familyId: typeof row.family_id === "string" ? row.family_id : submission.familyId,
+        templateId: typeof row.template_id === "string" ? row.template_id : submission.templateId,
+        paramValues: row.param_values && typeof row.param_values === "object" ? row.param_values as Record<string, unknown> : submission.paramValues,
+        paramsHash: typeof row.params_hash === "string" ? row.params_hash : submission.paramsHash,
+        contentHash: typeof row.content_hash === "string" ? row.content_hash : submission.contentHash,
+        generationSource: typeof row.generation_source === "string" ? row.generation_source : submission.generationSource,
       });
     });
 
@@ -177,7 +198,7 @@ export const fetchRecentSubmissions = async (
     try {
       const { data, error } = await client
         .from(TABLE_NAME)
-        .select("id, topic, category, difficulty, question, correct_answer, acceptable_answers, external_source, external_id, image, status, batch_id, origin, submitted_at, created_at, moderation_notes, round_time_ms")
+        .select("id, topic, category, difficulty, question, correct_answer, acceptable_answers, external_source, external_id, image, status, batch_id, origin, submitted_at, created_at, moderation_notes, round_time_ms, difficulty_band, family_id, template_id, param_values, params_hash, content_hash, generation_source")
         .order("submitted_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false, nullsFirst: false })
         .limit(limit);
@@ -200,6 +221,13 @@ export const fetchRecentSubmissions = async (
           batchId: row.batch_id ?? null,
           notes: row.moderation_notes ?? null,
           roundTimeMs: typeof row.round_time_ms === 'number' ? row.round_time_ms : FALLBACK_ROUND_TIME_MS,
+          difficultyBand: row.difficulty_band ?? null,
+          familyId: row.family_id ?? null,
+          templateId: row.template_id ?? null,
+          paramValues: row.param_values ?? null,
+          paramsHash: row.params_hash ?? null,
+          contentHash: row.content_hash ?? null,
+          generationSource: row.generation_source ?? null,
         }));
       }
     } catch (error) {

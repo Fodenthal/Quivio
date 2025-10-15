@@ -54,6 +54,7 @@ export class PromptState extends Schema {
   @type("number") difficultyLevel: number = 3; // 1-5 scale
   @type(["string"]) acceptableAnswers: string[] = [];
   @type(PromptImageState) image: PromptImageState = new PromptImageState();
+  @type("string") format: string = "plain";
 }
 
 export class TriviaRoomState extends Schema {
