@@ -2,6 +2,20 @@ import { Client, Room } from "colyseus.js";
 import { MSG, type PlayerData, RoundStartMessage, RoundEndMessage, ClockSyncMessage } from "@shared/index";
 import { clockSyncManager } from "@/utils/clockSync";
 
+const DEFAULT_COLYSEUS_PORT = process.env.NEXT_PUBLIC_BACKEND_PORT || "2567";
+
+function getDefaultServerUrl() {
+  // When there is no explicit backend URL and we're executing in the browser,
+  // fall back to the host currently serving the page so LAN/mobile testing works.
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const hostname = window.location.hostname;
+    return `${protocol}://${hostname}:${DEFAULT_COLYSEUS_PORT}`;
+  }
+
+  return `ws://localhost:${DEFAULT_COLYSEUS_PORT}`;
+}
+
 /**
  * Connection status enum for tracking client state
  */
@@ -53,13 +67,13 @@ export class GameClient {
   private serverHttpUrl: string; // HTTP URL for API calls
 
   constructor(serverUrl?: string) {
-    // Default to localhost in development, can be overridden
-    const url = serverUrl || (process.env.NEXT_PUBLIC_BACKEND_URL || "ws://localhost:2567");
-    
+    const envUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const url = serverUrl || envUrl || getDefaultServerUrl();
+
     this.client = new Client(url);
-    
+
     // Convert WebSocket URL to HTTP URL for API calls
-    this.serverHttpUrl = url.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
+    this.serverHttpUrl = url.replace(/^ws:/, "http:").replace(/^wss:/, "https:");
   }
 
   /**

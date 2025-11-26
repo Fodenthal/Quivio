@@ -36,20 +36,14 @@ export function ParentTopicRail({ topics, loading = false, disabled = false, onS
                   type="button"
                   disabled={isDisabled}
                   className={`w-44 shrink-0 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-left transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 snap-start ${buttonClasses}`}
-                  onMouseDown={(event) => {
+                  onClick={() => {
                     if (isDisabled) return;
-                    event.preventDefault();
                     onSelectTopic?.(topic);
                   }}
-                  onTouchStart={(event) => {
-                    if (isDisabled) return;
-                    event.preventDefault();
-                    onSelectTopic?.(topic);
-                  }}
-                  >
-                    <div className="text-sm font-semibold text-text-main truncate">{topic.displayName}</div>
-                  </button>
-                );
+                >
+                  <div className="text-sm font-semibold text-text-main truncate">{topic.displayName}</div>
+                </button>
+              );
             })}
 
         {!loading && topics.length === 0 && (
