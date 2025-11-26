@@ -10,7 +10,6 @@ import { DebugTools } from "./components/DebugTools";
 import Script from "next/script";
 import { FooterVisibilityProvider } from "@/contexts/FooterVisibilityContext";
 import { Footer } from "./components/Footer";
-import { ConsentManager } from "./components/ConsentManager";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -44,16 +43,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-          data-cookieconsent="marketing"
-        />
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
-        <ConsentManager cookiebotId={process.env.NEXT_PUBLIC_COOKIEBOT_ID} />
         <FooterVisibilityProvider>
           <MobileScaleFix />
           <DisplayNameProvider>
