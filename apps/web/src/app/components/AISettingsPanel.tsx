@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { GameState } from "@shared/index";
 
 import { useDebouncedEffect } from "../../hooks/useDebouncedEffect";
@@ -31,6 +31,13 @@ export function AISettingsPanel({
   const [newTopic, setNewTopic] = useState("");
   const { topics: popularTopics, isLoading: isPopularLoading } = usePopularTopics({ refreshMs: 120000, limit: 100 });
   const { topics: parentTopics, loading: isParentLoading } = useParentTopics();
+  const popularTouchTrackingRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+  const ignorePopularClickRef = useRef(false);
   
   // Collapsible Game Settings state
   const [isGameSettingsExpanded, setIsGameSettingsExpanded] = useState(false);
@@ -111,6 +118,37 @@ export function AISettingsPanel({
     const newTopics = topics.filter((_, i) => i !== index);
     setTopics(newTopics);
   };
+
+  const handlePopularPointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (isReadOnly || event.pointerType !== "touch") return;
+    popularTouchTrackingRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+    ignorePopularClickRef.current = false;
+  }, [isReadOnly]);
+
+  const handlePopularPointerMove = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (isReadOnly || event.pointerType !== "touch") return;
+    const tracking = popularTouchTrackingRef.current;
+    if (!tracking || tracking.pointerId !== event.pointerId || tracking.moved) {
+      return;
+    }
+
+    const deltaX = Math.abs(event.clientX - tracking.startX);
+    const deltaY = Math.abs(event.clientY - tracking.startY);
+    if (deltaX > 6 || deltaY > 6) {
+      tracking.moved = true;
+      ignorePopularClickRef.current = true;
+    }
+  }, [isReadOnly]);
+
+  const resetPopularPointerTracking = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== "touch") return;
+    popularTouchTrackingRef.current = null;
+  }, []);
 
   const handleParentTopicSelect = useCallback(
     (parentTopic: ParentTopicOverview) => {
@@ -221,14 +259,17 @@ export function AISettingsPanel({
                         ? "bg-white/5 border-white/10 text-text-secondary cursor-not-allowed opacity-60"
                         : "bg-white/5 hover:bg-white/10 border-white/5"
                     }`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
+                    onPointerDown={handlePopularPointerDown}
+                    onPointerMove={handlePopularPointerMove}
+                    onPointerUp={resetPopularPointerTracking}
+                    onPointerCancel={resetPopularPointerTracking}
+                    onPointerLeave={resetPopularPointerTracking}
+                    onClick={() => {
                       if (isReadOnly) return;
-                      if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
-                    }}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      if (isReadOnly) return;
+                      if (ignorePopularClickRef.current) {
+                        ignorePopularClickRef.current = false;
+                        return;
+                      }
                       if (!topics.includes(t.topic)) setTopics([...topics, t.topic]);
                     }}
                   >
