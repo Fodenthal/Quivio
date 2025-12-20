@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import { Metadata } from "next/types";
 
 export const blogMetadata: Record<string, Metadata> = {
   "history-of-trivia-games": {
