@@ -1,7 +1,5 @@
 import { Metadata } from "next";
 
-const baseTitle = "Quivio Blog";
-
 export const blogMetadata: Record<string, Metadata> = {
   "history-of-trivia-games": {
     title: "The History of Trivia Games: From Ancient Greece to Digital Age",

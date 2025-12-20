@@ -120,64 +120,6 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
       {/* Main Content */}
       <main className="w-full pt-4 pb-12 sm:pt-6 lg:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section className="mb-8 sm:mb-10">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8 shadow-glass">
-              <div className="grid lg:grid-cols-2 gap-6 items-start">
-                <div className="space-y-3">
-                  <p className="text-sm uppercase tracking-[0.2em] text-indigo-300">What is Quivio?</p>
-                  <h2 className="text-3xl font-bold text-white">Trivia on anything, with anyone.</h2>
-                  <p className="text-text-secondary text-lg">
-                    Launch a game in seconds, pick topics you love, and let our AI keep questions fresh. Play casually with friends or run a full trivia night without the hosting headache.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-sm">Live multiplayer</span>
-                    <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 text-sm">AI questions</span>
-                    <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-sm">Instant lobby</span>
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {valueProps.map((item) => (
-                    <div key={item.title} className="bg-white/5 border border-white/10 rounded-lg p-4">
-                      <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                      <p className="text-sm text-text-secondary">{item.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-8 sm:mb-10 grid lg:grid-cols-3 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-2">
-              <h3 className="text-lg font-semibold text-white">How it works</h3>
-              <ol className="list-decimal list-inside text-text-secondary space-y-1 text-sm">
-                <li>Create or join a room with a PIN.</li>
-                <li>Pick topics and difficulty.</li>
-                <li>Play fast rounds, chat, and crown a winner.</li>
-              </ol>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-2">
-              <h3 className="text-lg font-semibold text-white">Why people stay</h3>
-              <ul className="list-disc list-inside text-text-secondary space-y-1 text-sm">
-                <li>Fresh AI-written questions.</li>
-                <li>Responsive, mobile-friendly UI.</li>
-                <li>Moderation + community guidelines built in.</li>
-              </ul>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-2">
-              <h3 className="text-lg font-semibold text-white">Explore more</h3>
-              <p className="text-text-secondary text-sm">
-                New to Quivio? Read our blog for hosting tips and trivia strategies, or jump into the FAQ below.
-              </p>
-              <button
-                onClick={() => router.push("/blog")}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-colors text-sm"
-              >
-                Visit the blog →
-              </button>
-            </div>
-          </section>
-
           <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 lg:gap-6">
             {/* Info Panel - Shows first on mobile/tablet, moves to right sidebar on desktop */}
             <div className="lg:order-2 lg:flex lg:flex-col lg:gap-3">
@@ -237,7 +179,59 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
           </div>
         </div>
 
-          <section className="mt-8 sm:mt-12 bg-white/5 border border-white/10 rounded-lg p-6 md:p-8">
+          <section className="mt-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8 shadow-glass">
+              <div className="grid lg:grid-cols-3 gap-6 items-start">
+                <div className="lg:col-span-2 space-y-3">
+                  <p className="text-sm uppercase tracking-[0.2em] text-indigo-300">What is Quivio?</p>
+                  <h2 className="text-3xl font-bold text-white">Trivia on anything, with anyone.</h2>
+                  <p className="text-text-secondary text-lg">
+                    Launch a game in seconds, pick topics you love, and let our AI keep questions fresh. Play casually with friends or run a full trivia night without the hosting headache.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-sm">Live multiplayer</span>
+                    <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 text-sm">AI questions</span>
+                    <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-sm">Instant lobby</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <h3 className="text-base font-semibold text-white mb-2">How it works</h3>
+                    <ol className="list-decimal list-inside text-text-secondary space-y-1 text-sm">
+                      <li>Create or join a room with a PIN.</li>
+                      <li>Pick topics and difficulty.</li>
+                      <li>Play fast rounds, chat, and crown a winner.</li>
+                    </ol>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <h3 className="text-base font-semibold text-white mb-2">Why people stay</h3>
+                    <ul className="list-disc list-inside text-text-secondary space-y-1 text-sm">
+                      <li>Fresh AI-written questions.</li>
+                      <li>Responsive, mobile-friendly UI.</li>
+                      <li>Moderation + community guidelines built in.</li>
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => router.push("/blog")}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-colors text-sm"
+                  >
+                    Visit the blog →
+                  </button>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3 mt-6">
+                {valueProps.map((item) => (
+                  <div key={item.title} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                    <p className="text-sm text-text-secondary">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-8 sm:mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-2xl font-semibold text-white mb-3">FAQ</h3>
@@ -274,6 +268,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                   >
                     Community rules
                   </button>
+                </div>
                 </div>
               </div>
             </div>
