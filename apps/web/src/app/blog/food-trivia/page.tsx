@@ -1,5 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { blogMetadata } from '../meta';
+
+export const metadata: Metadata = blogMetadata["food-trivia"];
 
 export default function FoodTrivia() {
   return (

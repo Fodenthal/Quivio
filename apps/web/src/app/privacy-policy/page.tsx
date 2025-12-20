@@ -4,8 +4,8 @@ import React from 'react';
 const PrivacyPolicyPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">
     <h1 className="text-3xl font-bold mb-4 text-white">Privacy Policy</h1>
-    <p className="text-gray-600 mb-2">Last Updated: January 15, 2025</p>
-    <p className="mb-6 text-gray-400">Quivio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our trivia services.</p>
+    <p className="text-gray-600 mb-2">Last Updated: March 05, 2025</p>
+    <p className="mb-6 text-gray-400">Quivio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our trivia services. It also explains how advertising partners like Google AdSense use data and cookies on our site.</p>
     
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">1. Information We Collect</h2>
@@ -60,6 +60,7 @@ const PrivacyPolicyPage: React.FC = () => (
         <li><span className="font-medium">Preference Cookies:</span> Remember your settings and preferences</li>
       </ul>
       <p className="text-gray-400 mt-3">You can control cookie settings through your browser preferences. However, disabling certain cookies may affect site functionality.</p>
+      <p className="text-gray-400 mt-3">Google, as a third-party vendor, uses cookies to serve ads on our site. Google&apos;s use of the DoubleClick cookie enables it and its partners to serve ads to you based on your visit to our site and/or other sites on the Internet. Users may opt out of personalized advertising by visiting Google&apos;s Ads Settings.</p>
     </section>
     
     <section className="mb-6">
