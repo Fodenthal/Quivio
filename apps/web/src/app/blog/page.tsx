@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-// Uncomment when ready to add ads:
-// import { BlogAd } from './components/BlogAd';
+import { BlogAd } from './components/BlogAd';
 
 interface BlogPost {
   slug: string;
@@ -206,6 +205,8 @@ const blogPosts: BlogPost[] = [
 ];
 
 const BlogPage: React.FC = () => {
+  const adSlot = process.env.NEXT_PUBLIC_ADSENSE_SLOT_ID || "1234567890";
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-12">
       {/* Header */}
@@ -256,8 +257,7 @@ const BlogPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Ad placement example - uncomment when ready */}
-      {/* <BlogAd slot="your-ad-slot-id" className="text-center" /> */}
+      <BlogAd slot={adSlot} className="text-center" />
 
       {/* Categories */}
       <section className="mb-12">

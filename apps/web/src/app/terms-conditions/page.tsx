@@ -1,10 +1,25 @@
 
 import React from 'react';
+import type { Metadata } from "next/types";
+
+export const metadata: Metadata = {
+  title: "Terms & Conditions | Quivio",
+  description: "Read the Terms & Conditions for using Quivio's multiplayer trivia platform, including advertising and third-party services.",
+  openGraph: {
+    title: "Terms & Conditions | Quivio",
+    description: "Terms for using Quivio, including ads and third-party services.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Terms & Conditions | Quivio",
+    description: "Terms for using Quivio, including ads and third-party services.",
+  },
+};
 
 const TermsAndConditionsPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">
     <h1 className="text-3xl font-bold mb-4 text-white">Terms &amp; Conditions</h1>
-    <p className="text-gray-600 mb-2">Last Updated: July 22, 2025</p>
+    <p className="text-gray-600 mb-2">Last Updated: March 05, 2025</p>
     <section className="mb-6">
       <h2 className="text-xl font-semibold mb-2 text-gray-100">1. Acceptance of Terms</h2>
       <p className="text-gray-400">By accessing or using the Quivio website (the &quot;Service&quot;), you agree to be bound by these Terms. If you disagree with any part, you may not access the Service.</p>
@@ -48,6 +63,13 @@ const TermsAndConditionsPage: React.FC = () => (
     <section>
       <h2 className="text-xl font-semibold mb-2 text-gray-100">10. Contact Us</h2>
       <p className="text-gray-400">If you have questions about these Terms, please email us at <a href="mailto:support@quivio.fun" className="text-blue-400 underline">support@quivio.fun</a>.</p>
+    </section>
+
+    <section className="mt-6">
+      <h2 className="text-xl font-semibold mb-2 text-gray-100">11. Advertising and Third-Party Services</h2>
+      <p className="text-gray-400">
+        We use third-party services, including Google AdSense, to display ads and measure performance. These services may use cookies and similar technologies to deliver personalized ads and analytics. By using Quivio, you agree to the processing of data by these providers in accordance with their privacy policies. You can opt out of personalized ads in your Google Ads settings or by using industry opt-out tools.
+      </p>
     </section>
   </main>
 );

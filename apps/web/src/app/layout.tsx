@@ -7,7 +7,6 @@ import { DisplayNameProvider } from "../contexts/DisplayNameContext";
 import { GameConnectionProvider } from "../contexts/GameConnectionContext";
 import { MobileScaleFix } from "./components/MobileScaleFix";
 import { DebugTools } from "./components/DebugTools";
-import Script from "next/script";
 import { FooterVisibilityProvider } from "@/contexts/FooterVisibilityContext";
 import { Footer } from "./components/Footer";
 
@@ -40,15 +39,36 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.quivio.fun";
+
+  const organizationLdJson = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Quivio",
+    url: siteUrl,
+    logo: `${siteUrl}/file.svg`,
+    sameAs: [],
+  };
+
+  const websiteLdJson = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Quivio",
+    url: siteUrl,
+  };
+
   return (
     <html lang="en">
       <head>
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7659818852435801"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
+        <meta name="google-adsense-account" content="ca-pub-7659818852435801" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLdJson) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLdJson) }}
+        />
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <FooterVisibilityProvider>

@@ -1,5 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next/types';
+import { blogMetadata } from '../meta';
+
+export const metadata: Metadata = blogMetadata["music-trivia"];
 
 export default function MusicTrivia() {
   return (

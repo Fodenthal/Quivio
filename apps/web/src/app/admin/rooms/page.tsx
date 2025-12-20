@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next/types";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminRoomsDashboard from "./AdminRoomsDashboard";

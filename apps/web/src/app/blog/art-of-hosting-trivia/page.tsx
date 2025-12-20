@@ -1,6 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next/types';
+import { blogMetadata } from '../meta';
 import { BlogAd } from '../components/BlogAd';
+
+export const metadata: Metadata = blogMetadata["art-of-hosting-trivia"];
 
 export default function ArtOfHostingTrivia() {
   return (
