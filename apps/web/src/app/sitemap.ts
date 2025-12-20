@@ -12,7 +12,6 @@ const staticRoutes = [
   "/contact",
   "/questions",
   "/login",
-  "/auth",
 ];
 
 const blogSlugs = [
