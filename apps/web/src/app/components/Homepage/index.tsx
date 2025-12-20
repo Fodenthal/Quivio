@@ -62,6 +62,18 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     },
   ];
 
+  const blogTeasers = [
+    { title: "Hosting a great trivia night", href: "/blog/art-of-hosting-trivia" },
+    { title: "Level up your trivia skills", href: "/blog/improve-trivia-skills" },
+    { title: "Why trivia boosts learning", href: "/blog/science-behind-learning" },
+  ];
+
+  const testimonials = [
+    { quote: "Perfect for our Friday team hangs. Easy to spin up and play.", who: "Remote team lead" },
+    { quote: "My students love quick trivia warmups—keeps the class engaged.", who: "High school teacher" },
+    { quote: "Best way to host pub-style trivia without the prep hassle.", who: "Community host" },
+  ];
+
   const handleGamePinChange = (pin: string) => {
     setGamePin(pin);
     if (joinError) setJoinError(null);
@@ -224,6 +236,46 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                   <div key={item.title} className="bg-white/5 border border-white/10 rounded-lg p-4">
                     <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
                     <p className="text-sm text-text-secondary">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-7 shadow-glass">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-white">Latest from the blog</h3>
+                <button
+                  onClick={() => router.push("/blog")}
+                  className="text-sm text-indigo-200 hover:text-indigo-100 underline decoration-indigo-400"
+                >
+                  View all
+                </button>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {blogTeasers.map((post) => (
+                  <button
+                    key={post.href}
+                    onClick={() => router.push(post.href)}
+                    className="w-full text-left bg-white/5 border border-white/10 rounded-lg p-4 hover:border-indigo-400/40 transition-colors"
+                  >
+                    <p className="text-sm text-indigo-200 mb-1">Blog</p>
+                    <p className="text-white font-semibold text-base leading-snug">{post.title}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-7">
+              <h3 className="text-xl font-semibold text-white mb-4">Who uses Quivio</h3>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {testimonials.map((item) => (
+                  <div key={item.quote} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <p className="text-sm text-white font-semibold mb-1">“{item.quote}”</p>
+                    <p className="text-xs text-text-secondary">{item.who}</p>
                   </div>
                 ))}
               </div>

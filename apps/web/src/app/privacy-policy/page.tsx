@@ -76,6 +76,7 @@ const PrivacyPolicyPage: React.FC = () => (
       </ul>
       <p className="text-gray-400 mt-3">You can control cookie settings through your browser preferences. However, disabling certain cookies may affect site functionality.</p>
       <p className="text-gray-400 mt-3">Google, as a third-party vendor, uses cookies to serve ads on our site. Google&apos;s use of the DoubleClick cookie enables it and its partners to serve ads to you based on your visit to our site and/or other sites on the Internet. Users may opt out of personalized advertising by visiting Google&apos;s Ads Settings.</p>
+      <p className="text-gray-400 mt-3">To control personalized ads, visit <a href="https://adssettings.google.com" className="text-blue-400 underline">Google Ads Settings</a> or use industry opt-out tools like <a href="https://optout.aboutads.info" className="text-blue-400 underline">AboutAds</a>.</p>
     </section>
     
     <section className="mb-6">
