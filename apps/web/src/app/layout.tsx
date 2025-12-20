@@ -39,10 +39,41 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.quivio.fun";
+
+  const organizationLdJson = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Quivio",
+    url: siteUrl,
+    logo: `${siteUrl}/file.svg`,
+    sameAs: [],
+  };
+
+  const websiteLdJson = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Quivio",
+    url: siteUrl,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang="en">
       <head>
         <meta name="google-adsense-account" content="ca-pub-7659818852435801" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLdJson) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLdJson) }}
+        />
       </head>
       <body className={`${poppins.className} bg-gradient-to-br from-background to-background-light`}>
         <FooterVisibilityProvider>

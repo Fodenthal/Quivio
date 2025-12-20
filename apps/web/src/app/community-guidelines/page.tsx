@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Community Guidelines | Quivio",
+  description: "Quivio community rules for safe, respectful trivia games. Learn what we allow and how to report issues.",
+  openGraph: {
+    title: "Community Guidelines | Quivio",
+    description: "Rules for safe, respectful trivia games.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Community Guidelines | Quivio",
+    description: "Rules for safe, respectful trivia games.",
+  },
+};
 
 const CommunityGuidelinesPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">

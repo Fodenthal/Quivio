@@ -1,5 +1,20 @@
 
 import React from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Quivio | Multiplayer Trivia for Everyone",
+  description: "Learn about Quivio's mission to make trivia fast, friendly, and accessible for friends, classrooms, and teams.",
+  openGraph: {
+    title: "About Quivio",
+    description: "Meet the team building fast, friendly multiplayer trivia.",
+  },
+  twitter: {
+    card: "summary",
+    title: "About Quivio",
+    description: "Meet the team building fast, friendly multiplayer trivia.",
+  },
+};
 
 const AboutPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">

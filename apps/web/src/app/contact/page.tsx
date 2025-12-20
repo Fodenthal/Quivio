@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Contact Quivio | Support and Partnerships",
+  description: "Get in touch with Quivio for support, feedback, partnerships, and hosting questions.",
+  openGraph: {
+    title: "Contact Quivio",
+    description: "Reach the Quivio team for support, feedback, or partnerships.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Contact Quivio",
+    description: "Reach the Quivio team for support, feedback, or partnerships.",
+  },
+};
 
 const ContactPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">

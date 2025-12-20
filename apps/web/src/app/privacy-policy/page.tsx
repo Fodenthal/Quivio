@@ -1,5 +1,20 @@
 
 import React from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | Quivio",
+  description: "Learn how Quivio collects, uses, and protects your data, including analytics and Google AdSense cookies.",
+  openGraph: {
+    title: "Privacy Policy | Quivio",
+    description: "Understand how Quivio handles your data and cookies.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Privacy Policy | Quivio",
+    description: "Understand how Quivio handles your data and cookies.",
+  },
+};
 
 const PrivacyPolicyPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">

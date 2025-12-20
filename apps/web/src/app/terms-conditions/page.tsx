@@ -1,5 +1,20 @@
 
 import React from 'react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms & Conditions | Quivio",
+  description: "Read the Terms & Conditions for using Quivio's multiplayer trivia platform, including advertising and third-party services.",
+  openGraph: {
+    title: "Terms & Conditions | Quivio",
+    description: "Terms for using Quivio, including ads and third-party services.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Terms & Conditions | Quivio",
+    description: "Terms for using Quivio, including ads and third-party services.",
+  },
+};
 
 const TermsAndConditionsPage: React.FC = () => (
   <main className="max-w-2xl mx-auto px-4 py-12">
