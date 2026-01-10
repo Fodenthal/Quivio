@@ -378,6 +378,14 @@ export default function ArtOfHostingTrivia() {
           </Link>
         </div>
 
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">About the author</h3>
+          <p className="text-sm text-gray-300">
+            Written by <strong>Ava Thompson</strong>, former pub-trivia host and Content Editor at Quivio. Reviewed by <strong>Jordan Lee</strong>, Research Lead.
+          </p>
+          <p className="text-xs text-text-secondary mt-2">Updated March 08, 2025</p>
+        </section>
+
         {/* Ad Slot 3 - Bottom of Article */}
         <BlogAd slot="4870187564" />
 

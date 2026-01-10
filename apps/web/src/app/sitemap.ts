@@ -5,6 +5,8 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https:/
 const staticRoutes = [
   "/",
   "/blog",
+  "/authors",
+  "/editorial-policy",
   "/privacy-policy",
   "/terms-conditions",
   "/community-guidelines",
@@ -12,6 +14,7 @@ const staticRoutes = [
   "/contact",
   "/questions",
   "/login",
+  "/guides/host-trivia-night",
 ];
 
 const blogSlugs = [

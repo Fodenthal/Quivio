@@ -74,6 +74,21 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
     { quote: "Best way to host pub-style trivia without the prep hassle.", who: "Community host" },
   ];
 
+  const useCases = [
+    {
+      title: "Classroom warmups",
+      detail: "Use 5-minute rounds to start class. Mix easier questions to build confidence.",
+    },
+    {
+      title: "Team socials",
+      detail: "Run 3 quick rounds on Fridays with pop culture, sports, and custom topics.",
+    },
+    {
+      title: "Pub-style events",
+      detail: "Host longer sessions with custom topics and prize rounds; rotate questions weekly.",
+    },
+  ];
+
   const handleGamePinChange = (pin: string) => {
     setGamePin(pin);
     if (joinError) setJoinError(null);
@@ -315,12 +330,71 @@ export const Homepage: React.FC<HomepageProps> = ({ onJoinRoom, onCreateRoom }) 
                     Improve skills
                   </button>
                   <button
-                    onClick={() => router.push("/community-guidelines")}
+                    onClick={() => router.push("/guides/host-trivia-night")}
                     className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 text-sm text-white transition-colors"
                   >
-                    Community rules
+                    Hosting checklist
                   </button>
                 </div>
+              </div>
+            </div>
+            </div>
+          </section>
+
+          <section className="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 md:p-8 shadow-glass">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="text-2xl font-semibold text-white">How we create and review questions</h3>
+                  <p className="text-text-secondary">
+                    Human editors seed topics and difficulty, AI proposes variants, and a reviewer checks clarity, accuracy, and safety before questions go live. Reports are triaged daily and stale items rotate out weekly.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs text-indigo-200">
+                    <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Human review</span>
+                    <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Safety filters</span>
+                    <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Weekly refresh</span>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-white">Use cases</h4>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      {useCases.map((item) => (
+                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-lg p-3">
+                          <p className="text-white font-semibold text-sm">{item.title}</p>
+                          <p className="text-xs text-text-secondary">{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => router.push("/editorial-policy")}
+                      className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-colors text-sm"
+                    >
+                      Read our editorial policy
+                    </button>
+                    <button
+                      onClick={() => router.push("/authors")}
+                      className="px-4 py-2 rounded-md bg-white/10 text-sm text-white hover:bg-white/20 transition-colors"
+                    >
+                      Meet the authors
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <p className="text-sm text-indigo-200 mb-2">Snapshot</p>
+                  <div className="bg-gradient-to-br from-indigo-800/60 via-slate-800/40 to-indigo-900/50 border border-white/10 rounded-lg p-4 text-sm text-white space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Live round</span>
+                      <span className="text-xs text-indigo-200">Difficulty: Medium</span>
+                    </div>
+                    <p className="text-sm text-indigo-100">“Which scientist proposed the theory of general relativity?”</p>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Einstein</span>
+                      <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">1905–1915</span>
+                      <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Physics</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">Every question in live play was reviewed by a human for clarity and correctness.</p>
+                  </div>
                 </div>
               </div>
             </div>

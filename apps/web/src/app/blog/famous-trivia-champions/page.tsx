@@ -185,7 +185,7 @@ export default function FamousTriviaChampions() {
         <div className="border-t border-white/10 mt-12 pt-8">
           <h3 className="text-xl font-semibold mb-4">Related Articles</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/blog/how-to-improve-your-trivia-skills" className="block p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
+            <Link href="/blog/improve-trivia-skills" className="block p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
               <h4 className="font-semibold text-green-600">How to Improve Your Trivia Skills</h4>
               <p className="text-sm text-gray-400">Master the techniques that give you a competitive edge</p>
             </Link>
@@ -195,6 +195,14 @@ export default function FamousTriviaChampions() {
             </Link>
           </div>
         </div>
+
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">About the author</h3>
+          <p className="text-sm text-gray-300">
+            Written by <strong>Ava Thompson</strong>, Content Editor & trivia host. Reviewed by <strong>Jordan Lee</strong>, Research Lead.
+          </p>
+          <p className="text-xs text-text-secondary mt-2">Updated March 07, 2025</p>
+        </section>
       </article>
     </div>
   );
