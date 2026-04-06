@@ -78,6 +78,53 @@ export interface TopicsMessage {
 export interface DifficultyMessage {
     difficulty: number;
 }
+export type ClassicsTrackSlug = "greek-history" | "roman-history" | "mythology" | "famous-figures" | "vocabulary";
+export interface ClassicsTrack {
+    slug: ClassicsTrackSlug;
+    title: string;
+    description: string;
+    subtopics: string[];
+    quizTopics: string[];
+}
+export interface LessonSummary {
+    id: string;
+    track: ClassicsTrackSlug;
+    title: string;
+    description: string;
+    order: number;
+    estimatedMinutes: number;
+}
+export interface LessonCheckpoint {
+    id: string;
+    prompt: string;
+    acceptedAnswers: string[];
+    hint?: string;
+    explanation?: string;
+}
+export interface LessonContent extends LessonSummary {
+    overview: string;
+    body: string[];
+    keyTakeaways: string[];
+    checkpoints: LessonCheckpoint[];
+}
+export interface TrackProgress {
+    track: ClassicsTrackSlug;
+    completedLessonIds: string[];
+    masteryScore: number;
+    lastLessonId?: string;
+}
+export interface VocabularyEntry {
+    term: string;
+    translation: string;
+    notes?: string;
+}
+export interface VocabularyDeck {
+    id: string;
+    track: ClassicsTrackSlug;
+    title: string;
+    description: string;
+    entries: VocabularyEntry[];
+}
 export interface RoundStartMessage {
     roundStartTime: number;
     roundDurationMs: number;

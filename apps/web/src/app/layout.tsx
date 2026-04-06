@@ -14,7 +14,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
 export const metadata: Metadata = {
   title: "Quivio",
-  description: "A multiplayer trivia game",
+  description: "A Classics learning and quiz platform",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

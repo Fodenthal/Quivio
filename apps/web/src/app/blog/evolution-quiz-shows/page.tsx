@@ -246,6 +246,32 @@ export default function EvolutionQuizShows() {
             </Link>
           </div>
         </div>
+
+        <section className="mt-8 bg-white/5 border border-white/10 rounded-lg p-6 space-y-3">
+          <h3 className="text-xl font-semibold text-white">Key shifts to remember</h3>
+          <ul className="list-disc list-inside text-gray-300 space-y-1">
+            <li>Radio → TV → Streaming: each platform change widened reach and changed pacing.</li>
+            <li>Audience interactivity: from call-ins to live chat and app-based participation.</li>
+            <li>Prize models: from modest cash to sponsorship-heavy formats and digital rewards.</li>
+          </ul>
+        </section>
+
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6 space-y-2">
+          <h3 className="text-lg font-semibold text-white">Mini quiz</h3>
+          <ol className="list-decimal list-inside text-gray-300 space-y-1 text-sm">
+            <li>Which show popularized lifelines like “Phone a Friend”? (Who Wants to Be a Millionaire?)</li>
+            <li>What year did “Jeopardy!” first air? (1964)</li>
+            <li>Which platform drove the rise of live mobile trivia in the late 2010s? (Mobile apps like HQ Trivia)</li>
+          </ol>
+        </section>
+
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">About the author</h3>
+          <p className="text-sm text-gray-300">
+            Written by <strong>Jordan Lee</strong>, Research Lead (MLIS) at Quivio. Reviewed by <strong>Ava Thompson</strong>, Content Editor & trivia host.
+          </p>
+          <p className="text-xs text-text-secondary mt-2">Updated March 08, 2025</p>
+        </section>
       </article>
     </div>
   );

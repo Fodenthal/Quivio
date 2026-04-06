@@ -7,14 +7,18 @@ import { DisplayNameProvider } from "../../contexts/DisplayNameContext";
 const mockOnJoinRoom = vi.fn();
 const mockOnCreateRoom = vi.fn();
 
-// Mock the GamePins component
-vi.mock("../../app/components/GamePins", () => ({
-    GamePins: vi.fn(() => <div data-testid="game-pins">Game Pins Mock</div>)
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
 }));
 
-// Mock the TrendingTopics component
-vi.mock("../../app/components/TrendingTopics", () => ({
-    TrendingTopics: vi.fn(() => <div data-testid="trending-topics">Trending Topics Mock</div>)
+vi.mock("../../app/components/ActiveRoomsList", () => ({
+  ActiveRoomsList: () => <div data-testid="active-rooms-list">Active Rooms</div>,
+}));
+
+vi.mock("../../app/components/UserDropdown", () => ({
+  UserDropdown: () => <div data-testid="user-dropdown">User Dropdown</div>,
 }));
 
 const renderWithProvider = (component: React.ReactElement) => {
@@ -29,16 +33,25 @@ describe("Homepage", () => {
   it("join button is disabled when name is empty", () => {
     renderWithProvider(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
     
-    const joinButton = screen.getByRole("button", { name: /Join Room/ });
+    const joinButtons = screen.getAllByRole("button", { name: /Join Room/ });
 
-    expect(joinButton).toBeDisabled();
+    expect(joinButtons).toHaveLength(2);
+    joinButtons.forEach((button) => expect(button).toBeDisabled());
   });
 
   it("join button is disabled when game pin is empty", () => {
     renderWithProvider(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
     
-    const joinButton = screen.getByRole("button", { name: /Join Room/ });
+    const joinButtons = screen.getAllByRole("button", { name: /Join Room/ });
 
-    expect(joinButton).toBeDisabled();
+    expect(joinButtons).toHaveLength(2);
+    joinButtons.forEach((button) => expect(button).toBeDisabled());
+  });
+
+  it("shows the new learn mode entry point", () => {
+    renderWithProvider(<Homepage onJoinRoom={mockOnJoinRoom} onCreateRoom={mockOnCreateRoom} />);
+
+    expect(screen.getByRole("button", { name: /Courses and lessons/i })).toBeInTheDocument();
+    expect(screen.getByText(/Learn the classical world, then prove what you know/i)).toBeInTheDocument();
   });
 });

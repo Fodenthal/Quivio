@@ -15,6 +15,7 @@ const staticRoutes = [
   "/questions",
   "/login",
   "/guides/host-trivia-night",
+  "/sample-quiz",
 ];
 
 const blogSlugs = [

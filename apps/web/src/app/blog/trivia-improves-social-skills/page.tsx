@@ -222,8 +222,8 @@ export default function TriviaImprovesSocialSkills() {
           <h3 className="text-lg font-semibold text-white mb-2">About the author</h3>
           <p className="text-sm text-gray-300">
             Written by <strong>Samira Khan</strong>, Learning Designer at Quivio. Reviewed by <strong>Ava Thompson</strong>, Content Editor.
-            </p>
-          <p className="text-xs text-text-secondary mt-2">Updated March 07, 2025</p>
+          </p>
+          <p className="text-xs text-text-secondary mt-2">Updated March 08, 2025</p>
         </section>
       </article>
     </div>

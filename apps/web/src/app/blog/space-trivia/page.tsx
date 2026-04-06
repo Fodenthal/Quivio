@@ -311,6 +311,33 @@ export default function SpaceTrivia() {
             </Link>
           </div>
         </div>
+
+        <section className="mt-8 bg-white/5 border border-white/10 rounded-lg p-6 space-y-3">
+          <h3 className="text-xl font-semibold text-white">Quick facts to remember</h3>
+          <ul className="list-disc list-inside text-gray-300 space-y-1">
+            <li>Voyager 1 is the farthest human-made object from Earth—launched in 1977, now in interstellar space.</li>
+            <li>Olympus Mons on Mars is ~16 miles high—nearly 3× Everest and the largest volcano in the solar system.</li>
+            <li>The James Webb Space Telescope observes in infrared, letting us see the earliest galaxies after the Big Bang.</li>
+          </ul>
+        </section>
+
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6 space-y-2">
+          <h3 className="text-lg font-semibold text-white">Mini quiz</h3>
+          <p className="text-sm text-text-secondary">Test yourself quickly:</p>
+          <ol className="list-decimal list-inside text-gray-300 space-y-1 text-sm">
+            <li>Which mission first landed humans on the Moon? (Apollo 11)</li>
+            <li>What does “AU” measure in astronomy? (Average Earth–Sun distance)</li>
+            <li>Which planet has the Great Red Spot? (Jupiter)</li>
+          </ol>
+        </section>
+
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">About the author</h3>
+          <p className="text-sm text-gray-300">
+            Written by <strong>Jordan Lee</strong>, Research Lead (MLIS) at Quivio. Reviewed by <strong>Ava Thompson</strong>, Content Editor & trivia host.
+          </p>
+          <p className="text-xs text-text-secondary mt-2">Updated March 08, 2025</p>
+        </section>
       </article>
     </div>
   );
